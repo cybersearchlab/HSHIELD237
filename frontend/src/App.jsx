@@ -1,7 +1,24 @@
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+
+import DashboardPage from "./pages/Dashboard/DashboardPage";
+import LoginPage from "./pages/Login/LoginPage";
+import ProtectedRoute from "./routes/ProtectedRoute";
+
 export default function App() {
   return (
-    <main>
-      <h1>H-SHIELD237</h1>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
