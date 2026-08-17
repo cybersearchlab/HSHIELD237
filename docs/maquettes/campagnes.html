@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H-SHIELD237 — Campagnes</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F1F3D;--navy-mid:#1B2A5A;--navy-light:#2C3F6B;
+  --red:#C0392B;--red-dark:#a93226;--red-light:rgba(192,57,43,.09);--red-border:rgba(192,57,43,.28);--red-soft:#F5B7B1;--red-text:#7B241C;
+  --gold:#C49A1A;--gold-light:#FEF9E7;
+  --green:#1A7F4A;--green-light:#EAFAF1;
+  --orange:#E67E22;--orange-light:#FEF5E7;
+  --blue:#1A5FA0;--blue-light:#EBF5FB;
+  --teal:#0E7C7B;--teal-light:#E0F2F1;
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;
+  --border:rgba(0,0,0,0.08);--border-str:rgba(0,0,0,0.14);
+  --text:#0F1F3D;--text2:#4A5568;--text3:#8A97AC;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.09),0 2px 4px rgba(0,0,0,0.05);
+}
+html,body{min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+.app{display:grid;grid-template-columns:228px 1fr;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--navy);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:20px 18px 18px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:11px}
+.logo-icon{width:38px;height:38px;background:var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(192,57,43,.35)}
+.logo-icon i{color:#fff;font-size:19px}
+.logo-name{font-size:15.5px;font-weight:600;color:#fff;letter-spacing:-.02em;line-height:1}
+.logo-name span{color:var(--red)}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.34);margin-top:3px}
+.nav{padding:14px 10px;flex:1}
+.nav-section{font-size:9.5px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;padding:10px 10px 5px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);font-size:13px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:1px;transition:background .12s,color .12s;border:1px solid transparent;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.88)}
+.nav-item.active{background:rgba(192,57,43,.22);color:var(--red-soft);border-color:rgba(192,57,43,.38)}
+.nav-item.active i,.nav-item:hover i{color:inherit}
+.nav-item i{font-size:17px;color:rgba(255,255,255,.32)}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+.sidebar-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:rgba(255,255,255,.8);flex-shrink:0}
+.ava-name{font-size:12px;color:rgba(255,255,255,.8);font-weight:500}
+.ava-role{font-size:10px;color:rgba(255,255,255,.33)}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:var(--shadow)}
+.topbar-left h1{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.topbar-left span{font-size:11.5px;color:var(--text3);display:block;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:9px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--radius);font-size:12.5px;cursor:pointer;border:1px solid var(--border-str);background:var(--surface);color:var(--text2);font-family:inherit;transition:background .12s;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn i{font-size:15px}
+.btn-icon{padding:7px 9px}
+.btn-primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn-primary:hover{background:var(--red-dark)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.content{padding:22px 24px 48px;flex:1}
+.view{display:none}.view.active{display:block}
+
+/* ── COMMUN ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow)}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:13.5px;font-weight:600}
+.card-sub{font-size:11.5px;color:var(--text3);margin-top:2px}
+.link{font-size:12px;color:var(--blue);cursor:pointer;text-decoration:none}.link:hover{text-decoration:underline}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.badge-danger{background:var(--red-light);color:var(--red)}
+.badge-success{background:var(--green-light);color:var(--green)}
+.badge-warning{background:var(--orange-light);color:var(--orange)}
+.badge-accent{background:var(--blue-light);color:var(--blue)}
+.badge-neutral{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.badge-health{background:#FEE;color:#922}
+.badge-finance{background:#E8F0FE;color:#1A5FA0}
+.badge-btp{background:var(--orange-light);color:#7D4600}
+.badge-commerce{background:var(--green-light);color:var(--green)}
+.badge-education{background:var(--teal-light);color:var(--teal)}
+.badge-hotel{background:var(--gold-light);color:var(--gold)}
+
+.alert-strip{display:flex;align-items:flex-start;gap:10px;background:var(--red-light);border:1px solid var(--red-border);border-radius:var(--radius);padding:11px 14px;margin-bottom:20px;font-size:12.5px;color:var(--red-text);line-height:1.55}
+.alert-strip i{font-size:15px;color:var(--red);flex-shrink:0;margin-top:1px}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:0 14px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.td-name{font-weight:600;color:var(--text)}
+.td-muted{color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.status-pill{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:500;padding:3px 9px;border-radius:20px}
+.s-active{background:var(--orange-light);color:var(--orange)}
+.s-done{background:var(--green-light);color:var(--green)}
+.s-pending{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.s-paused{background:#EDE9FE;color:#5B21B6}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dot-active{background:var(--orange)}.dot-done{background:var(--green)}.dot-pending{background:var(--text3)}.dot-paused{background:#7C3AED}
+.prog-wrap{display:flex;align-items:center;gap:8px}
+.prog-track{flex:1;height:5px;background:var(--bg);border-radius:99px;overflow:hidden;min-width:55px}
+.prog-fill{height:100%;border-radius:99px;background:var(--red)}
+.prog-lbl{font-size:11px;color:var(--text3);white-space:nowrap}
+.click-rate{font-weight:700;font-size:13px}
+.click-high{color:var(--red)}.click-mid{color:var(--orange)}.click-low{color:var(--green)}.click-none{color:var(--text3)}
+
+/* ── MÉTRIQUES ── */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow)}
+.metric-label{font-size:10.5px;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.06em}
+.metric-label i{font-size:14px}
+.metric-value{font-size:28px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.metric-value.danger{color:var(--red)}
+.metric-value.success{color:var(--green)}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:5px}
+.metric-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:500}
+
+/* ════════════════════════════
+   PAGE CAMPAGNES
+════════════════════════════ */
+.camp-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.camp-toolbar .search-wrap{flex:1;position:relative;min-width:200px}
+.camp-toolbar .search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3)}
+.camp-toolbar .search-wrap input{width:100%;padding:8px 12px 8px 34px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit}
+.camp-toolbar .search-wrap input:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,42,90,.08)}
+.filter-group{display:flex;gap:6px;flex-wrap:wrap}
+.filter-btn{padding:6px 12px;border-radius:20px;border:1px solid var(--border-str);background:var(--surface);color:var(--text2);font-size:12px;font-family:inherit;cursor:pointer;transition:all .12s}
+.filter-btn:hover{background:var(--surface2)}
+.filter-btn.active{background:var(--navy-mid);color:#fff;border-color:var(--navy-mid)}
+
+/* Tableau campagnes étendu */
+.table-wrap{overflow-x:auto}
+.actions-cell{display:flex;align-items:center;gap:6px}
+.action-btn{width:28px;height:28px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);transition:all .12s}
+.action-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--border-str)}
+.action-btn.danger:hover{background:var(--red-light);color:var(--red);border-color:var(--red-border)}
+
+/* Bar de progression horizontale détaillée */
+.bar-track{height:7px;background:var(--bg);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px}
+.fill-danger{background:var(--red)}.fill-warning{background:var(--orange)}.fill-success{background:var(--green)}.fill-accent{background:var(--blue)}
+
+/* ── PANNEAU DÉTAIL CAMPAGNE ── */
+.detail-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.35);backdrop-filter:blur(2px)}
+.detail-overlay.open{display:block}
+.detail-panel{position:fixed;right:0;top:0;bottom:0;width:520px;background:var(--surface);box-shadow:-8px 0 32px rgba(0,0,0,0.12);display:flex;flex-direction:column;z-index:101;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.detail-panel.open{transform:translateX(0)}
+.detail-panel-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.detail-panel-title{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.detail-panel-sub{font-size:12px;color:var(--text3);margin-top:3px}
+.close-btn{width:30px;height:30px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);flex-shrink:0;font-size:17px}
+.close-btn:hover{background:var(--bg);color:var(--text)}
+.detail-panel-body{padding:20px 22px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px}
+
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.info-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.info-item-label{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.info-item-val{font-size:13.5px;font-weight:600;color:var(--text)}
+.info-item-val.danger{color:var(--red)}.info-item-val.success{color:var(--green)}.info-item-val.warn{color:var(--orange)}
+
+.section-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+
+.donut-row{display:flex;align-items:center;gap:20px}
+.mini-legend{display:flex;flex-direction:column;gap:8px;flex:1}
+.mini-leg-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.mini-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.mini-leg-pct{margin-left:auto;font-weight:600;font-size:12px}
+
+.email-preview-mini{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.epm-from{font-size:11px;color:var(--text3);margin-bottom:4px}
+.epm-subject{font-size:13px;font-weight:600;margin-bottom:8px;line-height:1.35}
+.epm-snippet{font-size:12px;color:var(--text2);line-height:1.65}
+
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:12px;padding-bottom:14px;position:relative}
+.tl-item:last-child{padding-bottom:0}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:9px;top:22px;bottom:0;width:1px;background:var(--border)}
+.tl-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.tl-dot i{font-size:11px;color:#fff}
+.tl-content{flex:1}
+.tl-label{font-size:12.5px;font-weight:500;color:var(--text)}
+.tl-time{font-size:11px;color:var(--text3);margin-top:2px}
+
+.detail-footer{padding:16px 22px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0}
+.detail-footer .btn{flex:1;justify-content:center}
+
+/* ── MODAL NOUVELLE CAMPAGNE ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.18)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:17px;font-weight:600}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,42,90,.09);background:var(--surface)}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text3)}
+.form-textarea{resize:vertical;min-height:72px;line-height:1.6}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-hint{font-size:11px;color:var(--text3);margin-top:4px}
+
+.steps-indicator{display:flex;gap:0;margin-bottom:24px}
+.step-ind{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative}
+.step-ind:not(:last-child)::after{content:'';position:absolute;top:14px;left:50%;right:-50%;height:1px;background:var(--border);z-index:0}
+.step-ind-num{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text3);position:relative;z-index:1;transition:all .2s}
+.step-ind.done .step-ind-num{background:var(--green);border-color:var(--green);color:#fff}
+.step-ind.active .step-ind-num{background:var(--navy-mid);border-color:var(--navy-mid);color:#fff}
+.step-ind-label{font-size:10.5px;color:var(--text3);text-align:center}
+.step-ind.active .step-ind-label{color:var(--navy-mid);font-weight:600}
+.step-ind.done .step-ind-label{color:var(--green)}
+
+.consent-box{background:var(--red-light);border:1px solid var(--red-border);border-radius:var(--radius);padding:14px 16px;display:flex;gap:10px;font-size:12.5px;color:var(--red-text)}
+.consent-box i{font-size:17px;color:var(--red);flex-shrink:0;margin-top:1px}
+.consent-check{display:flex;align-items:flex-start;gap:9px;margin-top:12px;font-size:13px;color:var(--text2);cursor:pointer}
+.consent-check input{width:16px;height:16px;border-radius:4px;accent-color:var(--red);flex-shrink:0;margin-top:1px;cursor:pointer}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;max-width:360px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast i{font-size:17px;flex-shrink:0}
+.toast.success i{color:#4ADE80}.toast.error i{color:#F87171}.toast.info i{color:#60A5FA}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ════════════ SIDEBAR ════════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-shield-lock"></i></div>
+    <div>
+      <div class="logo-name">H-SHIELD<span>237</span></div>
+      <div class="logo-sub">Simulateur de phishing éducatif</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Principal</div>
+    <a class="nav-item" id="nav-dashboard" onclick="showView('dashboard',this);return false" href="#">
+      <i class="ti ti-layout-dashboard"></i> Tableau de bord
+    </a>
+    <a class="nav-item" id="nav-generate" onclick="showView('generate',this);return false" href="#">
+      <i class="ti ti-robot"></i> Générer un scénario
+    </a>
+    <a class="nav-item active" id="nav-campaigns" onclick="showView('campaigns',this);return false" href="#">
+      <i class="ti ti-send"></i> Campagnes
+      <span class="nav-badge" id="camp-badge">4</span>
+    </a>
+    <div class="nav-section">Analyse</div>
+    <a class="nav-item" onclick="toast('Résultats','info');return false" href="#"><i class="ti ti-chart-bar"></i> Résultats</a>
+    <a class="nav-item" onclick="toast('Rapports PDF','info');return false" href="#"><i class="ti ti-file-report"></i> Rapports PDF <span class="nav-badge">2</span></a>
+    <a class="nav-item" onclick="toast('Historique','info');return false" href="#"><i class="ti ti-history"></i> Historique</a>
+    <div class="nav-section">Configuration</div>
+    <a class="nav-item" onclick="toast('Templates sectoriels','info');return false" href="#"><i class="ti ti-template"></i> Templates sectoriels</a>
+    <a class="nav-item" onclick="toast('Entreprises clientes','info');return false" href="#"><i class="ti ti-building"></i> Entreprises clientes</a>
+    <a class="nav-item" onclick="toast('Consentements','info');return false" href="#"><i class="ti ti-shield-check"></i> Consentements</a>
+    <a class="nav-item" onclick="toast('Paramètres','info');return false" href="#"><i class="ti ti-settings"></i> Paramètres</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar">LJ</div>
+    <div><div class="ava-name">LEVY Jérémie</div><div class="ava-role">Consultant — CSRL Yaoundé</div></div>
+  </div>
+</aside>
+
+<!-- ════════════ MAIN ════════════ -->
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 id="page-title">Campagnes</h1>
+      <span id="page-sub">7 campagnes ce mois — 4 actives · 2 terminées · 1 en attente</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-icon" aria-label="Rechercher"><i class="ti ti-search"></i></button>
+      <button class="btn btn-icon" style="position:relative" aria-label="Notifications">
+        <i class="ti ti-bell"></i>
+        <span style="position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid #fff"></span>
+      </button>
+      <button class="btn"><i class="ti ti-download"></i> Exporter</button>
+      <button class="btn btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> Nouvelle campagne</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ═══════ VUE DASHBOARD (simplifié) ═══════ -->
+    <div class="view" id="view-dashboard">
+      <p style="color:var(--text3);font-size:13px;padding:40px 0;text-align:center">
+        ← Tableau de bord — <a href="#" onclick="showView('campaigns',document.getElementById('nav-campaigns'));return false" class="link">revenir aux campagnes</a>
+      </p>
+    </div>
+
+    <!-- ═══════ VUE GENERATE (simplifié) ═══════ -->
+    <div class="view" id="view-generate">
+      <p style="color:var(--text3);font-size:13px;padding:40px 0;text-align:center">
+        ← Générer un scénario — <a href="#" onclick="showView('campaigns',document.getElementById('nav-campaigns'));return false" class="link">revenir aux campagnes</a>
+      </p>
+    </div>
+
+    <!-- ═══════ VUE CAMPAGNES ═══════ -->
+    <div class="view active" id="view-campaigns">
+
+      <!-- Alerte -->
+      <div class="alert-strip">
+        <i class="ti ti-alert-triangle"></i>
+        <span><strong>Alerte risque élevé</strong> — Clinique Sainte-Marie : taux de clic à 68 %. Formation urgente recommandée pour le service administratif. <a href="#" onclick="openDetail(0);return false" style="color:var(--red);font-weight:500">Voir le détail →</a></span>
+      </div>
+
+      <!-- Métriques -->
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label"><i class="ti ti-send"></i> Campagnes actives</div>
+          <div class="metric-value">4</div>
+          <div class="metric-sub">sur 7 ce mois</div>
+          <div class="metric-badge badge-accent">En cours</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label"><i class="ti ti-users"></i> Employés ciblés</div>
+          <div class="metric-value">187</div>
+          <div class="metric-sub">6 entreprises clientes</div>
+          <div class="metric-badge badge-success">+23 ce mois</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label"><i class="ti ti-pointer"></i> Taux de clic moyen</div>
+          <div class="metric-value danger">54 %</div>
+          <div class="metric-sub">↑ vs 48 % le mois dernier</div>
+          <div class="metric-badge badge-danger">Niveau élevé</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label"><i class="ti ti-check"></i> Taux de signalement</div>
+          <div class="metric-value success">11 %</div>
+          <div class="metric-sub">Bonne pratique identifiée</div>
+          <div class="metric-badge badge-success">+3 % vs objectif</div>
+        </div>
+      </div>
+
+      <!-- Toolbar filtres -->
+      <div class="camp-toolbar">
+        <div class="search-wrap">
+          <i class="ti ti-search"></i>
+          <input type="text" placeholder="Rechercher une campagne ou une entreprise…" oninput="filterTable(this.value)">
+        </div>
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="filterStatus('all',this)">Toutes (7)</button>
+          <button class="filter-btn" onclick="filterStatus('active',this)">Actives (4)</button>
+          <button class="filter-btn" onclick="filterStatus('done',this)">Terminées (2)</button>
+          <button class="filter-btn" onclick="filterStatus('pending',this)">En attente (1)</button>
+        </div>
+      </div>
+
+      <!-- Tableau des campagnes -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table id="camp-table" aria-label="Liste des campagnes">
+            <thead>
+              <tr>
+                <th><input type="checkbox" aria-label="Sélectionner tout" style="width:14px;height:14px;accent-color:var(--navy-mid)"></th>
+                <th>Entreprise</th>
+                <th>Scénario</th>
+                <th>Secteur</th>
+                <th>Destinataires</th>
+                <th>Progression</th>
+                <th>Taux de clic</th>
+                <th>Créée le</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="camp-tbody">
+              <!-- Injecté par JS -->
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--border);font-size:12px;color:var(--text3)">
+          <span id="table-count">7 campagnes affichées</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" disabled><i class="ti ti-chevron-left"></i></button>
+            <button class="btn btn-sm" style="background:var(--navy-mid);color:#fff;border-color:var(--navy-mid)">1</button>
+            <button class="btn btn-sm"><i class="ti ti-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /view-campaigns -->
+  </div><!-- /content -->
+</main>
+
+</div><!-- /app -->
+
+<!-- ════════════ PANNEAU DÉTAIL ════════════ -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-panel-header">
+    <div>
+      <div class="detail-panel-title" id="dp-title">Clinique Sainte-Marie</div>
+      <div class="detail-panel-sub" id="dp-sub">Alerte CENAME — portail piégé · Santé</div>
+    </div>
+    <div class="close-btn" onclick="closeDetail()" role="button" tabindex="0" aria-label="Fermer"><i class="ti ti-x"></i></div>
+  </div>
+
+  <div class="detail-panel-body">
+    <!-- Statut + métriques -->
+    <div>
+      <div class="section-title">Vue d'ensemble</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-item-label">Statut</div><div class="info-item-val" id="dp-status">Terminée</div></div>
+        <div class="info-item"><div class="info-item-label">Consentement</div><div class="info-item-val success">Validé ✓</div></div>
+        <div class="info-item"><div class="info-item-label">Taux de clic</div><div class="info-item-val danger" id="dp-click">68 %</div></div>
+        <div class="info-item"><div class="info-item-label">Taux de soumission</div><div class="info-item-val warn" id="dp-submit">29 %</div></div>
+        <div class="info-item"><div class="info-item-label">Ont signalé</div><div class="info-item-val success" id="dp-report">9 %</div></div>
+        <div class="info-item"><div class="info-item-label">Aucune interaction</div><div class="info-item-val" id="dp-none">23 %</div></div>
+      </div>
+    </div>
+
+    <!-- Donut -->
+    <div>
+      <div class="section-title">Répartition des comportements</div>
+      <div class="donut-row">
+        <svg width="110" height="110" viewBox="0 0 110 110" id="dp-donut">
+          <circle cx="55" cy="55" r="42" fill="none" stroke="#F0F2F7" stroke-width="19"/>
+          <circle cx="55" cy="55" r="42" fill="none" stroke="#C0392B" stroke-width="19" stroke-dasharray="143 120.8" stroke-dashoffset="0" transform="rotate(-90 55 55)" id="arc-click"/>
+          <circle cx="55" cy="55" r="42" fill="none" stroke="#E67E22" stroke-width="19" stroke-dasharray="50.1 213.7" stroke-dashoffset="-143" transform="rotate(-90 55 55)" id="arc-submit"/>
+          <circle cx="55" cy="55" r="42" fill="none" stroke="#1A7F4A" stroke-width="19" stroke-dasharray="18.9 244.9" stroke-dashoffset="-193.1" transform="rotate(-90 55 55)" id="arc-report"/>
+          <circle cx="55" cy="55" r="42" fill="none" stroke="#CBD2DB" stroke-width="19" stroke-dasharray="48.3 215.5" stroke-dashoffset="-212" transform="rotate(-90 55 55)" id="arc-none"/>
+          <text x="55" y="50" text-anchor="middle" font-size="17" font-weight="700" fill="#C0392B" font-family="system-ui" id="donut-main">68%</text>
+          <text x="55" y="63" text-anchor="middle" font-size="9" fill="#8A97AC" font-family="system-ui">ont cliqué</text>
+        </svg>
+        <div class="mini-legend">
+          <div class="mini-leg-item"><div class="mini-leg-dot" style="background:#C0392B"></div>Ont cliqué<span class="mini-leg-pct" style="color:#C0392B" id="leg-click">68 %</span></div>
+          <div class="mini-leg-item"><div class="mini-leg-dot" style="background:#E67E22"></div>Ont soumis<span class="mini-leg-pct" style="color:#E67E22" id="leg-submit">29 %</span></div>
+          <div class="mini-leg-item"><div class="mini-leg-dot" style="background:#1A7F4A"></div>Ont signalé<span class="mini-leg-pct" style="color:#1A7F4A" id="leg-report">9 %</span></div>
+          <div class="mini-leg-item"><div class="mini-leg-dot" style="background:#CBD2DB"></div>Aucune action<span class="mini-leg-pct" style="color:#8A97AC" id="leg-none">23 %</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aperçu email -->
+    <div>
+      <div class="section-title">Scénario utilisé</div>
+      <div class="email-preview-mini">
+        <div class="epm-from" id="dp-from">De : noreply@cename-minsante.cm</div>
+        <div class="epm-subject" id="dp-email-subject">⚠️ Mise à jour obligatoire CENAME avant le 15 juillet 2026</div>
+        <div class="epm-snippet" id="dp-snippet">Suite à la circulaire n°2026/MSP/CENAME/008, toutes les structures sanitaires sont tenues de mettre à jour leurs déclarations avant la date butoir...</div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div>
+      <div class="section-title">Historique de la campagne</div>
+      <div class="timeline" id="dp-timeline">
+        <!-- Injecté par JS -->
+      </div>
+    </div>
+
+    <!-- Recommandation IA -->
+    <div style="background:#EBF5FB;border:1px solid #BFDBFE;border-radius:var(--radius);padding:14px 16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <i class="ti ti-bulb" style="color:var(--blue);font-size:16px"></i>
+        <span style="font-size:12px;font-weight:600;color:var(--blue)">Recommandation IA</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--text2);line-height:1.65" id="dp-reco">
+        Formation urgente recommandée pour le service administratif. Les scénarios réglementaires (CENAME, BEAC) génèrent des taux de clic supérieurs de 40 % à la moyenne. Prévoir une session de sensibilisation dans les 14 jours.
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-footer">
+    <button class="btn" onclick="toast('Export PDF en cours…','info')"><i class="ti ti-file-report"></i> Rapport PDF</button>
+    <button class="btn" onclick="toast('Campagne de relance créée','success')"><i class="ti ti-refresh"></i> Relancer</button>
+    <button class="btn btn-primary" onclick="closeDetail();openModal()"><i class="ti ti-send"></i> Nouvelle campagne</button>
+  </div>
+</div>
+
+<!-- ════════════ MODAL NOUVELLE CAMPAGNE ════════════ -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Nouvelle campagne de simulation</h3>
+      <div class="close-btn" onclick="closeModal()" role="button" tabindex="0" aria-label="Fermer"><i class="ti ti-x"></i></div>
+    </div>
+    <div class="modal-body">
+      <!-- Indicateur d'étapes -->
+      <div class="steps-indicator" id="steps">
+        <div class="step-ind active" id="step-1"><div class="step-ind-num">1</div><div class="step-ind-label">Entreprise</div></div>
+        <div class="step-ind" id="step-2"><div class="step-ind-num">2</div><div class="step-ind-label">Scénario</div></div>
+        <div class="step-ind" id="step-3"><div class="step-ind-num">3</div><div class="step-ind-label">Destinataires</div></div>
+        <div class="step-ind" id="step-4"><div class="step-ind-num">4</div><div class="step-ind-label">Consentement</div></div>
+      </div>
+
+      <!-- Étape 1 -->
+      <div id="modal-step-1">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nom de l'entreprise *</label>
+            <input class="form-input" type="text" placeholder="Ex : Clinique Sainte-Marie" id="m-company">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Secteur d'activité *</label>
+            <select class="form-select" id="m-sector">
+              <option value="">Choisir un secteur…</option>
+              <option>Santé / Clinique</option>
+              <option>Microfinance / MFI</option>
+              <option>Commerce / Import-Export</option>
+              <option>BTP / Génie Civil</option>
+              <option>Enseignement privé</option>
+              <option>Hôtellerie / Restauration</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Taille de l'entreprise</label>
+            <select class="form-select">
+              <option>1 – 10 employés</option>
+              <option selected>11 – 50 employés</option>
+              <option>51 – 200 employés</option>
+              <option>200+ employés</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type de prétexte *</label>
+            <select class="form-select" id="m-pretexte">
+              <option>Alerte réglementaire (BEAC / MINFI)</option>
+              <option>Changement de coordonnées bancaires</option>
+              <option>Attribution de marché public</option>
+              <option>Alerte Mobile Money (MTN / Orange)</option>
+              <option>Notification institutionnelle</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contexte additionnel (optionnel)</label>
+          <textarea class="form-textarea" placeholder="Ex : L'entreprise utilise Gmail, travaille avec des fournisseurs asiatiques, reçoit des notifications BEAC…"></textarea>
+        </div>
+      </div>
+
+      <!-- Étape 2 -->
+      <div id="modal-step-2" style="display:none">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><i class="ti ti-robot" style="color:var(--red);font-size:17px"></i><span style="font-size:13px;font-weight:600">Scénario généré par IA</span></div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px">De : <strong id="m-from">noreply@beac-conformite.cm</strong></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px" id="m-subject">⚠️ Suspension de compte — Mise en conformité BEAC avant le 20 juillet 2026</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.65" id="m-body">Suite à la circulaire n°2026/BEAC/DSF/0044, votre compte opérationnel a été temporairement suspendu. Vous disposez de 48 heures pour régulariser votre situation...</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date de lancement</label>
+          <input class="form-input" type="date" id="m-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Durée de la collecte</label>
+          <select class="form-select"><option>48 heures</option><option selected>5 jours</option><option>7 jours</option><option>14 jours</option></select>
+        </div>
+      </div>
+
+      <!-- Étape 3 -->
+      <div id="modal-step-3" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Liste des destinataires *</label>
+          <textarea class="form-textarea" placeholder="Saisir les adresses email professionnelles, une par ligne :&#10;jean.dupont@entreprise.cm&#10;marie.ngo@entreprise.cm" style="min-height:120px" id="m-emails"></textarea>
+          <div class="form-hint"><i class="ti ti-info-circle" style="font-size:12px;vertical-align:-1px"></i> Seules les adresses de la liste blanche validée seront contactées.</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-size:12.5px;color:var(--text2)">
+          <strong>0 adresse</strong> saisie · Vérification automatique du format en cours
+        </div>
+      </div>
+
+      <!-- Étape 4 — Consentement -->
+      <div id="modal-step-4" style="display:none">
+        <div class="consent-box">
+          <i class="ti ti-shield-exclamation"></i>
+          <div>
+            <strong style="display:block;margin-bottom:4px">Validation du consentement obligatoire</strong>
+            Avant tout lancement, le responsable habilité de l'entreprise cliente doit explicitement autoriser cette campagne. Cette validation est enregistrée dans le journal d'audit de la plateforme.
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label">Nom du responsable habilité *</label>
+          <input class="form-input" type="text" placeholder="Ex : M. Jean-Pierre MBARGA, Directeur Général">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email du responsable *</label>
+          <input class="form-input" type="email" placeholder="directeur@entreprise.cm">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date de validation du consentement</label>
+          <input class="form-input" type="date">
+        </div>
+        <label class="consent-check">
+          <input type="checkbox" id="m-consent">
+          Je certifie avoir obtenu le consentement explicite et éclairé du responsable désigné pour le lancement de cette campagne de simulation éducative dans le cadre de H-SHIELD237.
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" id="modal-btn-back" onclick="modalStep(-1)" style="display:none"><i class="ti ti-chevron-left"></i> Précédent</button>
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" id="modal-btn-next" onclick="modalStep(1)">Suivant <i class="ti ti-chevron-right"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast-el"><i class="ti ti-info-circle" id="toast-icon"></i><span id="toast-msg"></span></div>
+
+<script>
+/* ════════════════════════════════════════
+   DONNÉES
+════════════════════════════════════════ */
+const campaigns = [
+  {
+    name:'Clinique Sainte-Marie', scenario:'Alerte CENAME — portail piégé', sector:'Santé', sectorClass:'badge-health',
+    total:34, done:34, click:68, submit:29, report:9, none:23, date:'02/07/2026', status:'done',
+    from:'noreply@cename-minsante.cm',
+    subject:'⚠️ Mise à jour obligatoire CENAME avant le 15 juillet 2026',
+    snippet:'Suite à la circulaire n°2026/MSP/CENAME/008, toutes les structures sanitaires sont tenues de mettre à jour leurs déclarations avant la date butoir...',
+    reco:'Formation urgente recommandée pour le service administratif. Les scénarios réglementaires (CENAME, BEAC) génèrent des taux de clic supérieurs de 40 % à la moyenne. Prévoir une session dans les 14 jours.',
+    timeline:[
+      {color:'#1A7F4A',icon:'ti-check',label:'Consentement validé — Dr. Amougou',time:'28/06/2026 · 09:14'},
+      {color:'#1B2A5A',icon:'ti-send',label:'Campagne lancée — 34 emails envoyés',time:'02/07/2026 · 08:00'},
+      {color:'#C0392B',icon:'ti-pointer',label:'Premier clic enregistré — Service administratif',time:'02/07/2026 · 08:47'},
+      {color:'#E67E22',icon:'ti-forms',label:'Première soumission enregistrée',time:'02/07/2026 · 09:03'},
+      {color:'#7C3AED',icon:'ti-flag',label:'2 signalements reçus par email',time:'02/07/2026 · 11:30'},
+      {color:'#1A7F4A',icon:'ti-circle-check',label:'Campagne clôturée — 100 % des emails livrés',time:'07/07/2026 · 18:00'},
+    ]
+  },
+  {
+    name:'MFI Cameroun Sud', scenario:'Fausse suspension BEAC', sector:'Microfinance', sectorClass:'badge-finance',
+    total:28, done:20, click:49, submit:18, report:12, none:39, date:'05/07/2026', status:'active',
+    from:'noreply@beac-conformite.cm',
+    subject:'⚠️ Suspension de compte — Mise en conformité BEAC avant le 20 juillet 2026',
+    snippet:'Suite à la circulaire n°2026/BEAC/DSF/0044, votre compte opérationnel n°CM21-MFI-00847 a été temporairement suspendu...',
+    reco:'Les agents de guichet montrent un taux de clic 35 % supérieur aux cadres. Cibler la formation sur les profils opérationnels en contact direct avec les clients.',
+    timeline:[
+      {color:'#1A7F4A',icon:'ti-check',label:'Consentement validé — Directrice MFI',time:'01/07/2026 · 14:22'},
+      {color:'#1B2A5A',icon:'ti-send',label:'Campagne lancée — 28 emails envoyés',time:'05/07/2026 · 09:00'},
+      {color:'#C0392B',icon:'ti-pointer',label:'8 clics enregistrés (agents de guichet)',time:'05/07/2026 · 10:15'},
+      {color:'#E67E22',icon:'ti-forms',label:'5 soumissions enregistrées',time:'05/07/2026 · 11:40'},
+    ]
+  },
+  {
+    name:'Bâti-Yaoundé SARL', scenario:'Faux courrier ARMP / MINTP', sector:'BTP', sectorClass:'badge-btp',
+    total:19, done:11, click:43, submit:15, report:8, none:49, date:'07/07/2026', status:'active',
+    from:'notifications@armp-mintp.cm',
+    subject:'[RÉSULTAT] Notification attribution marché n°MINTP-2026-0372',
+    snippet:'L\'Autorité de Régulation des Marchés Publics vous informe que votre offre a été retenue. Téléchargez votre notification d\'attribution dans les 72h...',
+    reco:'Le scénario d\'attribution de marché exploite efficacement l\'appât du gain. Sensibiliser les équipes aux vérifications préalables via les canaux officiels ARMP.',
+    timeline:[
+      {color:'#1A7F4A',icon:'ti-check',label:'Consentement validé — DG Bâti-Yaoundé',time:'04/07/2026 · 16:00'},
+      {color:'#1B2A5A',icon:'ti-send',label:'Campagne lancée — 19 emails envoyés',time:'07/07/2026 · 08:30'},
+      {color:'#C0392B',icon:'ti-pointer',label:'4 clics enregistrés (ingénieurs)',time:'07/07/2026 · 09:20'},
+    ]
+  },
+  {
+    name:'Import-Export Nguemo', scenario:'Changement RIB fournisseur CN', sector:'Commerce', sectorClass:'badge-commerce',
+    total:41, done:14, click:0, submit:0, report:0, none:0, date:'08/07/2026', status:'pending',
+    from:'contact@guangzhou-trade-intl.com',
+    subject:'[URGENT] Mise à jour coordonnées bancaires — Facture #INV-2026-7821',
+    snippet:'Veuillez noter que nos coordonnées bancaires ont changé. Utilisez ces nouvelles informations pour le règlement de la facture de 4 850 000 FCFA...',
+    reco:'Le scénario de fraude au fournisseur est le plus courant dans le secteur import-export. En attente de validation du consentement par la direction.',
+    timeline:[
+      {color:'#E67E22',icon:'ti-clock',label:'Consentement en attente de validation',time:'08/07/2026 · 10:00'},
+    ]
+  },
+  {
+    name:'École Privée Excellence', scenario:'Fausse alerte MINESUP', sector:'Enseignement', sectorClass:'badge-education',
+    total:22, done:22, click:37, submit:12, report:18, none:45, date:'28/06/2026', status:'done',
+    from:'noreply@minesup-infos.cm',
+    subject:'⚠️ Blocage inscriptions 2026-2027 — Portail MINESUP à mettre à jour',
+    snippet:'Le Ministère de l\'Enseignement Supérieur vous informe que votre établissement n\'a pas complété la procédure de renouvellement d\'accréditation...',
+    reco:'Bon taux de signalement (18 %). Les enseignants montrent une meilleure résilience que le personnel administratif. Maintenir la sensibilisation annuelle.',
+    timeline:[
+      {color:'#1A7F4A',icon:'ti-check',label:'Consentement validé — Directeur académique',time:'24/06/2026 · 11:00'},
+      {color:'#1B2A5A',icon:'ti-send',label:'Campagne lancée — 22 emails envoyés',time:'28/06/2026 · 08:00'},
+      {color:'#7C3AED',icon:'ti-flag',label:'4 signalements reçus',time:'28/06/2026 · 09:45'},
+      {color:'#1A7F4A',icon:'ti-circle-check',label:'Campagne clôturée',time:'05/07/2026 · 18:00'},
+    ]
+  },
+  {
+    name:'Hôtel des Collines', scenario:'Fausses réservations Booking', sector:'Hôtellerie', sectorClass:'badge-hotel',
+    total:15, done:15, click:28, submit:8, report:14, none:58, date:'25/06/2026', status:'done',
+    from:'reservations@booking-confirmations.cm',
+    subject:'12 nouvelles réservations en attente — Action requise sous 24h',
+    snippet:'Votre établissement a reçu 12 nouvelles demandes de réservation pour un montant total de 1 240 000 FCFA. Ces réservations expirent dans 24 heures...',
+    reco:'Bon résultat global pour ce secteur. Le taux de signalement de 14 % est au-dessus de la moyenne. Continuer les campagnes trimestrielles pour maintenir la vigilance.',
+    timeline:[
+      {color:'#1A7F4A',icon:'ti-check',label:'Consentement validé — Gérant',time:'22/06/2026 · 15:30'},
+      {color:'#1B2A5A',icon:'ti-send',label:'Campagne lancée — 15 emails envoyés',time:'25/06/2026 · 08:00'},
+      {color:'#1A7F4A',icon:'ti-circle-check',label:'Campagne clôturée',time:'02/07/2026 · 18:00'},
+    ]
+  },
+  {
+    name:'MFI Nord Cameroun', scenario:'Alerte Mobile Money MTN', sector:'Microfinance', sectorClass:'badge-finance',
+    total:35, done:0, click:0, submit:0, report:0, none:0, date:'10/07/2026', status:'pending',
+    from:'alert@mtn-momo-security.cm',
+    subject:'🔒 Votre compte MTN Mobile Money a été temporairement bloqué',
+    snippet:'Une activité suspecte a été détectée sur votre compte Mobile Money. Veuillez vérifier et sécuriser votre compte en cliquant sur le lien ci-dessous...',
+    reco:'Campagne en attente de lancement. Le scénario Mobile Money est particulièrement pertinent pour les agents de transfert et les guichetiers MFI.',
+    timeline:[
+      {color:'#E67E22',icon:'ti-clock',label:'Consentement en attente',time:'10/07/2026 · 08:00'},
+    ]
+  },
+];
+
+/* ════════════════════════════════════════
+   RENDU DU TABLEAU
+════════════════════════════════════════ */
+function renderTable(data) {
+  const tbody = document.getElementById('camp-tbody');
+  tbody.innerHTML = '';
+  data.forEach((c, idx) => {
+    const pct = c.total > 0 ? Math.round((c.done / c.total)*100) : 0;
+    const clickColor = c.click >= 60 ? 'click-high' : c.click >= 40 ? 'click-mid' : c.click > 0 ? 'click-low' : 'click-none';
+    const progColor  = c.click >= 60 ? 'var(--red)' : c.click >= 40 ? 'var(--orange)' : 'var(--green)';
+    const statusHtml = c.status === 'active'
+      ? `<span class="status-pill s-active"><span class="dot dot-active"></span> Active</span>`
+      : c.status === 'done'
+      ? `<span class="status-pill s-done"><span class="dot dot-done"></span> Terminée</span>`
+      : `<span class="status-pill s-pending"><span class="dot dot-pending"></span> En attente</span>`;
+    const clickHtml  = c.click > 0 ? `<span class="click-rate ${clickColor}">${c.click} %</span>` : `<span class="click-rate click-none">—</span>`;
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr data-status="${c.status}" data-name="${c.name.toLowerCase()} ${c.scenario.toLowerCase()}">
+        <td><input type="checkbox" style="width:14px;height:14px;accent-color:var(--navy-mid)"></td>
+        <td class="td-name" style="cursor:pointer" onclick="openDetail(${idx})">${c.name}</td>
+        <td class="td-muted" style="max-width:180px">${c.scenario}</td>
+        <td><span class="badge ${c.sectorClass}">${c.sector}</span></td>
+        <td>${c.total}</td>
+        <td>
+          <div class="prog-wrap">
+            <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${progColor}"></div></div>
+            <span class="prog-lbl">${c.done}/${c.total}</span>
+          </div>
+        </td>
+        <td>${clickHtml}</td>
+        <td style="color:var(--text3)">${c.date}</td>
+        <td>${statusHtml}</td>
+        <td>
+          <div class="actions-cell">
+            <div class="action-btn" onclick="openDetail(${idx})" title="Voir le détail"><i class="ti ti-eye" style="font-size:15px"></i></div>
+            <div class="action-btn" onclick="toast('Rapport PDF généré pour ${c.name}','success')" title="Générer le rapport"><i class="ti ti-file-report" style="font-size:15px"></i></div>
+            ${c.status === 'active' ? `<div class="action-btn" onclick="toast('Campagne mise en pause','info')" title="Mettre en pause"><i class="ti ti-player-pause" style="font-size:15px"></i></div>` : ''}
+            ${c.status === 'pending' ? `<div class="action-btn" onclick="toast('Campagne lancée — ${c.total} emails envoyés','success')" title="Lancer"><i class="ti ti-send" style="font-size:15px"></i></div>` : ''}
+            <div class="action-btn danger" onclick="toast('Campagne supprimée','error')" title="Supprimer"><i class="ti ti-trash" style="font-size:15px"></i></div>
+          </div>
+        </td>
+      </tr>`);
+  });
+  document.getElementById('table-count').textContent = `${data.length} campagne${data.length > 1 ? 's' : ''} affichée${data.length > 1 ? 's' : ''}`;
+}
+
+/* ════════════════════════════════════════
+   FILTRES
+════════════════════════════════════════ */
+let currentFilter = 'all';
+let currentSearch = '';
+
+function filterStatus(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function filterTable(q) {
+  currentSearch = q.toLowerCase();
+  applyFilters();
+}
+
+function applyFilters() {
+  let data = campaigns;
+  if (currentFilter !== 'all') data = data.filter(c => c.status === currentFilter);
+  if (currentSearch) data = data.filter(c => `${c.name} ${c.scenario}`.toLowerCase().includes(currentSearch));
+  renderTable(data);
+}
+
+/* ════════════════════════════════════════
+   PANNEAU DÉTAIL
+════════════════════════════════════════ */
+const C = Math.PI * 2 * 42;
+function openDetail(idx) {
+  const c = campaigns[idx];
+  document.getElementById('dp-title').textContent = c.name;
+  document.getElementById('dp-sub').textContent   = c.scenario + ' · ' + c.sector;
+  document.getElementById('dp-status').textContent = c.status === 'active' ? 'Active' : c.status === 'done' ? 'Terminée' : 'En attente';
+  document.getElementById('dp-click').textContent  = c.click  + ' %';
+  document.getElementById('dp-submit').textContent = c.submit + ' %';
+  document.getElementById('dp-report').textContent = c.report + ' %';
+  document.getElementById('dp-none').textContent   = c.none   + ' %';
+  document.getElementById('leg-click').textContent = c.click  + ' %';
+  document.getElementById('leg-submit').textContent= c.submit + ' %';
+  document.getElementById('leg-report').textContent= c.report + ' %';
+  document.getElementById('leg-none').textContent  = c.none   + ' %';
+  document.getElementById('donut-main').textContent = c.click + '%';
+  document.getElementById('dp-from').textContent  = 'De : ' + c.from;
+  document.getElementById('dp-email-subject').textContent = c.subject;
+  document.getElementById('dp-snippet').textContent = c.snippet;
+  document.getElementById('dp-reco').textContent  = c.reco;
+
+  // Arcs donut
+  const total = c.click + c.submit + c.report + c.none || 100;
+  let offset = 0;
+  [['arc-click',c.click,'#C0392B'],['arc-submit',c.submit,'#E67E22'],['arc-report',c.report,'#1A7F4A'],['arc-none',c.none,'#CBD2DB']].forEach(([id,val,col]) => {
+    const arc = document.getElementById(id);
+    const len = (val / total) * C;
+    arc.setAttribute('stroke', col);
+    arc.setAttribute('stroke-dasharray', `${len} ${C - len}`);
+    arc.setAttribute('stroke-dashoffset', -offset);
+    offset += len;
+  });
+
+  // Timeline
+  const tl = document.getElementById('dp-timeline');
+  tl.innerHTML = c.timeline.map(t => `
+    <div class="tl-item">
+      <div class="tl-dot" style="background:${t.color}"><i class="ti ${t.icon}" style="font-size:11px;color:#fff"></i></div>
+      <div class="tl-content"><div class="tl-label">${t.label}</div><div class="tl-time">${t.time}</div></div>
+    </div>`).join('');
+
+  document.getElementById('detail-overlay').classList.add('open');
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+/* ════════════════════════════════════════
+   MODAL NOUVELLE CAMPAGNE
+════════════════════════════════════════ */
+let modalCurrentStep = 1;
+const MODAL_STEPS = 4;
+
+function openModal() {
+  modalCurrentStep = 1;
+  renderModalStep();
+  document.getElementById('modal-overlay').classList.add('open');
+  const d = new Date(); d.setDate(d.getDate() + 1);
+  document.getElementById('m-date').value = d.toISOString().split('T')[0];
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function renderModalStep() {
+  for (let i = 1; i <= MODAL_STEPS; i++) {
+    document.getElementById(`modal-step-${i}`).style.display = i === modalCurrentStep ? 'block' : 'none';
+    const el = document.getElementById(`step-${i}`);
+    el.classList.remove('active','done');
+    if (i < modalCurrentStep) el.classList.add('done');
+    else if (i === modalCurrentStep) el.classList.add('active');
+  }
+  document.getElementById('modal-btn-back').style.display = modalCurrentStep > 1 ? 'inline-flex' : 'none';
+  const nextBtn = document.getElementById('modal-btn-next');
+  if (modalCurrentStep === MODAL_STEPS) {
+    nextBtn.innerHTML = '<i class="ti ti-rocket"></i> Lancer la campagne';
+  } else {
+    nextBtn.innerHTML = 'Suivant <i class="ti ti-chevron-right"></i>';
+  }
+}
+
+function modalStep(dir) {
+  if (dir === 1) {
+    if (modalCurrentStep === 1) {
+      const company = document.getElementById('m-company').value.trim();
+      const sector  = document.getElementById('m-sector').value;
+      if (!company || !sector) { toast('Veuillez remplir les champs obligatoires','error'); return; }
+      // Pré-remplir l'aperçu du scénario selon le secteur
+      const previews = {
+        'Santé / Clinique':           { from:'noreply@cename-minsante.cm', subject:'⚠️ Mise à jour CENAME — portail obligatoire avant le 15 juillet', body:'Suite à la circulaire MSP/CENAME/008, votre structure doit mettre à jour ses déclarations avant la date butoir...' },
+        'Microfinance / MFI':         { from:'noreply@beac-conformite.cm', subject:'⚠️ Suspension de compte — Mise en conformité BEAC urgente', body:'Suite à la circulaire BEAC/DSF/0044, votre compte opérationnel a été temporairement suspendu...' },
+        'Commerce / Import-Export':   { from:'contact@guangzhou-trade-intl.com', subject:'[URGENT] Changement coordonnées bancaires — Facture #INV-2026-7821', body:'Nos coordonnées bancaires ont changé. Utilisez ces nouvelles informations pour le règlement de la facture de 4 850 000 FCFA...' },
+        'BTP / Génie Civil':          { from:'notifications@armp-mintp.cm', subject:'[RÉSULTAT] Attribution marché n°MINTP-2026-0372 — Télécharger notification', body:'L\'Autorité de Régulation des Marchés Publics vous informe que votre offre pour le lot 3 a été retenue...' },
+        'Enseignement privé':         { from:'noreply@minesup-infos.cm', subject:'⚠️ Blocage inscriptions 2026-2027 — Portail MINESUP à mettre à jour', body:'Le Ministère de l\'Enseignement Supérieur vous informe que votre établissement n\'a pas complété la procédure d\'accréditation...' },
+        'Hôtellerie / Restauration':  { from:'reservations@booking-confirmations.cm', subject:'12 nouvelles réservations en attente — Action requise sous 24h', body:'Votre établissement a reçu 12 demandes de réservation pour 1 240 000 FCFA. Ces réservations expirent dans 24 heures...' },
+      };
+      const p = previews[sector] || previews['Microfinance / MFI'];
+      document.getElementById('m-from').textContent    = p.from;
+      document.getElementById('m-subject').textContent = p.subject;
+      document.getElementById('m-body').textContent    = p.body;
+    }
+    if (modalCurrentStep === MODAL_STEPS) {
+      if (!document.getElementById('m-consent').checked) { toast('Veuillez cocher la case de consentement','error'); return; }
+      closeModal();
+      toast('🚀 Campagne lancée avec succès !','success');
+      return;
+    }
+    if (modalCurrentStep < MODAL_STEPS) modalCurrentStep++;
+  } else {
+    if (modalCurrentStep > 1) modalCurrentStep--;
+  }
+  renderModalStep();
+}
+
+/* ════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════ */
+function showView(viewId, navEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + viewId).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  const titles = {
+    dashboard:  ['Tableau de bord',      'Campagnes actives — Juillet 2026'],
+    generate:   ['Générer un scénario',  'Création assistée par IA — H-SHIELD237'],
+    campaigns:  ['Campagnes',            '7 campagnes ce mois — 4 actives · 2 terminées · 1 en attente'],
+  };
+  const t = titles[viewId] || ['H-SHIELD237', ''];
+  document.getElementById('page-title').textContent = t[0];
+  document.getElementById('page-sub').textContent   = t[1];
+  window.scrollTo(0,0);
+}
+
+/* ════════════════════════════════════════
+   TOAST
+════════════════════════════════════════ */
+function toast(msg, type='info') {
+  const el = document.getElementById('toast-el');
+  const ic = document.getElementById('toast-icon');
+  const ms = document.getElementById('toast-msg');
+  const icons = { success:'ti-check', info:'ti-info-circle', error:'ti-alert-circle' };
+  el.className = 'toast ' + type;
+  ic.className = 'ti ' + (icons[type] || 'ti-info-circle');
+  ms.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+renderTable(campaigns);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeDetail(); closeModal(); }
+});
+</script>
+</body>
+</html>

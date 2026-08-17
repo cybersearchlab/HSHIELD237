@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H-SHIELD237 — Rapports PDF</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F1F3D;--navy-mid:#1B2A5A;--navy-light:#2C3F6B;
+  --red:#C0392B;--red-dark:#a93226;--red-light:rgba(192,57,43,.09);--red-border:rgba(192,57,43,.28);--red-soft:#F5B7B1;--red-text:#7B241C;
+  --gold:#C49A1A;--gold-light:#FEF9E7;
+  --green:#1A7F4A;--green-light:#EAFAF1;
+  --orange:#E67E22;--orange-light:#FEF5E7;
+  --blue:#1A5FA0;--blue-light:#EBF5FB;
+  --teal:#0E7C7B;--teal-light:#E0F2F1;
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;
+  --border:rgba(0,0,0,0.08);--border-str:rgba(0,0,0,0.14);
+  --text:#0F1F3D;--text2:#4A5568;--text3:#8A97AC;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.09);
+}
+html,body{min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+.app{display:grid;grid-template-columns:228px 1fr;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--navy);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:20px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:11px}
+.logo-icon{width:38px;height:38px;background:var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(192,57,43,.35)}
+.logo-icon i{color:#fff;font-size:19px}
+.logo-name{font-size:15.5px;font-weight:600;color:#fff;letter-spacing:-.02em;line-height:1}
+.logo-name span{color:var(--red)}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.34);margin-top:3px}
+.nav{padding:14px 10px;flex:1}
+.nav-section{font-size:9.5px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;padding:10px 10px 5px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);font-size:13px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:1px;transition:background .12s,color .12s;border:1px solid transparent;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.88)}
+.nav-item.active{background:rgba(192,57,43,.22);color:var(--red-soft);border-color:rgba(192,57,43,.38)}
+.nav-item i{font-size:17px;color:rgba(255,255,255,.32)}
+.nav-item.active i,.nav-item:hover i{color:inherit}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+.sidebar-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:rgba(255,255,255,.8);flex-shrink:0}
+.ava-name{font-size:12px;color:rgba(255,255,255,.8);font-weight:500}
+.ava-role{font-size:10px;color:rgba(255,255,255,.33)}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:var(--shadow)}
+.topbar-left h1{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.topbar-left span{font-size:11.5px;color:var(--text3);display:block;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:9px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--radius);font-size:12.5px;cursor:pointer;border:1px solid var(--border-str);background:var(--surface);color:var(--text2);font-family:inherit;transition:background .12s;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn i{font-size:15px}
+.btn-icon{padding:7px 9px}
+.btn-primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn-primary:hover{background:var(--red-dark)}
+.btn-navy{background:var(--navy-mid);border-color:var(--navy-mid);color:#fff}
+.btn-navy:hover{background:var(--navy-light)}
+.content{padding:22px 24px 48px;flex:1}
+.view{display:none}.view.active{display:block}
+
+/* ── LAYOUT RAPPORTS ── */
+.reports-layout{display:grid;grid-template-columns:1fr 420px;gap:20px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.card-pad{padding:18px 20px}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:13.5px;font-weight:600}
+.card-sub{font-size:11.5px;color:var(--text3);margin-top:2px}
+
+/* ── MÉTRIQUES ── */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.metric::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.metric.m-navy::after{background:var(--navy-mid)}.metric.m-green::after{background:var(--green)}.metric.m-orange::after{background:var(--orange)}.metric.m-red::after{background:var(--red)}
+.metric-label{font-size:10px;color:var(--text3);margin-bottom:6px;display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.06em}
+.metric-label i{font-size:13px}
+.metric-value{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{flex:1;position:relative;min-width:180px}
+.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3);pointer-events:none}
+.search-wrap input{width:100%;padding:8px 12px 8px 34px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit}
+.search-wrap input:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,42,90,.08)}
+.filter-group{display:flex;gap:6px}
+.filter-btn{padding:6px 12px;border-radius:20px;border:1px solid var(--border-str);background:var(--surface);color:var(--text2);font-size:12px;font-family:inherit;cursor:pointer;transition:all .12s}
+.filter-btn:hover{background:var(--surface2)}
+.filter-btn.active{background:var(--navy-mid);color:#fff;border-color:var(--navy-mid)}
+
+/* ── LISTE RAPPORTS ── */
+.report-item{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;position:relative}
+.report-item:last-child{border-bottom:none}
+.report-item:hover{background:var(--surface2)}
+.report-item.selected{background:#EBF0F9;border-left:3px solid var(--navy-mid)}
+.report-item.selected .report-name{color:var(--navy-mid)}
+.report-icon{width:44px;height:54px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+.report-icon i{font-size:22px}
+.pdf-badge{position:absolute;bottom:-4px;right:-4px;background:var(--red);color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;border:1.5px solid var(--surface)}
+.report-body{flex:1;min-width:0}
+.report-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.report-meta{font-size:11.5px;color:var(--text3);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.report-meta i{font-size:13px;vertical-align:-2px}
+.report-tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tag{display:inline-block;font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px}
+.tag-health{background:#FEE;color:#922}.tag-finance{background:#E8F0FE;color:#1A5FA0}
+.tag-btp{background:var(--orange-light);color:#7D4600}.tag-commerce{background:var(--green-light);color:var(--green)}
+.tag-edu{background:var(--teal-light);color:var(--teal)}.tag-hotel{background:var(--gold-light);color:var(--gold)}
+.tag-pending{background:var(--orange-light);color:var(--orange)}.tag-sent{background:var(--green-light);color:var(--green)}
+.tag-draft{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.report-actions{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}
+.act-btn{width:28px;height:28px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:15px;transition:all .12s}
+.act-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--border-str)}
+.act-btn.primary:hover{background:var(--red-light);color:var(--red);border-color:var(--red-border)}
+
+/* ── PRÉVISUALISATION ── */
+.preview-sticky{position:sticky;top:78px}
+.preview-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}
+.preview-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;text-align:center;gap:14px;min-height:400px}
+.preview-empty-icon{width:56px;height:56px;background:var(--red-light);border-radius:14px;display:flex;align-items:center;justify-content:center}
+.preview-empty-icon i{font-size:28px;color:var(--red)}
+.preview-empty-title{font-size:14px;font-weight:600}
+.preview-empty-sub{font-size:13px;color:var(--text3);max-width:240px;line-height:1.6}
+
+/* Rapport simulé */
+.pdf-header{background:var(--navy);padding:20px 22px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.pdf-logo-row{display:flex;align-items:center;gap:10px}
+.pdf-logo-icon{width:32px;height:32px;background:var(--red);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.pdf-logo-icon i{color:#fff;font-size:16px}
+.pdf-logo-name{font-size:15px;font-weight:600;color:#fff}
+.pdf-logo-name span{color:var(--red)}
+.pdf-logo-sub{font-size:9px;color:rgba(255,255,255,.35);margin-top:2px}
+.pdf-meta-right{text-align:right}
+.pdf-meta-right .pdf-date{font-size:10px;color:rgba(255,255,255,.4)}
+.pdf-meta-right .pdf-ref{font-size:11px;font-weight:600;color:rgba(255,255,255,.7);margin-top:3px}
+.pdf-body{padding:18px 20px;display:flex;flex-direction:column;gap:14px;max-height:520px;overflow-y:auto}
+.pdf-section-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.pdf-company{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)}
+.pdf-company-name{font-size:14px;font-weight:600}
+.pdf-company-sector{font-size:11.5px;color:var(--text3);margin-top:2px}
+.score-block{display:flex;align-items:center;gap:18px;padding:14px;background:var(--red-light);border:1px solid var(--red-border);border-radius:var(--radius)}
+.score-circle{width:56px;height:56px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;flex-direction:column;flex-shrink:0}
+.score-circle .sc-val{font-size:18px;font-weight:700;color:#fff;line-height:1}
+.score-circle .sc-lbl{font-size:8px;color:rgba(255,255,255,.7)}
+.score-text{font-size:12.5px;color:var(--red-text);line-height:1.65}
+.mini-stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.mini-stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;text-align:center}
+.mini-stat-val{font-size:18px;font-weight:700;line-height:1}
+.mini-stat-lbl{font-size:9.5px;color:var(--text3);margin-top:3px}
+.bar-row-mini{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.bar-row-mini:last-child{margin-bottom:0}
+.bar-row-top{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px}
+.bar-row-top .pct{font-weight:600}
+.bar-track{background:var(--bg);border-radius:99px;overflow:hidden}
+.bar-fill{border-radius:99px;height:6px}
+.fill-danger{background:var(--red)}.fill-warning{background:var(--orange)}.fill-success{background:var(--green)}.fill-accent{background:var(--blue)}
+.reco-list{display:flex;flex-direction:column;gap:8px}
+.reco-item{display:flex;align-items:flex-start;gap:9px;font-size:12px;color:var(--text2);line-height:1.6}
+.reco-num{font-size:15px;font-weight:700;color:var(--navy-mid);min-width:18px;line-height:1.3}
+.pdf-watermark{text-align:center;padding:12px;border-top:1px solid var(--border);font-size:10px;color:var(--text3)}
+.pdf-footer-actions{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:10px}
+.pdf-footer-actions .btn{flex:1;justify-content:center}
+
+/* ── MODAL GÉNÉRATION ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:540px;box-shadow:0 24px 64px rgba(0,0,0,.18)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:17px;font-weight:600}
+.modal-body{padding:22px 24px}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+.close-btn{width:30px;height:30px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3)}
+.close-btn:hover{background:var(--bg)}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.form-input,.form-select{width:100%;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,42,90,.09)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.checkbox-group{display:flex;flex-direction:column;gap:8px}
+.checkbox-item{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text2);cursor:pointer}
+.checkbox-item input{width:15px;height:15px;border-radius:4px;accent-color:var(--navy-mid);cursor:pointer}
+
+/* ── LOADING ── */
+.loading-state{display:none;flex-direction:column;align-items:center;gap:14px;padding:40px}
+.loading-state.active{display:flex}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;max-width:360px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast i{font-size:17px;flex-shrink:0}
+.toast.success i{color:#4ADE80}.toast.error i{color:#F87171}.toast.info i{color:#60A5FA}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ════════ SIDEBAR ════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-shield-lock"></i></div>
+    <div>
+      <div class="logo-name">H-SHIELD<span>237</span></div>
+      <div class="logo-sub">Simulateur de phishing éducatif</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Principal</div>
+    <a class="nav-item" id="nav-dashboard" onclick="showView('dashboard',this);return false" href="#"><i class="ti ti-layout-dashboard"></i> Tableau de bord</a>
+    <a class="nav-item" id="nav-generate" onclick="showView('generate',this);return false" href="#"><i class="ti ti-robot"></i> Générer un scénario</a>
+    <a class="nav-item" id="nav-campaigns" onclick="showView('campaigns',this);return false" href="#"><i class="ti ti-send"></i> Campagnes <span class="nav-badge">4</span></a>
+    <div class="nav-section">Analyse</div>
+    <a class="nav-item" id="nav-results" onclick="showView('results',this);return false" href="#"><i class="ti ti-chart-bar"></i> Résultats</a>
+    <a class="nav-item active" id="nav-reports" onclick="showView('reports',this);return false" href="#"><i class="ti ti-file-report"></i> Rapports PDF <span class="nav-badge" id="badge-reports">2</span></a>
+    <a class="nav-item" onclick="showToast('Historique','info');return false" href="#"><i class="ti ti-history"></i> Historique</a>
+    <div class="nav-section">Configuration</div>
+    <a class="nav-item" onclick="showToast('Templates sectoriels','info');return false" href="#"><i class="ti ti-template"></i> Templates sectoriels</a>
+    <a class="nav-item" onclick="showToast('Entreprises clientes','info');return false" href="#"><i class="ti ti-building"></i> Entreprises clientes</a>
+    <a class="nav-item" onclick="showToast('Consentements','info');return false" href="#"><i class="ti ti-shield-check"></i> Consentements</a>
+    <a class="nav-item" onclick="showToast('Paramètres','info');return false" href="#"><i class="ti ti-settings"></i> Paramètres</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar">LJ</div>
+    <div><div class="ava-name">LEVY Jérémie</div><div class="ava-role">Consultant — CSRL Yaoundé</div></div>
+  </div>
+</aside>
+
+<!-- ════════ MAIN ════════ -->
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 id="page-title">Rapports PDF</h1>
+      <span id="page-sub">12 rapports générés · 2 en attente d'envoi · Juillet 2026</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-icon" aria-label="Rechercher"><i class="ti ti-search"></i></button>
+      <button class="btn btn-icon" style="position:relative" aria-label="Notifications">
+        <i class="ti ti-bell"></i>
+        <span style="position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid #fff"></span>
+      </button>
+      <button class="btn" onclick="showToast('Export ZIP de tous les rapports en cours…','info')"><i class="ti ti-download"></i> Tout exporter</button>
+      <button class="btn btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> Générer un rapport</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- Vues placeholder -->
+    <div class="view" id="view-dashboard"><p style="color:var(--text3);padding:40px 0;text-align:center">← <a href="#" onclick="showView('reports',document.getElementById('nav-reports'));return false" style="color:var(--blue)">Revenir aux rapports</a></p></div>
+    <div class="view" id="view-generate"><p style="color:var(--text3);padding:40px 0;text-align:center">← <a href="#" onclick="showView('reports',document.getElementById('nav-reports'));return false" style="color:var(--blue)">Revenir aux rapports</a></p></div>
+    <div class="view" id="view-campaigns"><p style="color:var(--text3);padding:40px 0;text-align:center">← <a href="#" onclick="showView('reports',document.getElementById('nav-reports'));return false" style="color:var(--blue)">Revenir aux rapports</a></p></div>
+    <div class="view" id="view-results"><p style="color:var(--text3);padding:40px 0;text-align:center">← <a href="#" onclick="showView('reports',document.getElementById('nav-reports'));return false" style="color:var(--blue)">Revenir aux rapports</a></p></div>
+
+    <!-- ══════ VUE RAPPORTS PDF ══════ -->
+    <div class="view active" id="view-reports">
+
+      <!-- Métriques -->
+      <div class="metrics">
+        <div class="metric m-navy">
+          <div class="metric-label"><i class="ti ti-files"></i> Rapports générés</div>
+          <div class="metric-value">12</div>
+          <div class="metric-sub">dont 3 cette semaine</div>
+        </div>
+        <div class="metric m-orange">
+          <div class="metric-label"><i class="ti ti-clock"></i> En attente d'envoi</div>
+          <div class="metric-value" style="color:var(--orange)">2</div>
+          <div class="metric-sub">à transmettre au client</div>
+        </div>
+        <div class="metric m-green">
+          <div class="metric-label"><i class="ti ti-send"></i> Envoyés aux clients</div>
+          <div class="metric-value" style="color:var(--green)">9</div>
+          <div class="metric-sub">sur 12 générés</div>
+        </div>
+        <div class="metric m-red">
+          <div class="metric-label"><i class="ti ti-file-x"></i> Brouillons</div>
+          <div class="metric-value" style="color:var(--red)">1</div>
+          <div class="metric-sub">en cours de finalisation</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <i class="ti ti-search"></i>
+          <input type="text" placeholder="Rechercher un rapport ou une entreprise…" oninput="filterReports(this.value)">
+        </div>
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="filterByStatus('all',this)">Tous (12)</button>
+          <button class="filter-btn" onclick="filterByStatus('pending',this)">En attente (2)</button>
+          <button class="filter-btn" onclick="filterByStatus('sent',this)">Envoyés (9)</button>
+          <button class="filter-btn" onclick="filterByStatus('draft',this)">Brouillons (1)</button>
+        </div>
+        <select style="padding:7px 12px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface);font-size:12px;font-family:inherit" onchange="showToast('Filtre secteur : '+this.value,'info')">
+          <option value="">Tous les secteurs</option>
+          <option>Santé / Clinique</option>
+          <option>Microfinance / MFI</option>
+          <option>Commerce</option>
+          <option>BTP</option>
+          <option>Enseignement</option>
+          <option>Hôtellerie</option>
+        </select>
+      </div>
+
+      <!-- Layout principal -->
+      <div class="reports-layout">
+
+        <!-- Liste des rapports -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:13px;font-weight:600">Liste des rapports</div>
+            <span style="font-size:12px;color:var(--text3)" id="report-count">12 rapports</span>
+          </div>
+          <div id="reports-list">
+            <!-- Injecté par JS -->
+          </div>
+        </div>
+
+        <!-- Prévisualisation -->
+        <div class="preview-sticky">
+          <div class="preview-card" id="preview-card">
+
+            <!-- État vide -->
+            <div class="preview-empty" id="preview-empty">
+              <div class="preview-empty-icon"><i class="ti ti-file-report"></i></div>
+              <div class="preview-empty-title">Aperçu du rapport</div>
+              <div class="preview-empty-sub">Cliquez sur un rapport dans la liste pour afficher son aperçu ici.</div>
+            </div>
+
+            <!-- Contenu rapport (caché par défaut) -->
+            <div id="preview-content" style="display:none">
+              <!-- Header marine -->
+              <div class="pdf-header">
+                <div>
+                  <div class="pdf-logo-row">
+                    <div class="pdf-logo-icon"><i class="ti ti-shield-lock"></i></div>
+                    <div>
+                      <div class="pdf-logo-name">H-SHIELD<span>237</span></div>
+                      <div class="pdf-logo-sub">Rapport de vulnérabilité — Simulation de phishing éducatif</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="pdf-meta-right">
+                  <div class="pdf-date" id="pdf-date">Généré le 07/07/2026</div>
+                  <div class="pdf-ref" id="pdf-ref">REF : HSH-2026-001</div>
+                  <div style="margin-top:6px"><span id="pdf-status-badge" style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:rgba(26,127,74,.25);color:#86EFAC">● Envoyé</span></div>
+                </div>
+              </div>
+
+              <!-- Corps du rapport -->
+              <div class="pdf-body">
+
+                <!-- Entreprise -->
+                <div>
+                  <div class="pdf-section-title">Entreprise auditée</div>
+                  <div class="pdf-company">
+                    <div>
+                      <div class="pdf-company-name" id="pdf-company">Clinique Sainte-Marie</div>
+                      <div class="pdf-company-sector" id="pdf-sector">Santé / Clinique · 34 employés testés</div>
+                    </div>
+                    <span class="tag tag-health" id="pdf-sector-tag">Santé</span>
+                  </div>
+                </div>
+
+                <!-- Score global -->
+                <div>
+                  <div class="pdf-section-title">Score de vulnérabilité</div>
+                  <div class="score-block">
+                    <div class="score-circle">
+                      <div class="sc-val" id="pdf-score">72</div>
+                      <div class="sc-lbl">/ 100</div>
+                    </div>
+                    <div class="score-text" id="pdf-score-text">
+                      Niveau de risque <strong>ÉLEVÉ</strong>. 68 % des employés testés ont cliqué sur le lien frauduleux. Une formation urgente est recommandée, en particulier pour le service administratif.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Statistiques clés -->
+                <div>
+                  <div class="pdf-section-title">Résultats de la campagne</div>
+                  <div class="mini-stats-grid">
+                    <div class="mini-stat"><div class="mini-stat-val" style="color:var(--red)" id="pdf-click">68 %</div><div class="mini-stat-lbl">Ont cliqué</div></div>
+                    <div class="mini-stat"><div class="mini-stat-val" style="color:var(--orange)" id="pdf-submit">29 %</div><div class="mini-stat-lbl">Ont soumis</div></div>
+                    <div class="mini-stat"><div class="mini-stat-val" style="color:var(--green)" id="pdf-report-rate">9 %</div><div class="mini-stat-lbl">Ont signalé</div></div>
+                  </div>
+                </div>
+
+                <!-- Barres détaillées -->
+                <div>
+                  <div class="pdf-section-title">Vulnérabilité par service</div>
+                  <div id="pdf-bars">
+                    <div class="bar-row-mini">
+                      <div class="bar-row-top"><span>Service administratif</span><span class="pct" style="color:var(--red)">82 %</span></div>
+                      <div class="bar-track"><div class="bar-fill fill-danger" style="width:82%"></div></div>
+                    </div>
+                    <div class="bar-row-mini">
+                      <div class="bar-row-top"><span>Service comptabilité</span><span class="pct" style="color:var(--orange)">61 %</span></div>
+                      <div class="bar-track"><div class="bar-fill fill-warning" style="width:61%"></div></div>
+                    </div>
+                    <div class="bar-row-mini">
+                      <div class="bar-row-top"><span>Personnel soignant</span><span class="pct" style="color:var(--blue)">27 %</span></div>
+                      <div class="bar-track"><div class="bar-fill fill-accent" style="width:27%"></div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Recommandations -->
+                <div>
+                  <div class="pdf-section-title">Recommandations IA</div>
+                  <div class="reco-list" id="pdf-recos">
+                    <div class="reco-item"><div class="reco-num">1</div><span>Formation urgente pour le service administratif dans les 14 jours.</span></div>
+                    <div class="reco-item"><div class="reco-num">2</div><span>Sensibiliser aux vérifications institutionnelles officielles (CENAME, MINSANTE).</span></div>
+                    <div class="reco-item"><div class="reco-num">3</div><span>Planifier une campagne de relance dans 90 jours pour mesurer les progrès.</span></div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Watermark -->
+              <div class="pdf-watermark">
+                <i class="ti ti-shield-check" style="font-size:12px;vertical-align:-1px;margin-right:4px;color:var(--green)"></i>
+                Rapport confidentiel · H-SHIELD237 · CSRL Yaoundé · Simulation éducative — aucune donnée réelle collectée
+              </div>
+
+              <!-- Actions -->
+              <div class="pdf-footer-actions">
+                <button class="btn" onclick="showToast('Téléchargement du rapport PDF…','success')"><i class="ti ti-download"></i> Télécharger</button>
+                <button class="btn" onclick="showToast('Lien de partage copié','success')"><i class="ti ti-link"></i> Partager</button>
+                <button class="btn btn-primary" onclick="showToast('Rapport envoyé au client','success')"><i class="ti ti-send"></i> Envoyer</button>
+              </div>
+            </div>
+
+          </div><!-- /preview-card -->
+        </div><!-- /preview-sticky -->
+
+      </div><!-- /reports-layout -->
+
+    </div><!-- /view-reports -->
+  </div><!-- /content -->
+</main>
+</div><!-- /app -->
+
+<!-- ════════ MODAL GÉNÉRATION ════════ -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Générer un nouveau rapport PDF</h3>
+      <div class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></div>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Entreprise *</label>
+          <select class="form-select" id="m-company">
+            <option value="">Choisir une entreprise…</option>
+            <option>Clinique Sainte-Marie</option>
+            <option>MFI Cameroun Sud</option>
+            <option>Bâti-Yaoundé SARL</option>
+            <option>Import-Export Nguemo</option>
+            <option>École Privée Excellence</option>
+            <option>Hôtel des Collines</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Campagne associée *</label>
+          <select class="form-select" id="m-campaign">
+            <option value="">Choisir une campagne…</option>
+            <option>Alerte CENAME — Clinique Sainte-Marie</option>
+            <option>Fausse suspension BEAC — MFI</option>
+            <option>Faux courrier ARMP — Bâti-Yaoundé</option>
+            <option>Changement RIB — Import-Export Nguemo</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Destinataire du rapport</label>
+          <input class="form-input" type="email" placeholder="directeur@entreprise.cm" id="m-email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Langue du rapport</label>
+          <select class="form-select">
+            <option selected>Français</option>
+            <option>Anglais</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sections à inclure</label>
+        <div class="checkbox-group">
+          <label class="checkbox-item"><input type="checkbox" checked> Score de vulnérabilité global</label>
+          <label class="checkbox-item"><input type="checkbox" checked> Résultats détaillés par service</label>
+          <label class="checkbox-item"><input type="checkbox" checked> Recommandations IA priorisées</label>
+          <label class="checkbox-item"><input type="checkbox"> Comparaison avec les campagnes précédentes</label>
+          <label class="checkbox-item"><input type="checkbox"> Annexe : aperçu du scénario utilisé</label>
+        </div>
+      </div>
+      <div class="loading-state" id="modal-loading">
+        <div class="spinner"></div>
+        <div style="font-size:13px;color:var(--text2);text-align:center"><strong style="display:block;margin-bottom:4px">Génération du rapport en cours…</strong>Compilation des données · Mise en forme · Génération PDF</div>
+      </div>
+    </div>
+    <div class="modal-footer" id="modal-footer">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="generateReport()"><i class="ti ti-file-report"></i> Générer le rapport</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast-el"><i class="ti ti-info-circle" id="toast-icon"></i><span id="toast-msg"></span></div>
+
+<script>
+/* ════════════════════════════
+   DONNÉES
+════════════════════════════ */
+const reports = [
+  { id:'HSH-2026-001', company:'Clinique Sainte-Marie', sector:'Santé', sectorTag:'tag-health', campaign:'Alerte CENAME — portail piégé', date:'07/07/2026', size:'1,2 Mo', status:'sent', score:72, click:'68 %', submit:'29 %', reportRate:'9 %', bars:[{lbl:'Service administratif',pct:82,cls:'fill-danger'},{lbl:'Service comptabilité',pct:61,cls:'fill-warning'},{lbl:'Personnel soignant',pct:27,cls:'fill-accent'}], recos:['Formation urgente pour le service administratif dans les 14 jours.','Sensibiliser aux vérifications institutionnelles officielles (CENAME, MINSANTE).','Planifier une campagne de relance dans 90 jours pour mesurer les progrès.'], ref:'HSH-2026-001', genDate:'07/07/2026' },
+  { id:'HSH-2026-002', company:'MFI Cameroun Sud', sector:'Microfinance', sectorTag:'tag-finance', campaign:'Fausse suspension BEAC', date:'05/07/2026', size:'980 Ko', status:'pending', score:58, click:'49 %', submit:'18 %', reportRate:'12 %', bars:[{lbl:'Agents de guichet',pct:68,cls:'fill-danger'},{lbl:'Service commercial',pct:45,cls:'fill-warning'},{lbl:'Cadres dirigeants',pct:22,cls:'fill-success'}], recos:['Formation prioritaire pour les agents de guichet (68 % de clic).','Sensibiliser aux communications officielles de la BEAC et du MINFI.','Mettre en place un protocole de vérification des suspensions de compte.'], ref:'HSH-2026-002', genDate:'05/07/2026' },
+  { id:'HSH-2026-003', company:'École Privée Excellence', sector:'Enseignement', sectorTag:'tag-edu', campaign:'Fausse alerte MINESUP', date:'05/07/2026', size:'876 Ko', status:'sent', score:42, click:'37 %', submit:'12 %', reportRate:'18 %', bars:[{lbl:'Personnel administratif',pct:62,cls:'fill-warning'},{lbl:'Direction',pct:35,cls:'fill-accent'},{lbl:'Corps enseignant',pct:18,cls:'fill-success'}], recos:['Bon taux de signalement (18 %). Maintenir la sensibilisation annuelle.','Renforcer la formation du personnel administratif (62 % de clic).','Le corps enseignant est le plus résilient — valoriser cette bonne pratique.'], ref:'HSH-2026-003', genDate:'05/07/2026' },
+  { id:'HSH-2026-004', company:'Bâti-Yaoundé SARL', sector:'BTP', sectorTag:'tag-btp', campaign:'Faux courrier ARMP / MINTP', date:'08/07/2026', size:'—', status:'pending', score:55, click:'43 %', submit:'15 %', reportRate:'8 %', bars:[{lbl:'Ingénieurs BTP',pct:55,cls:'fill-warning'},{lbl:'Service achats',pct:48,cls:'fill-warning'},{lbl:'Direction technique',pct:28,cls:'fill-accent'}], recos:['Sensibiliser aux vérifications des attributions de marchés via les canaux officiels ARMP.','Mettre en place un processus de double vérification pour les courriers MINTP.','Planifier une formation axée sur les arnaques aux marchés publics.'], ref:'HSH-2026-004', genDate:'08/07/2026' },
+  { id:'HSH-2026-005', company:'Hôtel des Collines', sector:'Hôtellerie', sectorTag:'tag-hotel', campaign:'Fausses réservations Booking', date:'02/07/2026', size:'754 Ko', status:'sent', score:30, click:'28 %', submit:'8 %', reportRate:'14 %', bars:[{lbl:'Réception / accueil',pct:40,cls:'fill-accent'},{lbl:'Service réservations',pct:35,cls:'fill-accent'},{lbl:'Direction',pct:12,cls:'fill-success'}], recos:['Résultat satisfaisant. Continuer les campagnes trimestrielles.','Sensibiliser la réception aux fausses plateformes de réservation.','Le taux de signalement de 14 % est au-dessus de la moyenne.'], ref:'HSH-2026-005', genDate:'02/07/2026' },
+  { id:'HSH-2026-006', company:'Import-Export Nguemo', sector:'Commerce', sectorTag:'tag-commerce', campaign:'Changement RIB fournisseur CN', date:'—', size:'—', status:'draft', score:null, click:'—', submit:'—', reportRate:'—', bars:[], recos:['Rapport en attente de la fin de la campagne.'], ref:'HSH-2026-006', genDate:'En cours' },
+];
+
+let selectedReport = null;
+let currentStatusFilter = 'all';
+let currentSearch = '';
+
+/* ════════════════════════════
+   RENDU DE LA LISTE
+════════════════════════════ */
+function renderList(data) {
+  const container = document.getElementById('reports-list');
+  container.innerHTML = '';
+  data.forEach((r, idx) => {
+    const statusHtml = r.status === 'sent'
+      ? `<span class="tag tag-sent">● Envoyé</span>`
+      : r.status === 'pending'
+      ? `<span class="tag tag-pending">● En attente</span>`
+      : `<span class="tag tag-draft">● Brouillon</span>`;
+    const iconBg = r.status === 'draft' ? 'var(--surface2)' : r.status === 'sent' ? 'var(--green-light)' : 'var(--orange-light)';
+    const iconColor = r.status === 'draft' ? 'var(--text3)' : r.status === 'sent' ? 'var(--green)' : 'var(--orange)';
+    container.insertAdjacentHTML('beforeend', `
+      <div class="report-item" id="report-item-${idx}" onclick="selectReport(${idx})" data-status="${r.status}" data-search="${r.company.toLowerCase()} ${r.campaign.toLowerCase()}">
+        <div class="report-icon" style="background:${iconBg}">
+          <i class="ti ti-file-report" style="color:${iconColor}"></i>
+          <span class="pdf-badge">PDF</span>
+        </div>
+        <div class="report-body">
+          <div class="report-name">${r.company}</div>
+          <div class="report-meta">
+            <span><i class="ti ti-calendar"></i> ${r.date}</span>
+            <span><i class="ti ti-database"></i> ${r.size}</span>
+            <span><i class="ti ti-id-badge"></i> ${r.ref}</span>
+          </div>
+          <div class="report-tags">
+            <span class="tag ${r.sectorTag}">${r.sector}</span>
+            ${statusHtml}
+          </div>
+        </div>
+        <div class="report-actions">
+          <div class="act-btn" onclick="event.stopPropagation();showToast('Téléchargement : ${r.company}','success')" title="Télécharger"><i class="ti ti-download"></i></div>
+          <div class="act-btn" onclick="event.stopPropagation();showToast('Lien copié','info')" title="Partager"><i class="ti ti-link"></i></div>
+          ${r.status !== 'draft' ? `<div class="act-btn" onclick="event.stopPropagation();showToast('Rapport envoyé à ${r.company}','success')" title="Envoyer"><i class="ti ti-send"></i></div>` : ''}
+          <div class="act-btn primary" onclick="event.stopPropagation();showToast('Rapport supprimé','error')" title="Supprimer"><i class="ti ti-trash"></i></div>
+        </div>
+      </div>`);
+  });
+  document.getElementById('report-count').textContent = `${data.length} rapport${data.length > 1 ? 's' : ''}`;
+}
+
+/* ════════════════════════════
+   SÉLECTION ET PRÉVISUALISATION
+════════════════════════════ */
+function selectReport(idx) {
+  document.querySelectorAll('.report-item').forEach(el => el.classList.remove('selected'));
+  const itemEl = document.getElementById(`report-item-${idx}`);
+  if (itemEl) itemEl.classList.add('selected');
+
+  // Trouver le rapport dans les données filtrées
+  const visibleItems = Array.from(document.querySelectorAll('.report-item'));
+  const clickedEl = document.getElementById(`report-item-${idx}`);
+  const r = reports.find(rep => rep.ref === clickedEl?.querySelector('.report-name + .report-meta + .report-tags')?.previousElementSibling?.previousElementSibling?.textContent?.trim() ||
+    clickedEl?.querySelector('.report-name')?.textContent?.trim() === rep.company);
+
+  // Utilisation de l'index natif des données pour la sélection
+  const originalIdx = parseInt(itemEl?.id?.replace('report-item-','') ?? idx);
+  const rep = getFilteredReports()[originalIdx] ?? reports[idx];
+  if (!rep) return;
+
+  document.getElementById('preview-empty').style.display = 'none';
+  document.getElementById('preview-content').style.display = 'block';
+
+  // Remplir les données
+  document.getElementById('pdf-company').textContent  = rep.company;
+  document.getElementById('pdf-sector').textContent   = rep.sector + ' · ' + (rep.click !== '—' ? getTotal(rep) + ' employés testés' : 'Campagne en cours');
+  document.getElementById('pdf-sector-tag').className = 'tag ' + rep.sectorTag;
+  document.getElementById('pdf-sector-tag').textContent = rep.sector;
+  document.getElementById('pdf-date').textContent     = 'Généré le ' + rep.genDate;
+  document.getElementById('pdf-ref').textContent      = 'REF : ' + rep.ref;
+  document.getElementById('pdf-click').textContent    = rep.click;
+  document.getElementById('pdf-submit').textContent   = rep.submit;
+  document.getElementById('pdf-report-rate').textContent = rep.reportRate;
+
+  // Score
+  if (rep.score !== null) {
+    document.getElementById('pdf-score').textContent = rep.score;
+    const level = rep.score >= 60 ? 'ÉLEVÉ' : rep.score >= 40 ? 'MODÉRÉ' : 'FAIBLE';
+    const color = rep.score >= 60 ? 'var(--red)' : rep.score >= 40 ? 'var(--orange)' : 'var(--green)';
+    document.getElementById('pdf-score-text').innerHTML = `Niveau de risque <strong style="color:${color}">${level}</strong>. ${rep.click} des employés testés ont cliqué sur le lien frauduleux.`;
+  } else {
+    document.getElementById('pdf-score').textContent = '—';
+    document.getElementById('pdf-score-text').textContent = 'Campagne en cours — rapport disponible à la clôture.';
+  }
+
+  // Barres
+  const barsEl = document.getElementById('pdf-bars');
+  barsEl.innerHTML = rep.bars.length ? rep.bars.map(b => `
+    <div class="bar-row-mini">
+      <div class="bar-row-top"><span>${b.lbl}</span><span class="pct" style="color:${b.cls.includes('danger') ? 'var(--red)' : b.cls.includes('warning') ? 'var(--orange)' : b.cls.includes('accent') ? 'var(--blue)' : 'var(--green)'}">${b.pct} %</span></div>
+      <div class="bar-track"><div class="bar-fill ${b.cls}" style="width:${b.pct}%;height:6px"></div></div>
+    </div>`).join('') : '<p style="font-size:12px;color:var(--text3)">Données disponibles à la clôture de la campagne.</p>';
+
+  // Recommandations
+  const recosEl = document.getElementById('pdf-recos');
+  recosEl.innerHTML = rep.recos.map((r, i) => `<div class="reco-item"><div class="reco-num">${i+1}</div><span>${r}</span></div>`).join('');
+
+  // Badge statut
+  const badge = document.getElementById('pdf-status-badge');
+  if (rep.status === 'sent')    { badge.style.background = 'rgba(26,127,74,.2)'; badge.style.color = '#86EFAC'; badge.textContent = '● Envoyé'; }
+  if (rep.status === 'pending') { badge.style.background = 'rgba(230,126,34,.2)'; badge.style.color = '#FCD34D'; badge.textContent = '● En attente'; }
+  if (rep.status === 'draft')   { badge.style.background = 'rgba(139,152,172,.2)'; badge.style.color = '#CBD5E1'; badge.textContent = '● Brouillon'; }
+}
+
+function getTotal(rep) {
+  const clicks = { 'HSH-2026-001':34,'HSH-2026-002':28,'HSH-2026-003':22,'HSH-2026-004':19,'HSH-2026-005':15 };
+  return clicks[rep.ref] || '—';
+}
+
+/* ════════════════════════════
+   FILTRES
+════════════════════════════ */
+function getFilteredReports() {
+  return reports.filter(r => {
+    const statusOk = currentStatusFilter === 'all' || r.status === currentStatusFilter;
+    const searchOk = !currentSearch || `${r.company} ${r.campaign}`.toLowerCase().includes(currentSearch);
+    return statusOk && searchOk;
+  });
+}
+
+function filterByStatus(status, btn) {
+  currentStatusFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList(getFilteredReports());
+}
+
+function filterReports(q) {
+  currentSearch = q.toLowerCase();
+  renderList(getFilteredReports());
+}
+
+/* ════════════════════════════
+   MODAL GÉNÉRATION
+════════════════════════════ */
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('modal-loading').classList.remove('active');
+  document.getElementById('modal-body').querySelectorAll('.form-group, .form-row, .checkbox-group').forEach(el => el.closest('.form-group, .form-row') ? null : el.style.display = '');
+  document.getElementById('modal-footer').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function generateReport() {
+  const company = document.getElementById('m-company').value;
+  const campaign = document.getElementById('m-campaign').value;
+  if (!company || !campaign) { showToast('Veuillez sélectionner une entreprise et une campagne', 'error'); return; }
+
+  // Masquer le formulaire, afficher le loading
+  document.getElementById('modal-body').querySelectorAll('.form-group, .form-row').forEach(el => el.style.display = 'none');
+  document.getElementById('modal-loading').classList.add('active');
+  document.getElementById('modal-footer').style.display = 'none';
+
+  setTimeout(() => {
+    closeModal();
+    showToast('✓ Rapport généré avec succès pour ' + company, 'success');
+    // Mettre à jour le badge
+    const badge = document.getElementById('badge-reports');
+    badge.textContent = parseInt(badge.textContent) + 1;
+  }, 2200);
+}
+
+/* ════════════════════════════
+   NAVIGATION
+════════════════════════════ */
+function showView(viewId, navEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + viewId).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  const titles = {
+    dashboard:['Tableau de bord','Campagnes actives — Juillet 2026'],
+    generate: ['Générer un scénario','Création assistée par IA'],
+    campaigns:['Campagnes','7 campagnes ce mois'],
+    results:  ['Résultats & Analyses','Vue agrégée — 187 employés'],
+    reports:  ['Rapports PDF','12 rapports générés · 2 en attente d\'envoi · Juillet 2026'],
+  };
+  const t = titles[viewId] || ['H-SHIELD237',''];
+  document.getElementById('page-title').textContent = t[0];
+  document.getElementById('page-sub').textContent   = t[1];
+  window.scrollTo(0,0);
+}
+
+/* ════════════════════════════
+   TOAST
+════════════════════════════ */
+function showToast(msg, type='info') {
+  const el = document.getElementById('toast-el');
+  const ic = document.getElementById('toast-icon');
+  const ms = document.getElementById('toast-msg');
+  const icons = {success:'ti-check',info:'ti-info-circle',error:'ti-alert-circle'};
+  el.className = 'toast ' + type;
+  ic.className = 'ti ' + (icons[type]||'ti-info-circle');
+  ms.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+/* ════════════════════════════
+   INIT
+════════════════════════════ */
+renderList(reports);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H-SHIELD237 — Historique</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F1F3D;--navy-mid:#1B2A5A;--navy-light:#2C3F6B;
+  --red:#C0392B;--red-dark:#a93226;--red-light:rgba(192,57,43,.09);--red-border:rgba(192,57,43,.28);--red-soft:#F5B7B1;--red-text:#7B241C;
+  --gold:#C49A1A;--gold-light:#FEF9E7;
+  --green:#1A7F4A;--green-light:#EAFAF1;
+  --orange:#E67E22;--orange-light:#FEF5E7;
+  --blue:#1A5FA0;--blue-light:#EBF5FB;
+  --teal:#0E7C7B;--teal-light:#E0F2F1;
+  --purple:#6B21A8;--purple-light:#F5F3FF;
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;
+  --border:rgba(0,0,0,0.08);--border-str:rgba(0,0,0,0.14);
+  --text:#0F1F3D;--text2:#4A5568;--text3:#8A97AC;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.09);
+}
+html,body{min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+.app{display:grid;grid-template-columns:228px 1fr;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--navy);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:20px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:11px}
+.logo-icon{width:38px;height:38px;background:var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(192,57,43,.35)}
+.logo-icon i{color:#fff;font-size:19px}
+.logo-name{font-size:15.5px;font-weight:600;color:#fff;letter-spacing:-.02em;line-height:1}
+.logo-name span{color:var(--red)}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.34);margin-top:3px}
+.nav{padding:14px 10px;flex:1}
+.nav-section{font-size:9.5px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;padding:10px 10px 5px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);font-size:13px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:1px;transition:background .12s,color .12s;border:1px solid transparent;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.88)}
+.nav-item.active{background:rgba(192,57,43,.22);color:var(--red-soft);border-color:rgba(192,57,43,.38)}
+.nav-item i{font-size:17px;color:rgba(255,255,255,.32)}
+.nav-item.active i,.nav-item:hover i{color:inherit}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+.sidebar-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:rgba(255,255,255,.8);flex-shrink:0}
+.ava-name{font-size:12px;color:rgba(255,255,255,.8);font-weight:500}
+.ava-role{font-size:10px;color:rgba(255,255,255,.33)}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:var(--shadow)}
+.topbar-left h1{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.topbar-left span{font-size:11.5px;color:var(--text3);display:block;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:9px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--radius);font-size:12.5px;cursor:pointer;border:1px solid var(--border-str);background:var(--surface);color:var(--text2);font-family:inherit;transition:background .12s;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn i{font-size:15px}
+.btn-icon{padding:7px 9px}
+.btn-primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn-primary:hover{background:var(--red-dark)}
+.content{padding:22px 24px 48px;flex:1}
+.view{display:none}.view.active{display:block}
+
+/* ── COMMUN ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.card-pad{padding:18px 20px}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:13.5px;font-weight:600}
+.card-sub{font-size:11.5px;color:var(--text3);margin-top:2px}
+.link{font-size:12px;color:var(--blue);cursor:pointer;text-decoration:none}.link:hover{text-decoration:underline}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.badge-danger{background:var(--red-light);color:var(--red)}
+.badge-success{background:var(--green-light);color:var(--green)}
+.badge-warning{background:var(--orange-light);color:var(--orange)}
+.badge-accent{background:var(--blue-light);color:var(--blue)}
+.badge-neutral{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.tag{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.tag-health{background:#FEE;color:#922}.tag-finance{background:#E8F0FE;color:#1A5FA0}
+.tag-btp{background:var(--orange-light);color:#7D4600}.tag-commerce{background:var(--green-light);color:var(--green)}
+.tag-edu{background:var(--teal-light);color:var(--teal)}.tag-hotel{background:var(--gold-light);color:var(--gold)}
+
+/* ── MÉTRIQUES ── */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.metric::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.metric.m-navy::after{background:var(--navy-mid)}.metric.m-red::after{background:var(--red)}.metric.m-green::after{background:var(--green)}.metric.m-orange::after{background:var(--orange)}.metric.m-blue::after{background:var(--blue)}
+.metric-label{font-size:10px;color:var(--text3);margin-bottom:6px;display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.06em}
+.metric-label i{font-size:13px}
+.metric-value{font-size:24px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{flex:1;position:relative;min-width:180px}
+.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3);pointer-events:none}
+.search-wrap input{width:100%;padding:8px 12px 8px 34px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit}
+.search-wrap input:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,42,90,.08)}
+.filter-group{display:flex;gap:6px;flex-wrap:wrap}
+.filter-btn{padding:6px 12px;border-radius:20px;border:1px solid var(--border-str);background:var(--surface);color:var(--text2);font-size:12px;font-family:inherit;cursor:pointer;transition:all .12s}
+.filter-btn:hover{background:var(--surface2)}
+.filter-btn.active{background:var(--navy-mid);color:#fff;border-color:var(--navy-mid)}
+
+/* ── LAYOUT HISTORIQUE ── */
+.hist-layout{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+
+/* ── TIMELINE ── */
+.timeline-month{margin-bottom:28px}
+.month-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.09em;padding:0 0 10px 32px;display:flex;align-items:center;gap:10px}
+.month-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.tl-item{display:flex;gap:0;position:relative;margin-bottom:4px}
+.tl-line{width:32px;display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.tl-dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px;z-index:1}
+.tl-dot i{font-size:10px;color:#fff}
+.tl-connector{width:1px;flex:1;background:var(--border);margin-top:2px;min-height:16px}
+.tl-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-left:10px;margin-bottom:8px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow)}
+.tl-card:hover{border-color:var(--navy-mid);box-shadow:var(--shadow-md)}
+.tl-card.selected{border-color:var(--navy-mid);border-left:3px solid var(--navy-mid)}
+.tl-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.tl-card-left{flex:1;min-width:0}
+.tl-card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.tl-card-sub{font-size:11.5px;color:var(--text3)}
+.tl-card-right{text-align:right;flex-shrink:0}
+.tl-date{font-size:11px;color:var(--text3);margin-bottom:4px}
+.tl-metrics{display:flex;gap:10px;flex-wrap:wrap}
+.tl-metric{display:flex;flex-direction:column;align-items:center;padding:6px 10px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)}
+.tl-metric-val{font-size:15px;font-weight:700;line-height:1}
+.tl-metric-lbl{font-size:9.5px;color:var(--text3);margin-top:2px;text-align:center}
+.tl-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.evolution-chip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:20px}
+.chip-up{background:var(--red-light);color:var(--red)}
+.chip-down{background:var(--green-light);color:var(--green)}
+.chip-neutral{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+
+/* ── PANNEAU DÉTAIL ── */
+.detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);position:sticky;top:78px;overflow:hidden}
+.detail-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;text-align:center;gap:14px;min-height:320px}
+.detail-empty-icon{width:52px;height:52px;background:var(--red-light);border-radius:12px;display:flex;align-items:center;justify-content:center}
+.detail-empty-icon i{font-size:26px;color:var(--red)}
+.detail-empty-title{font-size:14px;font-weight:600}
+.detail-empty-sub{font-size:13px;color:var(--text3);max-width:220px;line-height:1.6}
+.detail-header{background:var(--navy);padding:16px 18px;display:flex;align-items:flex-start;justify-content:space-between}
+.detail-header-title{font-size:14px;font-weight:600;color:#fff;margin-bottom:2px}
+.detail-header-sub{font-size:11px;color:rgba(255,255,255,.4)}
+.detail-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px;max-height:560px;overflow-y:auto}
+.d-section-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.d-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.d-info-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px}
+.d-info-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.d-info-val{font-size:13px;font-weight:600}
+.d-bar-list{display:flex;flex-direction:column;gap:8px}
+.d-bar-row{display:flex;flex-direction:column;gap:4px}
+.d-bar-top{display:flex;justify-content:space-between;font-size:11.5px}
+.d-bar-top .pct{font-weight:600}
+.d-bar-track{height:6px;background:var(--bg);border-radius:99px;overflow:hidden}
+.d-bar-fill{height:100%;border-radius:99px}
+.fill-red{background:var(--red)}.fill-orange{background:var(--orange)}.fill-green{background:var(--green)}.fill-blue{background:var(--blue)}
+.d-compare{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius)}
+.d-compare-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.d-compare-val{font-size:20px;font-weight:700}
+.d-compare-lbl{font-size:10px;color:var(--text3);text-align:center}
+.d-compare-arrow{font-size:22px;color:var(--text3)}
+.d-tl{display:flex;flex-direction:column;gap:0}
+.d-tl-item{display:flex;gap:10px;padding-bottom:12px;position:relative}
+.d-tl-item:not(:last-child)::before{content:'';position:absolute;left:8px;top:18px;bottom:0;width:1px;background:var(--border)}
+.d-tl-dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.d-tl-dot i{font-size:10px;color:#fff}
+.d-tl-label{font-size:12px;font-weight:500;color:var(--text)}
+.d-tl-time{font-size:10.5px;color:var(--text3);margin-top:2px}
+.ia-insight{background:var(--blue-light);border:1px solid rgba(26,95,160,.2);border-radius:var(--radius);padding:12px 14px}
+.ia-insight-head{display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:12px;font-weight:600;color:var(--blue)}
+.ia-insight-head i{font-size:15px}
+.ia-insight-body{font-size:12px;color:var(--text2);line-height:1.65}
+.detail-footer{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
+.detail-footer .btn{flex:1;justify-content:center;font-size:12px}
+
+/* ── GRAPHIQUE ÉVOLUTION (droite) ── */
+.evo-card{margin-bottom:16px}
+.mini-bar-chart{display:flex;align-items:flex-end;gap:8px;height:100px;padding:0 2px}
+.mbc-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.mbc-val{font-size:10px;font-weight:600;color:var(--text2)}
+.mbc-bar{width:100%;border-radius:3px 3px 0 0;min-height:2px}
+.mbc-lbl{font-size:9px;color:var(--text3);text-align:center;line-height:1.3}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;max-width:360px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast i{font-size:17px;flex-shrink:0}
+.toast.success i{color:#4ADE80}.toast.error i{color:#F87171}.toast.info i{color:#60A5FA}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ════════ SIDEBAR ════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-shield-lock"></i></div>
+    <div>
+      <div class="logo-name">H-SHIELD<span>237</span></div>
+      <div class="logo-sub">Simulateur de phishing éducatif</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Principal</div>
+    <a class="nav-item" id="nav-dashboard" onclick="showView('dashboard',this);return false" href="#"><i class="ti ti-layout-dashboard"></i> Tableau de bord</a>
+    <a class="nav-item" id="nav-generate" onclick="showView('generate',this);return false" href="#"><i class="ti ti-robot"></i> Générer un scénario</a>
+    <a class="nav-item" id="nav-campaigns" onclick="showView('campaigns',this);return false" href="#"><i class="ti ti-send"></i> Campagnes <span class="nav-badge">4</span></a>
+    <div class="nav-section">Analyse</div>
+    <a class="nav-item" id="nav-results" onclick="showView('results',this);return false" href="#"><i class="ti ti-chart-bar"></i> Résultats</a>
+    <a class="nav-item" id="nav-reports" onclick="showView('reports',this);return false" href="#"><i class="ti ti-file-report"></i> Rapports PDF <span class="nav-badge">2</span></a>
+    <a class="nav-item active" id="nav-history" onclick="showView('history',this);return false" href="#"><i class="ti ti-history"></i> Historique</a>
+    <div class="nav-section">Configuration</div>
+    <a class="nav-item" onclick="showToast('Templates sectoriels','info');return false" href="#"><i class="ti ti-template"></i> Templates sectoriels</a>
+    <a class="nav-item" onclick="showToast('Entreprises clientes','info');return false" href="#"><i class="ti ti-building"></i> Entreprises clientes</a>
+    <a class="nav-item" onclick="showToast('Consentements','info');return false" href="#"><i class="ti ti-shield-check"></i> Consentements</a>
+    <a class="nav-item" onclick="showToast('Paramètres','info');return false" href="#"><i class="ti ti-settings"></i> Paramètres</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar">LJ</div>
+    <div><div class="ava-name">LEVY Jérémie</div><div class="ava-role">Consultant — CSRL Yaoundé</div></div>
+  </div>
+</aside>
+
+<!-- ════════ MAIN ════════ -->
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 id="page-title">Historique</h1>
+      <span id="page-sub">Journal complet des campagnes — Janvier à Juillet 2026</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-icon"><i class="ti ti-search"></i></button>
+      <button class="btn btn-icon" style="position:relative">
+        <i class="ti ti-bell"></i>
+        <span style="position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid #fff"></span>
+      </button>
+      <button class="btn" onclick="showToast('Export CSV de l\'historique en cours…','info')"><i class="ti ti-download"></i> Exporter CSV</button>
+      <button class="btn btn-primary" onclick="showToast('Redirection vers Nouvelle campagne','info')"><i class="ti ti-plus"></i> Nouvelle campagne</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- Vues placeholder -->
+    <div class="view" id="view-dashboard"><p style="color:var(--text3);padding:40px 0;text-align:center">← <a href="#" onclick="showView('history',document.getElementById('nav-history'));return false" style="color:var(--blue)">Revenir à l'historique</a></p></div>
+    <div class="view" id="view-generate"><p style="color:var(--text3);padding:40px 0;text-align:center">← <a href="#" onclick="showView('history',document.getElementById('nav-history'));return false" style="color:var(--blue)">Revenir à l'historique</a></p></div>
+    <div class="view" id="view-campaigns"><p style="color:var(--text3);padding:40px 0;text-align:center">← <a href="#" onclick="showView('history',document.getElementById('nav-history'));return false" style="color:var(--blue)">Revenir à l'historique</a></p></div>
+    <div class="view" id="view-results"><p style="color:var(--text3);padding:40px 0;text-align:center">← <a href="#" onclick="showView('history',document.getElementById('nav-history'));return false" style="color:var(--blue)">Revenir à l'historique</a></p></div>
+    <div class="view" id="view-reports"><p style="color:var(--text3);padding:40px 0;text-align:center">← <a href="#" onclick="showView('history',document.getElementById('nav-history'));return false" style="color:var(--blue)">Revenir à l'historique</a></p></div>
+
+    <!-- ══════ VUE HISTORIQUE ══════ -->
+    <div class="view active" id="view-history">
+
+      <!-- Métriques globales -->
+      <div class="metrics">
+        <div class="metric m-navy">
+          <div class="metric-label"><i class="ti ti-calendar"></i> Campagnes totales</div>
+          <div class="metric-value">14</div>
+          <div class="metric-sub">depuis Janvier 2026</div>
+        </div>
+        <div class="metric m-red">
+          <div class="metric-label"><i class="ti ti-users"></i> Employés sensibilisés</div>
+          <div class="metric-value" style="color:var(--red)">412</div>
+          <div class="metric-sub">sur 6 mois cumulés</div>
+        </div>
+        <div class="metric m-orange">
+          <div class="metric-label"><i class="ti ti-pointer"></i> Taux de clic moyen</div>
+          <div class="metric-value" style="color:var(--orange)">54 %</div>
+          <div class="metric-sub">tendance haussière</div>
+        </div>
+        <div class="metric m-green">
+          <div class="metric-label"><i class="ti ti-flag"></i> Taux de signalement</div>
+          <div class="metric-value" style="color:var(--green)">11 %</div>
+          <div class="metric-sub">↑ +3 pts vs objectif</div>
+        </div>
+        <div class="metric m-blue">
+          <div class="metric-label"><i class="ti ti-building"></i> Entreprises clientes</div>
+          <div class="metric-value" style="color:var(--blue)">6</div>
+          <div class="metric-sub">dont 3 récurrentes</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <i class="ti ti-search"></i>
+          <input type="text" placeholder="Rechercher une campagne, une entreprise…" oninput="filterHistory(this.value)">
+        </div>
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="setFilter('all',this)">Tout (14)</button>
+          <button class="filter-btn" onclick="setFilter('done',this)">Terminées (9)</button>
+          <button class="filter-btn" onclick="setFilter('active',this)">En cours (4)</button>
+          <button class="filter-btn" onclick="setFilter('pending',this)">En attente (1)</button>
+        </div>
+        <select style="padding:7px 12px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface);font-size:12px;font-family:inherit" onchange="showToast('Filtre : '+this.value,'info')">
+          <option>Toutes les entreprises</option>
+          <option>Clinique Sainte-Marie</option>
+          <option>MFI Cameroun Sud</option>
+          <option>Bâti-Yaoundé SARL</option>
+          <option>Import-Export Nguemo</option>
+          <option>École Privée Excellence</option>
+          <option>Hôtel des Collines</option>
+        </select>
+        <select style="padding:7px 12px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface);font-size:12px;font-family:inherit" onchange="showToast('Période : '+this.value,'info')">
+          <option>Janvier – Juillet 2026</option>
+          <option>Ce mois</option>
+          <option>3 derniers mois</option>
+          <option>6 derniers mois</option>
+        </select>
+      </div>
+
+      <!-- Layout principal -->
+      <div class="hist-layout">
+
+        <!-- Timeline -->
+        <div id="timeline-container">
+          <!-- Injecté par JS -->
+        </div>
+
+        <!-- Panneau droite -->
+        <div>
+          <!-- Graphique évolution mensuelle -->
+          <div class="card card-pad evo-card">
+            <div class="card-header">
+              <div><div class="card-title">Évolution mensuelle</div><div class="card-sub">Taux de clic moyen par mois</div></div>
+            </div>
+            <div class="mini-bar-chart">
+              <div class="mbc-col"><div class="mbc-val">30%</div><div class="mbc-bar" style="height:30%;background:var(--green)"></div><div class="mbc-lbl">Jan</div></div>
+              <div class="mbc-col"><div class="mbc-val">34%</div><div class="mbc-bar" style="height:34%;background:var(--green)"></div><div class="mbc-lbl">Fév</div></div>
+              <div class="mbc-col"><div class="mbc-val">38%</div><div class="mbc-bar" style="height:38%;background:var(--blue)"></div><div class="mbc-lbl">Mar</div></div>
+              <div class="mbc-col"><div class="mbc-val">44%</div><div class="mbc-bar" style="height:44%;background:var(--orange)"></div><div class="mbc-lbl">Avr</div></div>
+              <div class="mbc-col"><div class="mbc-val">48%</div><div class="mbc-bar" style="height:48%;background:var(--orange)"></div><div class="mbc-lbl">Mai</div></div>
+              <div class="mbc-col"><div class="mbc-val">51%</div><div class="mbc-bar" style="height:51%;background:var(--red)"></div><div class="mbc-lbl">Juin</div></div>
+              <div class="mbc-col"><div class="mbc-val" style="color:var(--red);font-weight:700">54%</div><div class="mbc-bar" style="height:54%;background:var(--red)"></div><div class="mbc-lbl" style="color:var(--navy-mid);font-weight:600">Juil</div></div>
+            </div>
+            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text2);display:flex;align-items:center;gap:6px">
+              <i class="ti ti-trending-up" style="color:var(--red);font-size:15px"></i>
+              Hausse de <strong style="color:var(--red)">+24 pts</strong> sur 7 mois — formation urgente requise
+            </div>
+          </div>
+
+          <!-- Top scénarios -->
+          <div class="card card-pad" style="margin-bottom:16px">
+            <div class="card-header">
+              <div><div class="card-title">Scénarios les plus efficaces</div><div class="card-sub">Par taux de clic moyen obtenu</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span><i class="ti ti-building-bank" style="color:var(--text3);margin-right:4px"></i>Alerte BEAC / MINFI</span><span style="color:var(--red);font-weight:700">68 %</span></div>
+                <div style="height:6px;background:var(--bg);border-radius:99px;overflow:hidden"><div style="width:68%;height:100%;background:var(--red);border-radius:99px"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span><i class="ti ti-cash" style="color:var(--text3);margin-right:4px"></i>Changement RIB fournisseur</span><span style="color:var(--orange);font-weight:700">61 %</span></div>
+                <div style="height:6px;background:var(--bg);border-radius:99px;overflow:hidden"><div style="width:61%;height:100%;background:var(--orange);border-radius:99px"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span><i class="ti ti-file-certificate" style="color:var(--text3);margin-right:4px"></i>Portail CENAME / MINSANTE</span><span style="color:var(--orange);font-weight:700">55 %</span></div>
+                <div style="height:6px;background:var(--bg);border-radius:99px;overflow:hidden"><div style="width:55%;height:100%;background:var(--orange);border-radius:99px"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span><i class="ti ti-briefcase" style="color:var(--text3);margin-right:4px"></i>Attribution marché ARMP</span><span style="color:var(--blue);font-weight:700">43 %</span></div>
+                <div style="height:6px;background:var(--bg);border-radius:99px;overflow:hidden"><div style="width:43%;height:100%;background:var(--blue);border-radius:99px"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span><i class="ti ti-device-mobile" style="color:var(--text3);margin-right:4px"></i>Alerte MTN Mobile Money</span><span style="color:var(--green);font-weight:700">28 %</span></div>
+                <div style="height:6px;background:var(--bg);border-radius:99px;overflow:hidden"><div style="width:28%;height:100%;background:var(--green);border-radius:99px"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Détail campagne sélectionnée -->
+          <div class="detail-panel" id="detail-panel">
+            <div class="detail-empty" id="detail-empty">
+              <div class="detail-empty-icon"><i class="ti ti-timeline"></i></div>
+              <div class="detail-empty-title">Détail de la campagne</div>
+              <div class="detail-empty-sub">Cliquez sur une campagne dans la timeline pour afficher son détail ici.</div>
+            </div>
+            <div id="detail-content" style="display:none">
+              <div class="detail-header">
+                <div>
+                  <div class="detail-header-title" id="d-title">Clinique Sainte-Marie</div>
+                  <div class="detail-header-sub" id="d-sub">Alerte CENAME · 02/07/2026 → 07/07/2026</div>
+                </div>
+                <span class="tag" id="d-sector-tag" style="align-self:flex-start">Santé</span>
+              </div>
+              <div class="detail-body">
+                <div>
+                  <div class="d-section-title">Résultats clés</div>
+                  <div class="d-info-grid">
+                    <div class="d-info-item"><div class="d-info-label">Destinataires</div><div class="d-info-val" id="d-total">34</div></div>
+                    <div class="d-info-item"><div class="d-info-label">Taux de clic</div><div class="d-info-val" id="d-click" style="color:var(--red)">68 %</div></div>
+                    <div class="d-info-item"><div class="d-info-label">Ont soumis</div><div class="d-info-val" id="d-submit" style="color:var(--orange)">29 %</div></div>
+                    <div class="d-info-item"><div class="d-info-label">Ont signalé</div><div class="d-info-val" id="d-report-rate" style="color:var(--green)">9 %</div></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="d-section-title">Comportements</div>
+                  <div class="d-bar-list" id="d-bars">
+                    <div class="d-bar-row"><div class="d-bar-top"><span>Ont cliqué</span><span class="pct" style="color:var(--red)">68 %</span></div><div class="d-bar-track"><div class="d-bar-fill fill-red" style="width:68%"></div></div></div>
+                    <div class="d-bar-row"><div class="d-bar-top"><span>Ont soumis</span><span class="pct" style="color:var(--orange)">29 %</span></div><div class="d-bar-track"><div class="d-bar-fill fill-orange" style="width:29%"></div></div></div>
+                    <div class="d-bar-row"><div class="d-bar-top"><span>Ont signalé</span><span class="pct" style="color:var(--green)">9 %</span></div><div class="d-bar-track"><div class="d-bar-fill fill-green" style="width:9%"></div></div></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="d-section-title">Timeline de la campagne</div>
+                  <div class="d-tl" id="d-timeline"></div>
+                </div>
+                <div class="ia-insight">
+                  <div class="ia-insight-head"><i class="ti ti-bulb"></i> Recommandation IA</div>
+                  <div class="ia-insight-body" id="d-insight">Formation urgente recommandée pour le service administratif. Planifier une campagne de relance dans 90 jours.</div>
+                </div>
+              </div>
+              <div class="detail-footer">
+                <button class="btn" onclick="showToast('Rapport PDF téléchargé','success')"><i class="ti ti-file-report"></i> Rapport</button>
+                <button class="btn btn-primary" onclick="showToast('Campagne de relance créée','success')"><i class="ti ti-refresh"></i> Relancer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /hist-layout -->
+    </div><!-- /view-history -->
+  </div><!-- /content -->
+</main>
+</div><!-- /app -->
+
+<!-- Toast -->
+<div class="toast" id="toast-el"><i class="ti ti-info-circle" id="toast-icon"></i><span id="toast-msg"></span></div>
+
+<script>
+/* ════════════════════════════
+   DONNÉES HISTORIQUE
+════════════════════════════ */
+const historyData = [
+  {
+    month:'Juillet 2026',
+    items:[
+      { id:0, company:'Import-Export Nguemo', sector:'Commerce', sectorClass:'tag-commerce', scenario:'Changement RIB fournisseur CN', date:'08/07/2026', status:'active', click:null, submit:null, report:null, total:41, dotColor:'var(--orange)', dotIcon:'ti-send',
+        bars:[], timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé — DG Nguemo',t:'06/07/2026 · 14:00'},{c:'var(--navy-mid)',i:'ti-send',l:'14 emails envoyés (lot 1)',t:'08/07/2026 · 09:00'}],
+        insight:'Campagne en cours. Les scénarios de changement de RIB fournisseur génèrent en moyenne 61 % de clics dans le secteur commerce. Suivi rapproché recommandé.', period:'08/07 → En cours', evo:null },
+      { id:1, company:'Bâti-Yaoundé SARL', sector:'BTP', sectorClass:'tag-btp', scenario:'Faux courrier ARMP / MINTP', date:'07/07/2026', status:'active', click:43, submit:15, report:8, total:19, dotColor:'var(--orange)', dotIcon:'ti-send',
+        bars:[{l:'Ont cliqué',p:43,c:'fill-orange'},{l:'Ont soumis',p:15,c:'fill-blue'},{l:'Ont signalé',p:8,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé — DG SARL',t:'04/07/2026 · 16:00'},{c:'var(--navy-mid)',i:'ti-send',l:'19 emails envoyés',t:'07/07/2026 · 08:30'},{c:'var(--red)',i:'ti-pointer',l:'4 clics enregistrés',t:'07/07/2026 · 09:20'}],
+        insight:'Le scénario ARMP/MINTP exploit l\'appât du gain. Sensibiliser aux processus officiels de vérification des attributions de marchés publics.', period:'07/07 → En cours', evo:{prev:null,curr:43} },
+      { id:2, company:'Clinique Sainte-Marie', sector:'Santé', sectorClass:'tag-health', scenario:'Alerte CENAME — portail piégé', date:'02/07/2026', status:'done', click:68, submit:29, report:9, total:34, dotColor:'var(--red)', dotIcon:'ti-circle-check',
+        bars:[{l:'Ont cliqué',p:68,c:'fill-red'},{l:'Ont soumis',p:29,c:'fill-orange'},{l:'Ont signalé',p:9,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé — Dr. Amougou',t:'28/06/2026 · 09:14'},{c:'var(--navy-mid)',i:'ti-send',l:'34 emails envoyés',t:'02/07/2026 · 08:00'},{c:'var(--red)',i:'ti-pointer',l:'Premier clic — 4 min après envoi',t:'02/07/2026 · 08:47'},{c:'var(--green)',i:'ti-circle-check',l:'Campagne clôturée',t:'07/07/2026 · 18:00'}],
+        insight:'Taux de clic record (68 %). Formation urgente pour le service administratif. Planifier une campagne de relance dans 90 jours.', period:'02/07 → 07/07', evo:{prev:null,curr:68} },
+    ]
+  },
+  {
+    month:'Juin 2026',
+    items:[
+      { id:3, company:'MFI Cameroun Sud', sector:'Microfinance', sectorClass:'tag-finance', scenario:'Fausse suspension BEAC', date:'05/07/2026', status:'active', click:49, submit:18, report:12, total:28, dotColor:'var(--orange)', dotIcon:'ti-send',
+        bars:[{l:'Ont cliqué',p:49,c:'fill-orange'},{l:'Ont soumis',p:18,c:'fill-blue'},{l:'Ont signalé',p:12,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé — Directrice MFI',t:'01/07/2026 · 14:22'},{c:'var(--navy-mid)',i:'ti-send',l:'28 emails envoyés',t:'05/07/2026 · 09:00'},{c:'var(--red)',i:'ti-pointer',l:'8 clics — agents de guichet',t:'05/07/2026 · 10:15'}],
+        insight:'Les agents de guichet sont 35 % plus vulnérables que les cadres. Formation prioritaire pour le personnel opérationnel.', period:'05/07 → En cours', evo:{prev:null,curr:49} },
+      { id:4, company:'École Privée Excellence', sector:'Enseignement', sectorClass:'tag-edu', scenario:'Fausse alerte MINESUP', date:'28/06/2026', status:'done', click:37, submit:12, report:18, total:22, dotColor:'var(--green)', dotIcon:'ti-circle-check',
+        bars:[{l:'Ont cliqué',p:37,c:'fill-blue'},{l:'Ont soumis',p:12,c:'fill-orange'},{l:'Ont signalé',p:18,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé — Directeur académique',t:'24/06/2026 · 11:00'},{c:'var(--navy-mid)',i:'ti-send',l:'22 emails envoyés',t:'28/06/2026 · 08:00'},{c:'var(--purple)',i:'ti-flag',l:'4 signalements reçus',t:'28/06/2026 · 09:45'},{c:'var(--green)',i:'ti-circle-check',l:'Campagne clôturée',t:'05/07/2026 · 18:00'}],
+        insight:'Bon taux de signalement (18 %). Le corps enseignant montre une meilleure résilience que le personnel administratif. Maintenir la sensibilisation annuelle.', period:'28/06 → 05/07', evo:{prev:null,curr:37} },
+      { id:5, company:'Hôtel des Collines', sector:'Hôtellerie', sectorClass:'tag-hotel', scenario:'Fausses réservations Booking', date:'25/06/2026', status:'done', click:28, submit:8, report:14, total:15, dotColor:'var(--green)', dotIcon:'ti-circle-check',
+        bars:[{l:'Ont cliqué',p:28,c:'fill-blue'},{l:'Ont soumis',p:8,c:'fill-orange'},{l:'Ont signalé',p:14,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé — Gérant',t:'22/06/2026 · 15:30'},{c:'var(--navy-mid)',i:'ti-send',l:'15 emails envoyés',t:'25/06/2026 · 08:00'},{c:'var(--green)',i:'ti-circle-check',l:'Campagne clôturée',t:'02/07/2026 · 18:00'}],
+        insight:'Résultat satisfaisant pour ce secteur. Continuer les campagnes trimestrielles pour maintenir la vigilance.', period:'25/06 → 02/07', evo:{prev:null,curr:28} },
+    ]
+  },
+  {
+    month:'Mai 2026',
+    items:[
+      { id:6, company:'MFI Cameroun Sud', sector:'Microfinance', sectorClass:'tag-finance', scenario:'Alerte MTN Mobile Money', date:'20/05/2026', status:'done', click:52, submit:21, report:10, total:28, dotColor:'var(--red)', dotIcon:'ti-circle-check',
+        bars:[{l:'Ont cliqué',p:52,c:'fill-red'},{l:'Ont soumis',p:21,c:'fill-orange'},{l:'Ont signalé',p:10,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé',t:'18/05/2026'},{c:'var(--navy-mid)',i:'ti-send',l:'28 emails envoyés',t:'20/05/2026'},{c:'var(--green)',i:'ti-circle-check',l:'Campagne clôturée',t:'27/05/2026'}],
+        insight:'Deuxième campagne pour cette entreprise. Amélioration possible en ciblant la formation sur les alertes Mobile Money.', period:'20/05 → 27/05', evo:{prev:null,curr:52} },
+      { id:7, company:'Clinique Sainte-Marie', sector:'Santé', sectorClass:'tag-health', scenario:'Fausse urgence MINSANTE', date:'15/05/2026', status:'done', click:71, submit:33, report:6, total:34, dotColor:'var(--red)', dotIcon:'ti-circle-check',
+        bars:[{l:'Ont cliqué',p:71,c:'fill-red'},{l:'Ont soumis',p:33,c:'fill-orange'},{l:'Ont signalé',p:6,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé',t:'12/05/2026'},{c:'var(--navy-mid)',i:'ti-send',l:'34 emails envoyés',t:'15/05/2026'},{c:'var(--green)',i:'ti-circle-check',l:'Campagne clôturée',t:'22/05/2026'}],
+        insight:'Taux de clic très élevé (71 %). Première campagne pour cette entreprise — niveau de vigilance initial très faible. Formation urgente effectuée le 01/06.', period:'15/05 → 22/05', evo:{prev:71,curr:68} },
+    ]
+  },
+  {
+    month:'Avril 2026',
+    items:[
+      { id:8, company:'Bâti-Yaoundé SARL', sector:'BTP', sectorClass:'tag-btp', scenario:'Alerte ARMP — première campagne', date:'10/04/2026', status:'done', click:58, submit:20, report:5, total:19, dotColor:'var(--red)', dotIcon:'ti-circle-check',
+        bars:[{l:'Ont cliqué',p:58,c:'fill-red'},{l:'Ont soumis',p:20,c:'fill-orange'},{l:'Ont signalé',p:5,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé',t:'07/04/2026'},{c:'var(--navy-mid)',i:'ti-send',l:'19 emails envoyés',t:'10/04/2026'},{c:'var(--green)',i:'ti-circle-check',l:'Campagne clôturée',t:'17/04/2026'}],
+        insight:'Première campagne pour Bâti-Yaoundé. Taux de clic de 58 %. La deuxième campagne (Juillet 2026) montre une amélioration de 15 pts après la formation.', period:'10/04 → 17/04', evo:{prev:58,curr:43} },
+    ]
+  },
+  {
+    month:'Janvier – Mars 2026',
+    items:[
+      { id:9, company:'École Privée Excellence', sector:'Enseignement', sectorClass:'tag-edu', scenario:'Alerte MINESUP — première campagne', date:'15/03/2026', status:'done', click:62, submit:18, report:8, total:22, dotColor:'var(--orange)', dotIcon:'ti-circle-check',
+        bars:[{l:'Ont cliqué',p:62,c:'fill-red'},{l:'Ont soumis',p:18,c:'fill-orange'},{l:'Ont signalé',p:8,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé',t:'12/03/2026'},{c:'var(--navy-mid)',i:'ti-send',l:'22 emails envoyés',t:'15/03/2026'},{c:'var(--green)',i:'ti-circle-check',l:'Campagne clôturée',t:'22/03/2026'}],
+        insight:'Première campagne. Taux de clic de 62 %. Après formation (Avril 2026), la deuxième campagne (Juin) montre une amélioration de 25 pts — résultat remarquable.', period:'15/03 → 22/03', evo:{prev:62,curr:37} },
+      { id:10, company:'Hôtel des Collines', sector:'Hôtellerie', sectorClass:'tag-hotel', scenario:'Fausse alerte paiement', date:'10/02/2026', status:'done', click:35, submit:10, report:11, total:15, dotColor:'var(--green)', dotIcon:'ti-circle-check',
+        bars:[{l:'Ont cliqué',p:35,c:'fill-blue'},{l:'Ont soumis',p:10,c:'fill-orange'},{l:'Ont signalé',p:11,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé',t:'07/02/2026'},{c:'var(--navy-mid)',i:'ti-send',l:'15 emails envoyés',t:'10/02/2026'},{c:'var(--green)',i:'ti-circle-check',l:'Campagne clôturée',t:'17/02/2026'}],
+        insight:'Première campagne. Niveau de risque modéré. Bon taux de signalement initial (11 %). La deuxième campagne (Juin 2026) confirme la vigilance du personnel.', period:'10/02 → 17/02', evo:{prev:35,curr:28} },
+      { id:11, company:'MFI Cameroun Sud', sector:'Microfinance', sectorClass:'tag-finance', scenario:'Fausse mise à jour réglementaire', date:'20/01/2026', status:'done', click:58, submit:24, report:7, total:28, dotColor:'var(--red)', dotIcon:'ti-circle-check',
+        bars:[{l:'Ont cliqué',p:58,c:'fill-red'},{l:'Ont soumis',p:24,c:'fill-orange'},{l:'Ont signalé',p:7,c:'fill-green'}],
+        timeline:[{c:'var(--green)',i:'ti-check',l:'Consentement validé',t:'17/01/2026'},{c:'var(--navy-mid)',i:'ti-send',l:'28 emails envoyés',t:'20/01/2026'},{c:'var(--green)',i:'ti-circle-check',l:'Campagne clôturée',t:'27/01/2026'}],
+        insight:'Première campagne pour MFI Cameroun Sud. Taux de clic initial de 58 %. Progression vers 49 % en Juillet après deux sessions de sensibilisation.', period:'20/01 → 27/01', evo:{prev:58,curr:49} },
+    ]
+  }
+];
+
+// Aplatir toutes les campagnes pour faciliter l'accès
+const allItems = historyData.flatMap(m => m.items);
+let currentFilter = 'all';
+let currentSearch = '';
+
+/* ════════════════════════════
+   RENDU TIMELINE
+════════════════════════════ */
+function renderTimeline(data) {
+  const container = document.getElementById('timeline-container');
+  container.innerHTML = '';
+  let totalShown = 0;
+
+  data.forEach(month => {
+    const filtered = month.items.filter(item => {
+      const statusOk = currentFilter === 'all' || item.status === currentFilter;
+      const searchOk = !currentSearch || `${item.company} ${item.scenario}`.toLowerCase().includes(currentSearch);
+      return statusOk && searchOk;
+    });
+    if (!filtered.length) return;
+    totalShown += filtered.length;
+
+    const monthDiv = document.createElement('div');
+    monthDiv.className = 'timeline-month';
+    monthDiv.innerHTML = `<div class="month-label">${month.month}</div>`;
+
+    filtered.forEach((item, i) => {
+      const clickHtml = item.click !== null
+        ? `<span class="tl-metric-val" style="color:${item.click>=60?'var(--red)':item.click>=40?'var(--orange)':'var(--green)'}">${item.click}%</span><span class="tl-metric-lbl">clic</span>`
+        : `<span class="tl-metric-val" style="color:var(--text3)">—</span><span class="tl-metric-lbl">en cours</span>`;
+
+      const evoHtml = item.evo && item.evo.prev
+        ? `<span class="evolution-chip ${item.evo.curr < item.evo.prev ? 'chip-down' : 'chip-up'}">${item.evo.curr < item.evo.prev ? '↓' : '↑'} vs 1ère campagne : ${item.evo.prev}% → ${item.evo.curr}%</span>`
+        : '';
+
+      const statusHtml = item.status === 'done'
+        ? `<span class="badge badge-success">Terminée</span>`
+        : item.status === 'active'
+        ? `<span class="badge badge-warning">Active</span>`
+        : `<span class="badge badge-neutral">En attente</span>`;
+
+      const itemEl = document.createElement('div');
+      itemEl.className = 'tl-item';
+      itemEl.innerHTML = `
+        <div class="tl-line">
+          <div class="tl-dot" style="background:${item.dotColor}"><i class="ti ${item.dotIcon}"></i></div>
+          ${i < filtered.length - 1 ? '<div class="tl-connector"></div>' : ''}
+        </div>
+        <div class="tl-card" id="tl-card-${item.id}" onclick="selectItem(${item.id})">
+          <div class="tl-card-top">
+            <div class="tl-card-left">
+              <div class="tl-card-title">${item.company}</div>
+              <div class="tl-card-sub">${item.scenario}</div>
+            </div>
+            <div class="tl-card-right">
+              <div class="tl-date">${item.period}</div>
+              ${statusHtml}
+            </div>
+          </div>
+          <div class="tl-metrics">
+            <div class="tl-metric">${clickHtml}</div>
+            <div class="tl-metric"><span class="tl-metric-val">${item.total}</span><span class="tl-metric-lbl">dest.</span></div>
+            ${item.report !== null ? `<div class="tl-metric"><span class="tl-metric-val" style="color:var(--green)">${item.report}%</span><span class="tl-metric-lbl">signal.</span></div>` : ''}
+          </div>
+          <div class="tl-tags">
+            <span class="tag ${item.sectorClass}">${item.sector}</span>
+            ${evoHtml}
+          </div>
+        </div>`;
+      monthDiv.appendChild(itemEl);
+    });
+
+    container.appendChild(monthDiv);
+  });
+
+  if (totalShown === 0) {
+    container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px 0;font-size:13px">Aucune campagne trouvée pour ces critères.</div>';
+  }
+}
+
+/* ════════════════════════════
+   SÉLECTION D'UN ITEM
+════════════════════════════ */
+function selectItem(id) {
+  document.querySelectorAll('.tl-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById(`tl-card-${id}`);
+  if (card) card.classList.add('selected');
+
+  const item = allItems.find(i => i.id === id);
+  if (!item) return;
+
+  document.getElementById('detail-empty').style.display = 'none';
+  document.getElementById('detail-content').style.display = 'block';
+
+  document.getElementById('d-title').textContent = item.company;
+  document.getElementById('d-sub').textContent   = item.scenario + ' · ' + item.period;
+  const tag = document.getElementById('d-sector-tag');
+  tag.className = 'tag ' + item.sectorClass;
+  tag.textContent = item.sector;
+  document.getElementById('d-total').textContent      = item.total;
+  document.getElementById('d-click').textContent      = item.click !== null ? item.click + ' %' : '—';
+  document.getElementById('d-click').style.color      = item.click >= 60 ? 'var(--red)' : item.click >= 40 ? 'var(--orange)' : item.click !== null ? 'var(--green)' : 'var(--text3)';
+  document.getElementById('d-submit').textContent     = item.submit !== null ? item.submit + ' %' : '—';
+  document.getElementById('d-report-rate').textContent= item.report !== null ? item.report + ' %' : '—';
+
+  const barsEl = document.getElementById('d-bars');
+  barsEl.innerHTML = item.bars.length
+    ? item.bars.map(b => `<div class="d-bar-row"><div class="d-bar-top"><span>${b.l}</span><span class="pct" style="color:${b.c.includes('red')?'var(--red)':b.c.includes('orange')?'var(--orange)':b.c.includes('green')?'var(--green)':'var(--blue)'}">${b.p} %</span></div><div class="d-bar-track"><div class="d-bar-fill ${b.c}" style="width:${b.p}%;height:6px"></div></div></div>`).join('')
+    : '<p style="font-size:12px;color:var(--text3)">Données disponibles à la clôture.</p>';
+
+  const tlEl = document.getElementById('d-timeline');
+  tlEl.innerHTML = item.timeline.map(t => `
+    <div class="d-tl-item">
+      <div class="d-tl-dot" style="background:${t.c}"><i class="ti ${t.i}"></i></div>
+      <div><div class="d-tl-label">${t.l}</div><div class="d-tl-time">${t.t}</div></div>
+    </div>`).join('');
+
+  document.getElementById('d-insight').textContent = item.insight;
+}
+
+/* ════════════════════════════
+   FILTRES
+════════════════════════════ */
+function setFilter(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTimeline(historyData);
+}
+
+function filterHistory(q) {
+  currentSearch = q.toLowerCase();
+  renderTimeline(historyData);
+}
+
+/* ════════════════════════════
+   NAVIGATION
+════════════════════════════ */
+function showView(viewId, navEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + viewId).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  const titles = {
+    dashboard:['Tableau de bord','Campagnes actives — Juillet 2026'],
+    generate: ['Générer un scénario','Création assistée par IA'],
+    campaigns:['Campagnes','7 campagnes ce mois'],
+    results:  ['Résultats & Analyses','Vue agrégée — 187 employés'],
+    reports:  ['Rapports PDF','12 rapports générés'],
+    history:  ['Historique','Journal complet des campagnes — Janvier à Juillet 2026'],
+  };
+  const t = titles[viewId] || ['H-SHIELD237',''];
+  document.getElementById('page-title').textContent = t[0];
+  document.getElementById('page-sub').textContent   = t[1];
+  window.scrollTo(0,0);
+}
+
+/* ════════════════════════════
+   TOAST
+════════════════════════════ */
+function showToast(msg, type='info') {
+  const el = document.getElementById('toast-el');
+  const ic = document.getElementById('toast-icon');
+  const ms = document.getElementById('toast-msg');
+  const icons = {success:'ti-check',info:'ti-info-circle',error:'ti-alert-circle'};
+  el.className = 'toast ' + type;
+  ic.className = 'ti ' + (icons[type]||'ti-info-circle');
+  ms.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), 3500);
+}
+
+/* ════════════════════════════
+   INIT
+════════════════════════════ */
+renderTimeline(historyData);
+</script>
+</body>
+</html>

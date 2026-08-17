@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H-SHIELD237 — Tableau de bord</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F1F3D;--navy-mid:#1B2A5A;--navy-light:#2C3F6B;
+  --red:#C0392B;--red-dark:#a93226;--red-light:rgba(192,57,43,.1);--red-border:rgba(192,57,43,.3);--red-soft:#F5B7B1;--red-text:#7B241C;
+  --gold:#C49A1A;--gold-light:#FEF9E7;
+  --green:#1A7F4A;--green-light:#EAFAF1;
+  --orange:#E67E22;--orange-light:#FEF5E7;
+  --blue:#1A5FA0;--blue-light:#EBF5FB;
+  --teal:#0E7C7B;--teal-light:#E0F2F1;
+  --purple:#6B21A8;--purple-light:#F5F3FF;
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;
+  --border:rgba(0,0,0,0.08);--border-str:rgba(0,0,0,0.14);
+  --text:#0F1F3D;--text2:#4A5568;--text3:#8A97AC;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.08),0 1px 4px rgba(0,0,0,0.05);
+}
+html,body{min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+
+/* ── LAYOUT ─────────────────────────────────────────── */
+.app{display:grid;grid-template-columns:228px 1fr;min-height:100vh}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+.sidebar{background:var(--navy);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:20px 18px 18px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:11px}
+.logo-icon{width:38px;height:38px;background:var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(192,57,43,.35)}
+.logo-icon i{color:#fff;font-size:19px}
+.logo-name{font-size:15.5px;font-weight:600;color:#fff;letter-spacing:-.02em;line-height:1}
+.logo-name span{color:var(--red)}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.34);margin-top:3px}
+.nav{padding:14px 10px;flex:1}
+.nav-section{font-size:9.5px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;padding:10px 10px 5px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);font-size:13px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:1px;transition:background .12s,color .12s;border:1px solid transparent;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.88)}
+.nav-item.active{background:rgba(192,57,43,.22);color:var(--red-soft);border-color:rgba(192,57,43,.38)}
+.nav-item.active i{color:var(--red-soft)}
+.nav-item i{font-size:17px;color:rgba(255,255,255,.32)}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+.sidebar-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:rgba(255,255,255,.8);flex-shrink:0}
+.ava-name{font-size:12px;color:rgba(255,255,255,.8);font-weight:500}
+.ava-role{font-size:10px;color:rgba(255,255,255,.33)}
+
+/* ── MAIN ─────────────────────────────────────────────── */
+.main{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:var(--shadow)}
+.topbar-left h1{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.topbar-left span{font-size:11.5px;color:var(--text3);display:block;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:9px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--radius);font-size:12.5px;cursor:pointer;border:1px solid var(--border-str);background:var(--surface);color:var(--text2);font-family:inherit;transition:background .12s;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn i{font-size:15px}
+.btn-icon{padding:7px 9px}
+.btn-primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn-primary:hover{background:var(--red-dark)}
+.content{padding:22px 24px 48px;flex:1}
+
+/* ── VIEWS ─────────────────────────────────────────────── */
+.view{display:none}.view.active{display:block}
+
+/* ── COMPOSANTS COMMUNS ─────────────────────────────────── */
+.alert-strip{display:flex;align-items:flex-start;gap:10px;background:var(--red-light);border:1px solid var(--red-border);border-radius:var(--radius);padding:11px 14px;margin-bottom:20px;font-size:12.5px;color:var(--red-text);line-height:1.55}
+.alert-strip i{font-size:15px;color:var(--red);flex-shrink:0;margin-top:1px}
+.alert-strip a{color:var(--red);font-weight:500;text-decoration:none}
+.alert-strip a:hover{text-decoration:underline}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow)}
+.metric-label{font-size:10.5px;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.06em}
+.metric-label i{font-size:14px}
+.metric-value{font-size:28px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.metric-value.danger{color:var(--red)}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:5px}
+.metric-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:500}
+.badge-danger{background:var(--red-light);color:var(--red)}
+.badge-success{background:var(--green-light);color:var(--green)}
+.badge-warning{background:var(--orange-light);color:var(--orange)}
+.badge-accent{background:var(--blue-light);color:var(--blue)}
+
+.row2{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow)}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:13.5px;font-weight:600}
+.card-sub{font-size:11.5px;color:var(--text3);margin-top:2px}
+.link{font-size:11.5px;color:var(--blue);cursor:pointer;text-decoration:none}
+.link:hover{text-decoration:underline}
+
+.bar-list{display:flex;flex-direction:column;gap:12px}
+.bar-row{display:flex;flex-direction:column;gap:5px}
+.bar-top{display:flex;justify-content:space-between;font-size:12px}
+.pct{font-weight:600}
+.pct-danger{color:var(--red)}.pct-warning{color:var(--orange)}.pct-ok{color:var(--green)}.pct-blue{color:var(--blue)}
+.bar-track{height:7px;background:var(--bg);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px}
+.fill-danger{background:var(--red)}.fill-warning{background:var(--orange)}.fill-success{background:var(--green)}.fill-accent{background:var(--blue)}
+
+.donut-wrap{display:flex;align-items:center;gap:22px;margin-top:6px}
+.donut-legend{display:flex;flex-direction:column;gap:9px;flex:1}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.legend-pct{margin-left:auto;font-weight:600;font-size:12px}
+.risk-wrap{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.risk-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px}
+.risk-val{font-weight:600;color:var(--red)}
+
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-size:10.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:0 12px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.td-name{font-weight:600}
+.td-muted{color:var(--text2);max-width:200px}
+.status-pill{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:500;padding:3px 9px;border-radius:20px}
+.s-done{background:var(--green-light);color:var(--green)}
+.s-active{background:var(--orange-light);color:var(--orange)}
+.s-pending{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dot-done{background:var(--green)}.dot-active{background:var(--orange)}.dot-pending{background:var(--text3)}
+.prog-wrap{display:flex;align-items:center;gap:8px}
+.prog-track{flex:1;height:5px;background:var(--bg);border-radius:99px;overflow:hidden;min-width:55px}
+.prog-fill{height:100%;border-radius:99px;background:var(--red)}
+.prog-lbl{font-size:11px;color:var(--text3);white-space:nowrap}
+.click-rate{font-weight:700;font-size:13px}
+.click-high{color:var(--red)}.click-mid{color:var(--orange)}.click-low{color:var(--green)}.click-none{color:var(--text3)}
+
+.sec-badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.sec-health{background:#FEE;color:#922}.sec-finance{background:#E8F0FE;color:#1A5FA0}.sec-btp{background:var(--orange-light);color:#7D4600}.sec-commerce{background:var(--green-light);color:var(--green)}
+
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:20px}
+.mini-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mini-icon i{font-size:16px}
+.icon-red{background:var(--red-light)}.icon-red i{color:var(--red)}
+.icon-gold{background:var(--gold-light)}.icon-gold i{color:var(--gold)}
+.icon-blue{background:var(--blue-light)}.icon-blue i{color:var(--blue)}
+.mini-head{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.mini-title{font-size:12.5px;font-weight:600}.mini-sub{font-size:11px;color:var(--text3)}
+.insight-list,.activity-list,.tpl-list{display:flex;flex-direction:column;gap:9px}
+.insight-item{display:flex;align-items:flex-start;gap:9px;font-size:12px;color:var(--text2)}
+.insight-num{font-size:16px;font-weight:700;color:var(--navy-mid);min-width:24px}
+.act-item{display:flex;align-items:center;gap:9px;font-size:12px}
+.act-dot{width:7px;height:7px;border-radius:50%;background:var(--border-str);flex-shrink:0}
+.act-dot.r{background:var(--red)}.act-dot.g{background:var(--green)}.act-dot.o{background:var(--orange)}
+.act-time{margin-left:auto;font-size:10.5px;color:var(--text3);white-space:nowrap}
+.tpl-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);font-size:12px}
+.tpl-item i{font-size:15px;color:var(--text3)}
+.tpl-name{flex:1;font-weight:500}
+.tpl-uses{font-size:10.5px;color:var(--text3)}
+
+/* ══════════════════════════════════════════
+   PAGE GÉNÉRER UN SCÉNARIO
+══════════════════════════════════════════ */
+.gen-page-header{margin-bottom:24px}
+.gen-page-header h2{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
+.gen-page-header p{font-size:13px;color:var(--text2)}
+.gen-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.gen-left,.gen-right{display:flex;flex-direction:column;gap:16px}
+
+.step-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;box-shadow:var(--shadow)}
+.step-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--navy-mid);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
+.step-title{font-size:14px;font-weight:600}
+.step-sub{font-size:11.5px;color:var(--text3);margin-top:1px}
+
+.form-group{margin-bottom:14px}
+.form-group:last-child{margin-bottom:0}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;transition:border-color .15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,42,90,.09);background:var(--surface)}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text3)}
+.form-textarea{resize:vertical;min-height:80px;line-height:1.6}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.sector-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sector-btn{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:12.5px;color:var(--text2);font-family:inherit;transition:all .12s;text-align:left}
+.sector-btn:hover{border-color:var(--navy-mid);background:var(--surface);color:var(--text)}
+.sector-btn.selected{border-color:var(--navy-mid);background:#EBF0F9;color:var(--navy-mid);font-weight:500}
+.sector-btn i{font-size:17px;color:var(--text3)}
+.sector-btn.selected i{color:var(--navy-mid)}
+
+.pretexte-list{display:flex;flex-direction:column;gap:8px}
+.pretexte-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .12s}
+.pretexte-item:hover{border-color:var(--navy-mid);background:var(--surface)}
+.pretexte-item.selected{border-color:var(--red);background:rgba(192,57,43,.05)}
+.pretexte-item input[type=radio]{margin-top:2px;flex-shrink:0;accent-color:var(--red)}
+.pretexte-label{font-size:12.5px;font-weight:500;color:var(--text)}
+.pretexte-desc{font-size:11.5px;color:var(--text3);margin-top:2px}
+
+.btn-gen{width:100%;padding:13px;border-radius:var(--radius);background:var(--red);border:none;color:#fff;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s}
+.btn-gen:hover{background:var(--red-dark)}
+.btn-gen i{font-size:18px}
+
+/* Aperçu du scénario généré */
+.preview-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}
+.preview-header{background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.preview-header-left{display:flex;align-items:center;gap:10px}
+.preview-header-left i{color:var(--red-soft);font-size:18px}
+.preview-title{font-size:13px;font-weight:500;color:#fff}
+.preview-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:1px}
+.preview-badge{background:rgba(192,57,43,.25);border:1px solid rgba(192,57,43,.4);border-radius:20px;padding:3px 10px;font-size:10.5px;color:var(--red-soft)}
+.preview-body{padding:18px 20px}
+.email-meta{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.email-meta-row{display:flex;align-items:flex-start;gap:8px;font-size:12px}
+.email-meta-row .em-key{color:var(--text3);min-width:50px;flex-shrink:0}
+.email-meta-row .em-val{color:var(--text);font-weight:500}
+.email-subject-line{font-size:14px;font-weight:600;margin-bottom:14px;line-height:1.4}
+.email-content{font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:16px}
+.email-cta{display:inline-flex;align-items:center;gap:7px;background:var(--navy-mid);color:#fff;padding:9px 18px;border-radius:var(--radius);font-size:12.5px;font-weight:500;text-decoration:none;margin-bottom:14px;cursor:pointer}
+.sim-warning{display:flex;align-items:flex-start;gap:8px;background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.2);border-radius:var(--radius);padding:9px 12px;font-size:12px;color:var(--red-text)}
+.sim-warning i{font-size:14px;color:var(--red);flex-shrink:0;margin-top:1px}
+.preview-actions{display:flex;gap:10px;padding:0 20px 18px}
+.preview-actions .btn{flex:1;justify-content:center}
+
+/* Stats du scénario */
+.scenario-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.s-stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.s-stat-val{font-size:18px;font-weight:700;color:var(--navy-mid);line-height:1}
+.s-stat-lbl{font-size:10.5px;color:var(--text3);margin-top:4px}
+
+/* Loading state */
+.loading-state{display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:14px}
+.loading-state.active{display:flex}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--text2);text-align:center}
+.loading-text strong{display:block;font-size:14px;color:var(--text);margin-bottom:4px}
+
+.preview-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 24px;text-align:center;gap:14px;min-height:300px}
+.placeholder-icon{width:56px;height:56px;border-radius:14px;background:var(--red-light);display:flex;align-items:center;justify-content:center}
+.placeholder-icon i{font-size:28px;color:var(--red)}
+.placeholder-title{font-size:14px;font-weight:600;color:var(--text)}
+.placeholder-sub{font-size:13px;color:var(--text3);max-width:280px;line-height:1.6}
+
+/* Notification toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .35s;z-index:999;max-width:360px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast i{font-size:17px;flex-shrink:0}
+.toast.success i{color:#4ADE80}
+.toast.error i{color:#F87171}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- ════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-shield-lock" aria-hidden="true"></i></div>
+    <div>
+      <div class="logo-name">H-SHIELD<span>237</span></div>
+      <div class="logo-sub">Simulateur de phishing éducatif</div>
+    </div>
+  </div>
+
+  <nav class="nav" role="navigation">
+    <div class="nav-section">Principal</div>
+    <a class="nav-item active" id="nav-dashboard" onclick="showView('dashboard',this)" href="#">
+      <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Tableau de bord
+    </a>
+    <a class="nav-item" id="nav-generate" onclick="showView('generate',this)" href="#">
+      <i class="ti ti-robot" aria-hidden="true"></i> Générer un scénario
+    </a>
+    <a class="nav-item" onclick="showToast('Campagnes','info')" href="#">
+      <i class="ti ti-send" aria-hidden="true"></i> Campagnes
+      <span class="nav-badge">4</span>
+    </a>
+
+    <div class="nav-section">Analyse</div>
+    <a class="nav-item" onclick="showToast('Résultats','info')" href="#">
+      <i class="ti ti-chart-bar" aria-hidden="true"></i> Résultats
+    </a>
+    <a class="nav-item" onclick="showToast('Rapports PDF','info')" href="#">
+      <i class="ti ti-file-report" aria-hidden="true"></i> Rapports PDF
+      <span class="nav-badge">2</span>
+    </a>
+    <a class="nav-item" onclick="showToast('Historique','info')" href="#">
+      <i class="ti ti-history" aria-hidden="true"></i> Historique
+    </a>
+
+    <div class="nav-section">Configuration</div>
+    <a class="nav-item" onclick="showToast('Templates sectoriels','info')" href="#">
+      <i class="ti ti-template" aria-hidden="true"></i> Templates sectoriels
+    </a>
+    <a class="nav-item" onclick="showToast('Entreprises clientes','info')" href="#">
+      <i class="ti ti-building" aria-hidden="true"></i> Entreprises clientes
+    </a>
+    <a class="nav-item" onclick="showToast('Consentements','info')" href="#">
+      <i class="ti ti-shield-check" aria-hidden="true"></i> Consentements
+    </a>
+    <a class="nav-item" onclick="showToast('Paramètres','info')" href="#">
+      <i class="ti ti-settings" aria-hidden="true"></i> Paramètres
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="avatar">LJ</div>
+    <div>
+      <div class="ava-name">LEVY Jérémie</div>
+      <div class="ava-role">Consultant — CSRL Yaoundé</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ════════════════════════════════════════
+     MAIN
+════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- Topbar -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-left">
+      <h1 id="page-title">Tableau de bord</h1>
+      <span id="page-sub">Campagnes actives — Juillet 2026</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-icon" aria-label="Rechercher"><i class="ti ti-search"></i></button>
+      <button class="btn btn-icon" aria-label="Notifications" style="position:relative">
+        <i class="ti ti-bell"></i>
+        <span style="position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid #fff"></span>
+      </button>
+      <button class="btn"><i class="ti ti-download"></i> Exporter</button>
+      <button class="btn btn-primary" onclick="showView('generate',document.getElementById('nav-generate'))">
+        <i class="ti ti-plus"></i> Nouvelle campagne
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ═══════════════════════════════
+         VUE 1 — TABLEAU DE BORD
+    ═══════════════════════════════ -->
+    <div class="view active" id="view-dashboard">
+
+      <div class="alert-strip" role="alert">
+        <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+        <span><strong>Alerte risque élevé</strong> — Clinique Sainte-Marie : taux de clic à 68 %. Formation urgente recommandée pour le service administratif. <a href="#" onclick="return false">Voir le rapport →</a></span>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label"><i class="ti ti-send"></i> Campagnes actives</div>
+          <div class="metric-value">4</div>
+          <div class="metric-sub">sur 7 ce mois</div>
+          <div class="metric-badge badge-accent">En cours</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label"><i class="ti ti-users"></i> Employés testés</div>
+          <div class="metric-value">187</div>
+          <div class="metric-sub">6 entreprises clientes</div>
+          <div class="metric-badge badge-success">+23 ce mois</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label"><i class="ti ti-pointer"></i> Taux de clic moyen</div>
+          <div class="metric-value danger">54 %</div>
+          <div class="metric-sub">↑ vs 48 % le mois dernier</div>
+          <div class="metric-badge badge-danger">Niveau élevé</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label"><i class="ti ti-file-text"></i> Rapports générés</div>
+          <div class="metric-value">12</div>
+          <div class="metric-sub">dont 3 cette semaine</div>
+          <div class="metric-badge badge-warning">2 en attente</div>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Vulnérabilité par secteur</div><div class="card-sub">Taux de clic moyen — campagnes en cours et clôturées</div></div>
+            <a href="#" class="link" onclick="return false">Détail →</a>
+          </div>
+          <div class="bar-list">
+            <div class="bar-row"><div class="bar-top"><span>Santé / Clinique</span><span class="pct pct-danger">68 %</span></div><div class="bar-track"><div class="bar-fill fill-danger" style="width:68%"></div></div></div>
+            <div class="bar-row"><div class="bar-top"><span>Commerce / Import-Export</span><span class="pct pct-danger">61 %</span></div><div class="bar-track"><div class="bar-fill fill-danger" style="width:61%"></div></div></div>
+            <div class="bar-row"><div class="bar-top"><span>Microfinance / MFI</span><span class="pct pct-warning">49 %</span></div><div class="bar-track"><div class="bar-fill fill-warning" style="width:49%"></div></div></div>
+            <div class="bar-row"><div class="bar-top"><span>BTP / Génie Civil</span><span class="pct pct-warning">43 %</span></div><div class="bar-track"><div class="bar-fill fill-warning" style="width:43%"></div></div></div>
+            <div class="bar-row"><div class="bar-top"><span>Enseignement privé</span><span class="pct pct-blue">37 %</span></div><div class="bar-track"><div class="bar-fill fill-accent" style="width:37%"></div></div></div>
+            <div class="bar-row"><div class="bar-top"><span>Hôtellerie / Restauration</span><span class="pct pct-ok">28 %</span></div><div class="bar-track"><div class="bar-fill fill-success" style="width:28%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">Score global de vulnérabilité</div><div class="card-sub">Toutes campagnes — 187 employés</div></div></div>
+          <div class="donut-wrap">
+            <svg width="128" height="128" viewBox="0 0 128 128" aria-label="54% ont cliqué, 19% ont soumis, 11% ont signalé, 16% aucune action">
+              <title>Répartition des comportements</title>
+              <circle cx="64" cy="64" r="48" fill="none" stroke="#F0F2F7" stroke-width="22"/>
+              <circle cx="64" cy="64" r="48" fill="none" stroke="#C0392B" stroke-width="22" stroke-dasharray="162.9 138.8" stroke-dashoffset="0" transform="rotate(-90 64 64)"/>
+              <circle cx="64" cy="64" r="48" fill="none" stroke="#E67E22" stroke-width="22" stroke-dasharray="57.2 244.5" stroke-dashoffset="-162.9" transform="rotate(-90 64 64)"/>
+              <circle cx="64" cy="64" r="48" fill="none" stroke="#1A7F4A" stroke-width="22" stroke-dasharray="33.2 268.5" stroke-dashoffset="-220.1" transform="rotate(-90 64 64)"/>
+              <circle cx="64" cy="64" r="48" fill="none" stroke="#CBD2DB" stroke-width="22" stroke-dasharray="48.3 253.4" stroke-dashoffset="-253.3" transform="rotate(-90 64 64)"/>
+              <text x="64" y="59" text-anchor="middle" font-size="20" font-weight="700" fill="#C0392B" font-family="system-ui">54%</text>
+              <text x="64" y="74" text-anchor="middle" font-size="10" fill="#8A97AC" font-family="system-ui">ont cliqué</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#C0392B"></div><span>Ont cliqué</span><span class="legend-pct" style="color:#C0392B">54 %</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#E67E22"></div><span>Ont soumis</span><span class="legend-pct" style="color:#E67E22">19 %</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#1A7F4A"></div><span>Ont signalé</span><span class="legend-pct" style="color:#1A7F4A">11 %</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#CBD2DB"></div><span>Aucune action</span><span class="legend-pct" style="color:#8A97AC">16 %</span></div>
+            </div>
+          </div>
+          <div class="risk-wrap">
+            <div class="risk-row"><span>Niveau de risque global</span><span class="risk-val">ÉLEVÉ</span></div>
+            <div class="bar-track" style="height:9px"><div class="bar-fill fill-danger" style="width:72%"></div></div>
+            <div style="font-size:10.5px;color:var(--text3);margin-top:5px">Formation urgente pour 3 entreprises sur 6</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Campagnes en cours et récentes</div><div class="card-sub">7 campagnes ce mois — 4 actives · 2 terminées · 1 en attente</div></div>
+          <a href="#" class="link" onclick="return false">Voir toutes →</a>
+        </div>
+        <table aria-label="Campagnes récentes">
+          <thead><tr>
+            <th>Entreprise</th><th>Scénario</th><th>Secteur</th><th>Dest.</th><th>Progression</th><th>Taux de clic</th><th>Statut</th><th></th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td class="td-name">Clinique Sainte-Marie</td>
+              <td class="td-muted">Alerte CENAME — portail piégé</td>
+              <td><span class="sec-badge sec-health">Santé</span></td>
+              <td>34</td>
+              <td><div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:100%"></div></div><span class="prog-lbl">34/34</span></div></td>
+              <td><span class="click-rate click-high">68 %</span></td>
+              <td><span class="status-pill s-done"><span class="dot dot-done"></span> Terminée</span></td>
+              <td><a href="#" class="link" onclick="return false">Rapport</a></td>
+            </tr>
+            <tr>
+              <td class="td-name">MFI Cameroun Sud</td>
+              <td class="td-muted">Fausse suspension BEAC</td>
+              <td><span class="sec-badge sec-finance">Microfinance</span></td>
+              <td>28</td>
+              <td><div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:71%"></div></div><span class="prog-lbl">20/28</span></div></td>
+              <td><span class="click-rate click-mid">49 %</span></td>
+              <td><span class="status-pill s-active"><span class="dot dot-active"></span> Active</span></td>
+              <td><a href="#" class="link" onclick="return false">Suivre</a></td>
+            </tr>
+            <tr>
+              <td class="td-name">Bâti-Yaoundé SARL</td>
+              <td class="td-muted">Faux courrier ARMP/MINTP</td>
+              <td><span class="sec-badge sec-btp">BTP</span></td>
+              <td>19</td>
+              <td><div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:58%;background:var(--orange)"></div></div><span class="prog-lbl">11/19</span></div></td>
+              <td><span class="click-rate click-mid">43 %</span></td>
+              <td><span class="status-pill s-active"><span class="dot dot-active"></span> Active</span></td>
+              <td><a href="#" class="link" onclick="return false">Suivre</a></td>
+            </tr>
+            <tr>
+              <td class="td-name">Import-Export Nguemo</td>
+              <td class="td-muted">Changement RIB fournisseur CN</td>
+              <td><span class="sec-badge sec-commerce">Commerce</span></td>
+              <td>41</td>
+              <td><div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:34%;background:var(--text3)"></div></div><span class="prog-lbl">14/41</span></div></td>
+              <td><span class="click-rate click-none">—</span></td>
+              <td><span class="status-pill s-pending"><span class="dot dot-pending"></span> En attente</span></td>
+              <td><a href="#" class="link" onclick="return false">Lancer</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="row3">
+        <div class="card">
+          <div class="mini-head"><div class="mini-icon icon-red"><i class="ti ti-bulb" aria-hidden="true"></i></div><div><div class="mini-title">Recommandations IA</div><div class="mini-sub">Générées à partir des résultats</div></div></div>
+          <div class="insight-list">
+            <div class="insight-item"><div class="insight-num">1</div><span>Former en priorité le service administratif de la Clinique Sainte-Marie (68 % de clic)</span></div>
+            <div class="insight-item"><div class="insight-num">2</div><span>Les scénarios imitant la BEAC obtiennent 2× plus de clics que les prétextes fournisseurs</span></div>
+            <div class="insight-item"><div class="insight-num">3</div><span>Planifier une campagne de relance pour Bâti-Yaoundé dans 30 jours</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="mini-head"><div class="mini-icon icon-gold"><i class="ti ti-activity" aria-hidden="true"></i></div><div><div class="mini-title">Activité récente</div><div class="mini-sub">Événements des dernières 24h</div></div></div>
+          <div class="activity-list">
+            <div class="act-item"><span class="act-dot r"></span><span>34 employés ont reçu l'email — Clinique Sainte-Marie</span><span class="act-time">Il y a 2h</span></div>
+            <div class="act-item"><span class="act-dot o"></span><span>Nouveau clic enregistré — MFI Cameroun Sud</span><span class="act-time">Il y a 4h</span></div>
+            <div class="act-item"><span class="act-dot g"></span><span>Rapport PDF généré — Clinique Sainte-Marie</span><span class="act-time">Il y a 6h</span></div>
+            <div class="act-item"><span class="act-dot"></span><span>Consentement validé — Bâti-Yaoundé SARL</span><span class="act-time">Hier</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="mini-head"><div class="mini-icon icon-blue"><i class="ti ti-template" aria-hidden="true"></i></div><div><div class="mini-title">Templates les plus utilisés</div><div class="mini-sub">Par nombre de campagnes</div></div></div>
+          <div class="tpl-list">
+            <div class="tpl-item"><i class="ti ti-building-bank" aria-hidden="true"></i><span class="tpl-name">Alerte réglementaire BEAC</span><span class="tpl-uses">7×</span></div>
+            <div class="tpl-item"><i class="ti ti-file-certificate" aria-hidden="true"></i><span class="tpl-name">Portail CENAME / MINSANTE</span><span class="tpl-uses">5×</span></div>
+            <div class="tpl-item"><i class="ti ti-briefcase" aria-hidden="true"></i><span class="tpl-name">Attribution marché MINTP</span><span class="tpl-uses">4×</span></div>
+            <div class="tpl-item"><i class="ti ti-cash" aria-hidden="true"></i><span class="tpl-name">Changement RIB fournisseur</span><span class="tpl-uses">3×</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /view-dashboard -->
+
+    <!-- ═══════════════════════════════
+         VUE 2 — GÉNÉRER UN SCÉNARIO
+    ═══════════════════════════════ -->
+    <div class="view" id="view-generate">
+
+      <div class="gen-page-header">
+        <h2>Générer un scénario de phishing</h2>
+        <p>L'IA adapte le scénario au secteur d'activité et à la réalité numérique locale — BEAC, MTN MoMo, MINESUP, ARMP, fournisseurs internationaux…</p>
+      </div>
+
+      <div class="gen-layout">
+
+        <!-- Colonne gauche — formulaire -->
+        <div class="gen-left">
+
+          <!-- Étape 1 — Entreprise -->
+          <div class="step-card">
+            <div class="step-head">
+              <div class="step-num">1</div>
+              <div><div class="step-title">Entreprise cliente</div><div class="step-sub">Paramétrez le contexte de la simulation</div></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="company-name">Nom de l'entreprise</label>
+                <input class="form-input" id="company-name" type="text" placeholder="Ex : Clinique Sainte-Marie">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="company-size">Taille</label>
+                <select class="form-select" id="company-size">
+                  <option>1 – 10 employés</option>
+                  <option selected>11 – 50 employés</option>
+                  <option>51 – 200 employés</option>
+                  <option>200+ employés</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="company-context">Contexte additionnel (optionnel)</label>
+              <textarea class="form-textarea" id="company-context" placeholder="Ex : L'entreprise utilise une messagerie Gmail, travaille avec des fournisseurs chinois, reçoit des notifications de la BEAC…"></textarea>
+            </div>
+          </div>
+
+          <!-- Étape 2 — Secteur -->
+          <div class="step-card">
+            <div class="step-head">
+              <div class="step-num">2</div>
+              <div><div class="step-title">Secteur d'activité</div><div class="step-sub">Choisissez le secteur pour contextualiser le scénario</div></div>
+            </div>
+            <div class="sector-grid" role="group" aria-label="Secteurs d'activité">
+              <button class="sector-btn" onclick="selectSector(this,'Santé / Clinique')"><i class="ti ti-stethoscope" aria-hidden="true"></i> Santé / Clinique</button>
+              <button class="sector-btn selected" onclick="selectSector(this,'Microfinance / MFI')"><i class="ti ti-building-bank" aria-hidden="true"></i> Microfinance / MFI</button>
+              <button class="sector-btn" onclick="selectSector(this,'Commerce / Import-Export')"><i class="ti ti-package" aria-hidden="true"></i> Commerce / Import-Export</button>
+              <button class="sector-btn" onclick="selectSector(this,'BTP / Génie Civil')"><i class="ti ti-crane" aria-hidden="true"></i> BTP / Génie Civil</button>
+              <button class="sector-btn" onclick="selectSector(this,'Enseignement privé')"><i class="ti ti-school" aria-hidden="true"></i> Enseignement privé</button>
+              <button class="sector-btn" onclick="selectSector(this,'Hôtellerie / Restauration')"><i class="ti ti-building-hotel" aria-hidden="true"></i> Hôtellerie / Restauration</button>
+            </div>
+          </div>
+
+          <!-- Étape 3 — Type de prétexte -->
+          <div class="step-card">
+            <div class="step-head">
+              <div class="step-num">3</div>
+              <div><div class="step-title">Type de prétexte</div><div class="step-sub">Le LLM adapte le scénario au vecteur choisi</div></div>
+            </div>
+            <div class="pretexte-list" role="group" aria-label="Types de prétextes">
+              <label class="pretexte-item selected" onclick="selectPretexte(this)">
+                <input type="radio" name="pretexte" checked>
+                <div><div class="pretexte-label">Alerte réglementaire (BEAC / MINFI)</div><div class="pretexte-desc">Fausse suspension de compte ou demande de conformité réglementaire urgente</div></div>
+              </label>
+              <label class="pretexte-item" onclick="selectPretexte(this)">
+                <input type="radio" name="pretexte">
+                <div><div class="pretexte-label">Changement de coordonnées bancaires</div><div class="pretexte-desc">Faux email d'un fournisseur annonçant un nouveau RIB avant règlement</div></div>
+              </label>
+              <label class="pretexte-item" onclick="selectPretexte(this)">
+                <input type="radio" name="pretexte">
+                <div><div class="pretexte-label">Attribution de marché public</div><div class="pretexte-desc">Faux courrier ARMP / MINTP notifiant l'attribution d'un marché</div></div>
+              </label>
+              <label class="pretexte-item" onclick="selectPretexte(this)">
+                <input type="radio" name="pretexte">
+                <div><div class="pretexte-label">Alerte Mobile Money (MTN / Orange)</div><div class="pretexte-desc">Fausse notification de compte bloqué ou transaction suspecte</div></div>
+              </label>
+              <label class="pretexte-item" onclick="selectPretexte(this)">
+                <input type="radio" name="pretexte">
+                <div><div class="pretexte-label">Notification institutionnelle</div><div class="pretexte-desc">Fausse communication d'un ministère (MINESUP, MINSANTE, MINTP…)</div></div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Bouton génération -->
+          <button class="btn-gen" onclick="generateScenario()">
+            <i class="ti ti-sparkles" aria-hidden="true"></i>
+            Générer le scénario par IA
+          </button>
+
+        </div><!-- /gen-left -->
+
+        <!-- Colonne droite — aperçu -->
+        <div class="gen-right">
+
+          <!-- Statistiques contextuelles -->
+          <div class="step-card">
+            <div class="card-header" style="margin-bottom:12px">
+              <div><div class="card-title">Contexte du secteur</div><div class="card-sub" id="sector-ctx-label">Microfinance / MFI — données historiques</div></div>
+            </div>
+            <div class="scenario-stats">
+              <div class="s-stat"><div class="s-stat-val" id="stat-click">49 %</div><div class="s-stat-lbl">Taux de clic moyen</div></div>
+              <div class="s-stat"><div class="s-stat-val" id="stat-risk">Élevé</div><div class="s-stat-lbl">Niveau de risque</div></div>
+              <div class="s-stat"><div class="s-stat-val" id="stat-tpl">7</div><div class="s-stat-lbl">Templates disponibles</div></div>
+            </div>
+          </div>
+
+          <!-- Zone de prévisualisation -->
+          <div class="preview-card" id="preview-card">
+
+            <!-- État initial (placeholder) -->
+            <div class="preview-placeholder" id="preview-placeholder">
+              <div class="placeholder-icon"><i class="ti ti-mail-forward" aria-hidden="true"></i></div>
+              <div class="placeholder-title">Aperçu du scénario généré</div>
+              <div class="placeholder-sub">Configurez le contexte à gauche puis cliquez sur "Générer le scénario par IA" pour voir l'aperçu de l'email simulé ici.</div>
+            </div>
+
+            <!-- État chargement -->
+            <div class="loading-state" id="loading-state">
+              <div class="spinner"></div>
+              <div class="loading-text">
+                <strong>L'IA génère votre scénario…</strong>
+                Construction du prompt contextuel · Appel au service LLM · Création de la fausse page
+              </div>
+            </div>
+
+            <!-- Résultat généré (caché par défaut) -->
+            <div id="scenario-result" style="display:none">
+              <div class="preview-header">
+                <div class="preview-header-left">
+                  <i class="ti ti-mail" aria-hidden="true"></i>
+                  <div>
+                    <div class="preview-title">Aperçu de l'email simulé</div>
+                    <div class="preview-sub" id="result-sector-label">Microfinance / MFI · Alerte réglementaire BEAC</div>
+                  </div>
+                </div>
+                <span class="preview-badge">Scénario IA</span>
+              </div>
+
+              <div class="preview-body">
+                <div class="email-meta">
+                  <div class="email-meta-row"><span class="em-key">De :</span><span class="em-val" id="email-from">noreply@beac-conformite.cm</span></div>
+                  <div class="email-meta-row"><span class="em-key">À :</span><span class="em-val" id="email-to">personnel@mfi-camerounsud.cm</span></div>
+                  <div class="email-meta-row"><span class="em-key">Objet :</span><span class="em-val" id="email-object">⚠️ Suspension de compte urgente — Mise en conformité BEAC avant le 20 juillet 2026</span></div>
+                </div>
+                <div class="email-subject-line" id="email-subject">⚠️ Suspension de compte urgente — Mise en conformité BEAC avant le 20 juillet 2026</div>
+                <div class="email-content" id="email-body">
+                  Madame, Monsieur,<br><br>
+                  Suite à la circulaire <strong>n°2026/BEAC/DSF/0044</strong> relative au contrôle de conformité des établissements de microfinance agréés, votre compte opérationnel <strong>n°CM21-MFI-00847</strong> a été temporairement suspendu en attente de mise à jour de vos documents réglementaires.<br><br>
+                  Vous disposez de <strong>48 heures</strong> pour régulariser votre situation. Passé ce délai, un rapport sera transmis à la Commission Bancaire de l'AFRITAC.<br><br>
+                  Accédez au portail de conformité pour soumettre vos documents mis à jour :
+                </div>
+                <a href="#" class="email-cta" onclick="showToast('Lien simulé — fausse page de capture H-SHIELD237','success'); return false;">
+                  <i class="ti ti-external-link" aria-hidden="true"></i>
+                  Accéder au portail BEAC Conformité →
+                </a>
+                <div class="sim-warning">
+                  <i class="ti ti-shield-exclamation" aria-hidden="true"></i>
+                  <span>Simulation éducative H-SHIELD237 — ce lien pointe vers la fausse page de capture. Aucune donnée réelle n'est collectée.</span>
+                </div>
+              </div>
+
+              <div class="preview-actions">
+                <button class="btn" onclick="generateScenario()"><i class="ti ti-refresh" aria-hidden="true"></i> Régénérer</button>
+                <button class="btn" onclick="showToast('Scénario copié dans le presse-papier','success')"><i class="ti ti-copy" aria-hidden="true"></i> Copier</button>
+                <button class="btn btn-primary" onclick="showToast('Campagne créée — configurez les destinataires','success')"><i class="ti ti-send" aria-hidden="true"></i> Créer une campagne</button>
+              </div>
+            </div>
+
+          </div><!-- /preview-card -->
+
+        </div><!-- /gen-right -->
+
+      </div><!-- /gen-layout -->
+
+    </div><!-- /view-generate -->
+
+  </div><!-- /content -->
+</main><!-- /main -->
+</div><!-- /app -->
+
+<!-- Toast notification -->
+<div class="toast" id="toast" role="alert" aria-live="polite">
+  <i class="ti ti-info-circle" id="toast-icon" aria-hidden="true"></i>
+  <span id="toast-msg">Message</span>
+</div>
+
+<script>
+/* ── Navigation entre vues ─────────────────────────── */
+function showView(viewId, navEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + viewId).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+
+  const titles = {
+    dashboard: ['Tableau de bord', 'Campagnes actives — Juillet 2026'],
+    generate:  ['Générer un scénario', 'Création assistée par IA — H-SHIELD237']
+  };
+  document.getElementById('page-title').textContent = titles[viewId][0];
+  document.getElementById('page-sub').textContent   = titles[viewId][1];
+  window.scrollTo(0, 0);
+  return false;
+}
+
+/* ── Sélection secteur ─────────────────────────────── */
+const sectorData = {
+  'Santé / Clinique':          { click:'68 %', risk:'Très élevé', tpl:'5' },
+  'Microfinance / MFI':        { click:'49 %', risk:'Élevé',      tpl:'7' },
+  'Commerce / Import-Export':  { click:'61 %', risk:'Élevé',      tpl:'6' },
+  'BTP / Génie Civil':         { click:'43 %', risk:'Modéré',     tpl:'4' },
+  'Enseignement privé':        { click:'37 %', risk:'Modéré',     tpl:'3' },
+  'Hôtellerie / Restauration': { click:'28 %', risk:'Faible',     tpl:'2' },
+};
+let selectedSector = 'Microfinance / MFI';
+
+function selectSector(el, name) {
+  document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedSector = name;
+  const d = sectorData[name] || {};
+  document.getElementById('stat-click').textContent = d.click || '—';
+  document.getElementById('stat-risk').textContent  = d.risk  || '—';
+  document.getElementById('stat-tpl').textContent   = d.tpl   || '—';
+  document.getElementById('sector-ctx-label').textContent = name + ' — données historiques';
+}
+
+/* ── Sélection prétexte ─────────────────────────────── */
+function selectPretexte(el) {
+  document.querySelectorAll('.pretexte-item').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+/* ── Génération du scénario ─────────────────────────── */
+const scenarios = {
+  'Santé / Clinique': {
+    from:'noreply@cename-minsante.cm', object:'⚠️ Mise à jour obligatoire CENAME avant le 15 juillet 2026',
+    label:'Santé / Clinique · Notification CENAME / MINSANTE',
+    body:`Madame, Monsieur,<br><br>Suite à la circulaire <strong>n°2026/MSP/CENAME/008</strong>, toutes les structures sanitaires privées sont tenues de mettre à jour leurs déclarations de stock médicamenteux avant la date butoir du <strong>15 juillet 2026</strong>.<br><br>Le non-respect de cette directive entraîne la <strong>suspension immédiate de votre agrément d'exercice</strong> et l'impossibilité de facturer les prestations à la CNAM.<br><br>Accédez au portail officiel pour régulariser votre situation :`,
+    cta:'Accéder au portail CENAME →'
+  },
+  'Microfinance / MFI': {
+    from:'noreply@beac-conformite.cm', object:'⚠️ Suspension de compte urgente — Mise en conformité BEAC avant le 20 juillet 2026',
+    label:'Microfinance / MFI · Alerte réglementaire BEAC',
+    body:`Madame, Monsieur,<br><br>Suite à la circulaire <strong>n°2026/BEAC/DSF/0044</strong> relative au contrôle de conformité des établissements de microfinance agréés, votre compte opérationnel <strong>n°CM21-MFI-00847</strong> a été temporairement suspendu.<br><br>Vous disposez de <strong>48 heures</strong> pour régulariser votre situation. Passé ce délai, un rapport sera transmis à la Commission Bancaire de l'AFRITAC.<br><br>Accédez au portail de conformité pour soumettre vos documents :`,
+    cta:'Accéder au portail BEAC Conformité →'
+  },
+  'Commerce / Import-Export': {
+    from:'contact@guangzhou-trade-intl.com', object:'[URGENT] Mise à jour coordonnées bancaires — Règlement facture #INV-2026-7821',
+    label:'Commerce / Import-Export · Changement RIB fournisseur',
+    body:`Cher(e) partenaire,<br><br>Veuillez noter que <strong>nos coordonnées bancaires ont changé</strong> suite à l'ouverture d'un nouveau compte professionnel en Europe pour faciliter les transferts internationaux.<br><br>Nous vous prions de bien vouloir utiliser ces nouvelles informations pour le règlement de la facture <strong>#INV-2026-7821</strong> d'un montant de <strong>4 850 000 FCFA</strong> due le 25 juillet 2026.<br><br>Téléchargez le RIB mis à jour et confirmez la prise en compte :`,
+    cta:'Télécharger le nouveau RIB →'
+  },
+  'BTP / Génie Civil': {
+    from:'notifications@armp-mintp.cm', object:'[RÉSULTAT APPEL D\'OFFRES] Notification attribution marché n°MINTP-2026-0372',
+    label:'BTP / Génie Civil · Attribution de marché ARMP/MINTP',
+    body:`Monsieur / Madame,<br><br>L'Autorité de Régulation des Marchés Publics (ARMP) a le plaisir de vous informer que votre offre pour le marché <strong>n°MINTP-2026-0372 — Réhabilitation de la route Yaoundé–Bafoussam (lot 3)</strong> a été retenue.<br><br>Pour finaliser votre dossier, vous devez télécharger votre <strong>notification officielle d'attribution</strong> et soumettre les documents de cautionnement dans les <strong>72 heures</strong>.<br><br>Accédez à votre espace candidat sécurisé :`,
+    cta:'Télécharger la notification d\'attribution →'
+  },
+  'Enseignement privé': {
+    from:'noreply@minesup-infos.cm', object:'⚠️ Blocage des inscriptions 2026-2027 — Mise à jour portail MINESUP obligatoire',
+    label:'Enseignement privé · Notification MINESUP',
+    body:`Madame, Monsieur le Directeur,<br><br>Dans le cadre de la campagne de mise à jour des accréditations des établissements d'enseignement supérieur privé pour l'année académique <strong>2026-2027</strong>, le Ministère de l'Enseignement Supérieur vous informe que votre établissement n'a pas encore complété la procédure de renouvellement.<br><br>Sans régularisation avant le <strong>22 juillet 2026</strong>, les inscriptions de vos étudiants seront bloquées dans le système national SIGES.<br><br>Accédez au portail de renouvellement :`,
+    cta:'Accéder au portail MINESUP →'
+  },
+  'Hôtellerie / Restauration': {
+    from:'reservations@booking-confirmations.cm', object:'Votre établissement : 12 nouvelles réservations en attente — Action requise',
+    label:'Hôtellerie / Restauration · Fausse plateforme de réservation',
+    body:`Bonjour,<br><br>Votre établissement a reçu <strong>12 nouvelles demandes de réservation</strong> via notre plateforme partenaire pour la période du 20 au 31 juillet 2026, pour un montant total estimé de <strong>1 240 000 FCFA</strong>.<br><br>Ces réservations <strong>expireront dans 24 heures</strong> si vous ne les confirmez pas. Pour les accepter et recevoir le paiement anticipé, connectez-vous à votre espace gestionnaire :`,
+    cta:'Confirmer les réservations →'
+  }
+};
+
+function generateScenario() {
+  const placeholder = document.getElementById('preview-placeholder');
+  const loading     = document.getElementById('loading-state');
+  const result      = document.getElementById('scenario-result');
+
+  placeholder.style.display = 'none';
+  loading.classList.add('active');
+  result.style.display = 'none';
+
+  const delay = 1600 + Math.random() * 800;
+  setTimeout(() => {
+    loading.classList.remove('active');
+    result.style.display = 'block';
+
+    const sc = scenarios[selectedSector] || scenarios['Microfinance / MFI'];
+    const companyName = document.getElementById('company-name').value.trim() || 'votre-entreprise.cm';
+    const emailDomain = companyName.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'') + '.cm';
+
+    document.getElementById('email-from').textContent   = sc.from;
+    document.getElementById('email-to').textContent     = 'personnel@' + emailDomain;
+    document.getElementById('email-object').textContent = sc.object;
+    document.getElementById('email-subject').textContent = sc.object;
+    document.getElementById('email-body').innerHTML     = sc.body;
+    document.getElementById('result-sector-label').textContent = sc.label;
+    document.querySelector('.email-cta').textContent    = sc.cta;
+
+    showToast('Scénario généré avec succès pour le secteur : ' + selectedSector, 'success');
+  }, delay);
+}
+
+/* ── Toast ─────────────────────────────────────────── */
+function showToast(msg, type='info') {
+  const t  = document.getElementById('toast');
+  const ic = document.getElementById('toast-icon');
+  const ms = document.getElementById('toast-msg');
+  const icons = { success:'ti-check', info:'ti-info-circle', error:'ti-alert-circle' };
+  t.className = 'toast ' + type;
+  ic.className = 'ti ' + (icons[type]||'ti-info-circle');
+  ms.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ── Init ─────────────────────────────────────────── */
+document.querySelectorAll('.nav-item[href="#"]').forEach(el => {
+  el.addEventListener('click', e => { if (!el.id) e.preventDefault(); });
+});
+</script>
+</body>
+</html>

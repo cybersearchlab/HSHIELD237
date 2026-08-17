@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H-SHIELD237 — Entreprises, Consentements & Paramètres</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F1F3D;--navy-mid:#1B2A5A;--navy-light:#2C3F6B;
+  --red:#C0392B;--red-dark:#a93226;--red-light:rgba(192,57,43,.09);--red-border:rgba(192,57,43,.28);--red-soft:#F5B7B1;--red-text:#7B241C;
+  --gold:#C49A1A;--gold-light:#FEF9E7;
+  --green:#1A7F4A;--green-light:#EAFAF1;
+  --orange:#E67E22;--orange-light:#FEF5E7;
+  --blue:#1A5FA0;--blue-light:#EBF5FB;
+  --teal:#0E7C7B;--teal-light:#E0F2F1;
+  --purple:#6B21A8;--purple-light:#F5F3FF;
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;
+  --border:rgba(0,0,0,0.08);--border-str:rgba(0,0,0,0.14);
+  --text:#0F1F3D;--text2:#4A5568;--text3:#8A97AC;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.09);
+}
+html,body{min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+.app{display:grid;grid-template-columns:228px 1fr;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{background:var(--navy);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:20px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:11px}
+.logo-icon{width:38px;height:38px;background:var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(192,57,43,.35)}
+.logo-icon i{color:#fff;font-size:19px}
+.logo-name{font-size:15.5px;font-weight:600;color:#fff;letter-spacing:-.02em;line-height:1}
+.logo-name span{color:var(--red)}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.34);margin-top:3px}
+.nav{padding:14px 10px;flex:1}
+.nav-section{font-size:9.5px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;padding:10px 10px 5px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);font-size:13px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:1px;transition:background .12s,color .12s;border:1px solid transparent;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.88)}
+.nav-item.active{background:rgba(192,57,43,.22);color:var(--red-soft);border-color:rgba(192,57,43,.38)}
+.nav-item i{font-size:17px;color:rgba(255,255,255,.32)}
+.nav-item.active i,.nav-item:hover i{color:inherit}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+.sidebar-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:rgba(255,255,255,.8);flex-shrink:0}
+.ava-name{font-size:12px;color:rgba(255,255,255,.8);font-weight:500}
+.ava-role{font-size:10px;color:rgba(255,255,255,.33)}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:var(--shadow)}
+.topbar-left h1{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.topbar-left span{font-size:11.5px;color:var(--text3);display:block;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:9px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--radius);font-size:12.5px;cursor:pointer;border:1px solid var(--border-str);background:var(--surface);color:var(--text2);font-family:inherit;transition:background .12s;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn i{font-size:15px}
+.btn-icon{padding:7px 9px}
+.btn-primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn-primary:hover{background:var(--red-dark)}
+.btn-navy{background:var(--navy-mid);border-color:var(--navy-mid);color:#fff}
+.btn-sm{padding:5px 10px;font-size:12px}
+.content{padding:22px 24px 48px;flex:1}
+.view{display:none}.view.active{display:block}
+
+/* COMMUN */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:13.5px;font-weight:600}
+.card-sub{font-size:11.5px;color:var(--text3);margin-top:2px}
+.link{font-size:12px;color:var(--blue);cursor:pointer;text-decoration:none}.link:hover{text-decoration:underline}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.badge-danger{background:var(--red-light);color:var(--red)}
+.badge-success{background:var(--green-light);color:var(--green)}
+.badge-warning{background:var(--orange-light);color:var(--orange)}
+.badge-accent{background:var(--blue-light);color:var(--blue)}
+.tag{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.tag-health{background:#FEE;color:#922}.tag-finance{background:#E8F0FE;color:#1A5FA0}
+.tag-btp{background:var(--orange-light);color:#7D4600}.tag-commerce{background:var(--green-light);color:var(--green)}
+.tag-edu{background:var(--teal-light);color:var(--teal)}.tag-hotel{background:var(--gold-light);color:var(--gold)}
+
+/* METRIQUES */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.metric::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.metric.m-navy::after{background:var(--navy-mid)}.metric.m-red::after{background:var(--red)}.metric.m-green::after{background:var(--green)}.metric.m-gold::after{background:var(--gold)}.metric.m-orange::after{background:var(--orange)}
+.metric-label{font-size:10px;color:var(--text3);margin-bottom:6px;display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.06em}
+.metric-label i{font-size:13px}
+.metric-value{font-size:24px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{flex:1;position:relative;min-width:180px}
+.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3);pointer-events:none}
+.search-wrap input{width:100%;padding:8px 12px 8px 34px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit}
+.search-wrap input:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,42,90,.08)}
+.filter-group{display:flex;gap:6px;flex-wrap:wrap}
+.filter-btn{padding:6px 12px;border-radius:20px;border:1px solid var(--border-str);background:var(--surface);color:var(--text2);font-size:12px;font-family:inherit;cursor:pointer;transition:all .12s}
+.filter-btn:hover{background:var(--surface2)}
+.filter-btn.active{background:var(--navy-mid);color:#fff;border-color:var(--navy-mid)}
+
+/* ENTREPRISES */
+.ent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.ent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:all .15s}
+.ent-card:hover{border-color:var(--navy-mid);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.ent-card-top{padding:16px 18px 12px;display:flex;align-items:flex-start;gap:12px}
+.ent-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ent-logo i{font-size:22px}
+.ent-name{font-size:14px;font-weight:600;color:var(--text)}
+.ent-sector{font-size:11px;color:var(--text3);margin-top:2px}
+.ent-card-body{padding:0 18px 12px}
+.ent-stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.ent-stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 6px;text-align:center}
+.ent-stat-val{font-size:15px;font-weight:700;line-height:1}
+.ent-stat-lbl{font-size:9px;color:var(--text3);margin-top:3px}
+.ent-card-footer{padding:10px 18px;border-top:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--text3)}
+.risk-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
+
+.ent-detail-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
+.ent-detail-overlay.open{display:block}
+.ent-detail-panel{position:fixed;right:0;top:0;bottom:0;width:560px;background:var(--surface);box-shadow:-8px 0 32px rgba(0,0,0,.12);display:flex;flex-direction:column;z-index:101;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.ent-detail-panel.open{transform:translateX(0)}
+.ed-header{padding:20px 22px;background:var(--navy);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.ed-header-left{display:flex;align-items:center;gap:14px}
+.ed-logo{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ed-logo i{font-size:26px;color:#fff}
+.ed-title{font-size:17px;font-weight:600;color:#fff}
+.ed-sub{font-size:11.5px;color:rgba(255,255,255,.4);margin-top:3px}
+.ed-close{width:30px;height:30px;border-radius:var(--radius);border:1px solid rgba(255,255,255,.2);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.7);flex-shrink:0}
+.ed-close:hover{background:rgba(255,255,255,.1)}
+.ed-body{padding:20px 22px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px}
+.ed-section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.ed-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ed-info-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px}
+.ed-info-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.ed-info-val{font-size:13px;font-weight:600}
+.ed-contact-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)}
+.ed-contact-avatar{width:36px;height:36px;border-radius:50%;background:var(--navy-mid);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.ed-campaigns-list{display:flex;flex-direction:column;gap:8px}
+.ed-camp-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);font-size:12px}
+.ed-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0}
+.ed-footer .btn{flex:1;justify-content:center}
+
+/* CONSENTEMENTS */
+.consent-timeline{display:flex;flex-direction:column;gap:0}
+.consent-row{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border-bottom:1px solid var(--border)}
+.consent-row:last-child{border-bottom:none}
+.consent-row:hover{background:var(--surface2)}
+.consent-status-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.consent-status-icon i{font-size:19px}
+.consent-body{flex:1;min-width:0}
+.consent-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px}
+.consent-title{font-size:13.5px;font-weight:600;color:var(--text)}
+.consent-sub{font-size:11.5px;color:var(--text3);margin-top:2px}
+.consent-meta{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.consent-meta-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)}
+.consent-meta-item i{font-size:13px}
+.consent-signature{margin-top:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);font-size:11.5px;color:var(--text2);display:flex;align-items:center;gap:8px}
+.consent-signature i{color:var(--green);font-size:15px}
+.consent-actions{display:flex;gap:8px;flex-shrink:0}
+
+/* PARAMÈTRES */
+.settings-layout{display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start}
+.settings-nav{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;position:sticky;top:78px}
+.settings-nav-item{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;font-size:13px;color:var(--text2);border-left:3px solid transparent;transition:all .12s;border-bottom:1px solid var(--border)}
+.settings-nav-item:last-child{border-bottom:none}
+.settings-nav-item:hover{background:var(--surface2)}
+.settings-nav-item.active{background:#EBF0F9;border-left-color:var(--navy-mid);color:var(--navy-mid);font-weight:600}
+.settings-nav-item i{font-size:17px;color:var(--text3)}
+.settings-nav-item.active i{color:var(--navy-mid)}
+.settings-panel{display:none}
+.settings-panel.active{display:block}
+.settings-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 24px;box-shadow:var(--shadow);margin-bottom:16px}
+.settings-section-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.settings-section-sub{font-size:12px;color:var(--text3);margin-bottom:18px}
+.form-group{margin-bottom:16px}
+.form-group:last-child{margin-bottom:0}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.form-input,.form-select{width:100%;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,42,90,.09)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-hint{font-size:11px;color:var(--text3);margin-top:5px}
+
+.settings-avatar-row{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.settings-avatar{width:64px;height:64px;border-radius:50%;background:var(--navy-mid);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;flex-shrink:0}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-info{flex:1}
+.toggle-title{font-size:13px;font-weight:500;color:var(--text)}
+.toggle-desc{font-size:11.5px;color:var(--text3);margin-top:2px}
+.switch{position:relative;width:42px;height:24px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch-slider{position:absolute;cursor:pointer;inset:0;background:#CBD2DB;border-radius:99px;transition:.2s}
+.switch-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch input:checked+.switch-slider{background:var(--navy-mid)}
+.switch input:checked+.switch-slider::before{transform:translateX(18px)}
+
+.team-list{display:flex;flex-direction:column;gap:0}
+.team-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.team-row:last-child{border-bottom:none}
+.team-avatar{width:38px;height:38px;border-radius:50%;background:var(--navy-mid);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.team-info{flex:1}
+.team-name{font-size:13px;font-weight:600}
+.team-email{font-size:11.5px;color:var(--text3)}
+.role-select{padding:6px 10px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface2);font-size:12px;font-family:inherit}
+
+.api-key-row{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:10px}
+.api-key-val{flex:1;font-family:'Courier New',monospace;font-size:12px;color:var(--text2);letter-spacing:.05em}
+
+.danger-zone{border:1px solid var(--red-border);background:var(--red-light)}
+.danger-zone .settings-section-title{color:var(--red)}
+
+.plan-card{border:2px solid var(--navy-mid);border-radius:var(--radius-lg);padding:18px;background:#EBF0F9;position:relative}
+.plan-badge-current{position:absolute;top:-10px;right:16px;background:var(--navy-mid);color:#fff;font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px}
+.plan-price{font-size:26px;font-weight:700;color:var(--navy-mid)}
+.plan-features{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.plan-feature{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2)}
+.plan-feature i{color:var(--green);font-size:14px}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.18)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:17px;font-weight:600}
+.modal-body{padding:22px 24px}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+.close-btn{width:30px;height:30px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3)}
+.close-btn:hover{background:var(--bg)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;max-width:360px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast i{font-size:17px;flex-shrink:0}
+.toast.success i{color:#4ADE80}.toast.error i{color:#F87171}.toast.info i{color:#60A5FA}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-shield-lock"></i></div>
+    <div>
+      <div class="logo-name">H-SHIELD<span>237</span></div>
+      <div class="logo-sub">Simulateur de phishing éducatif</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Principal</div>
+    <a class="nav-item" id="nav-dashboard" onclick="showView('dashboard',this);return false" href="#"><i class="ti ti-layout-dashboard"></i> Tableau de bord</a>
+    <a class="nav-item" id="nav-generate" onclick="showView('generate',this);return false" href="#"><i class="ti ti-robot"></i> Générer un scénario</a>
+    <a class="nav-item" id="nav-campaigns" onclick="showView('campaigns',this);return false" href="#"><i class="ti ti-send"></i> Campagnes <span class="nav-badge">4</span></a>
+    <div class="nav-section">Analyse</div>
+    <a class="nav-item" id="nav-results" onclick="showView('results',this);return false" href="#"><i class="ti ti-chart-bar"></i> Résultats</a>
+    <a class="nav-item" id="nav-reports" onclick="showView('reports',this);return false" href="#"><i class="ti ti-file-report"></i> Rapports PDF <span class="nav-badge">2</span></a>
+    <a class="nav-item" id="nav-history" onclick="showView('history',this);return false" href="#"><i class="ti ti-history"></i> Historique</a>
+    <div class="nav-section">Configuration</div>
+    <a class="nav-item" id="nav-templates" onclick="showView('templates',this);return false" href="#"><i class="ti ti-template"></i> Templates sectoriels</a>
+    <a class="nav-item" id="nav-companies" onclick="showView('companies',this);return false" href="#"><i class="ti ti-building"></i> Entreprises clientes</a>
+    <a class="nav-item" id="nav-consents" onclick="showView('consents',this);return false" href="#"><i class="ti ti-shield-check"></i> Consentements <span class="nav-badge" style="background:var(--orange)">1</span></a>
+    <a class="nav-item" id="nav-settings" onclick="showView('settings',this);return false" href="#"><i class="ti ti-settings"></i> Paramètres</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar">LJ</div>
+    <div><div class="ava-name">LEVY Jérémie</div><div class="ava-role">Consultant — CSRL Yaoundé</div></div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 id="page-title">Entreprises clientes</h1>
+      <span id="page-sub">6 entreprises actives · 14 campagnes cumulées</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-icon"><i class="ti ti-search"></i></button>
+      <button class="btn btn-icon" style="position:relative">
+        <i class="ti ti-bell"></i>
+        <span style="position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid #fff"></span>
+      </button>
+      <button class="btn" id="topbar-export" onclick="showToast('Export en cours…','info')"><i class="ti ti-download"></i> Exporter</button>
+      <button class="btn btn-primary" id="topbar-cta" onclick="openCompanyModal()"><i class="ti ti-plus"></i> Nouvelle entreprise</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <div class="view" id="view-dashboard"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('companies',document.getElementById('nav-companies'));return false" style="color:var(--blue)">Revenir aux entreprises</a></p></div>
+    <div class="view" id="view-generate"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('companies',document.getElementById('nav-companies'));return false" style="color:var(--blue)">Revenir aux entreprises</a></p></div>
+    <div class="view" id="view-campaigns"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('companies',document.getElementById('nav-companies'));return false" style="color:var(--blue)">Revenir aux entreprises</a></p></div>
+    <div class="view" id="view-results"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('companies',document.getElementById('nav-companies'));return false" style="color:var(--blue)">Revenir aux entreprises</a></p></div>
+    <div class="view" id="view-reports"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('companies',document.getElementById('nav-companies'));return false" style="color:var(--blue)">Revenir aux entreprises</a></p></div>
+    <div class="view" id="view-history"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('companies',document.getElementById('nav-companies'));return false" style="color:var(--blue)">Revenir aux entreprises</a></p></div>
+    <div class="view" id="view-templates"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('companies',document.getElementById('nav-companies'));return false" style="color:var(--blue)">Revenir aux entreprises</a></p></div>
+
+    <div class="view active" id="view-companies">
+      <div class="metrics">
+        <div class="metric m-navy"><div class="metric-label"><i class="ti ti-building"></i> Entreprises actives</div><div class="metric-value">6</div><div class="metric-sub">dont 3 récurrentes</div></div>
+        <div class="metric m-red"><div class="metric-label"><i class="ti ti-alert-triangle"></i> À risque élevé</div><div class="metric-value" style="color:var(--red)">3</div><div class="metric-sub">score ≥ 60/100</div></div>
+        <div class="metric m-green"><div class="metric-label"><i class="ti ti-users"></i> Employés couverts</div><div class="metric-value" style="color:var(--green)">159</div><div class="metric-sub">effectif total testé</div></div>
+        <div class="metric m-gold"><div class="metric-label"><i class="ti ti-currency-dollar"></i> Revenu cumulé</div><div class="metric-value" style="color:var(--gold);font-size:19px">1 940 000</div><div class="metric-sub">FCFA facturés depuis Janvier</div></div>
+      </div>
+      <div class="toolbar">
+        <div class="search-wrap"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher une entreprise…" oninput="filterCompanies(this.value)"></div>
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="setCompanyFilter('all',this)">Toutes (6)</button>
+          <button class="filter-btn" onclick="setCompanyFilter('high',this)">Risque élevé (3)</button>
+          <button class="filter-btn" onclick="setCompanyFilter('recurring',this)">Récurrentes (3)</button>
+        </div>
+        <select style="padding:7px 12px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface);font-size:12px;font-family:inherit" onchange="showToast('Tri : '+this.value,'info')">
+          <option>Trier par : Score de risque</option><option>Trier par : Nom</option><option>Trier par : Dernière campagne</option>
+        </select>
+      </div>
+      <div class="ent-grid" id="ent-grid"></div>
+    </div>
+
+    <div class="view" id="view-consents">
+      <div class="metrics">
+        <div class="metric m-navy"><div class="metric-label"><i class="ti ti-shield-check"></i> Consentements totaux</div><div class="metric-value">15</div><div class="metric-sub">depuis Janvier 2026</div></div>
+        <div class="metric m-orange"><div class="metric-label"><i class="ti ti-clock"></i> En attente</div><div class="metric-value" style="color:var(--orange)">1</div><div class="metric-sub">nécessite une action</div></div>
+        <div class="metric m-green"><div class="metric-label"><i class="ti ti-check"></i> Validés</div><div class="metric-value" style="color:var(--green)">13</div><div class="metric-sub">consentements accordés</div></div>
+        <div class="metric m-red"><div class="metric-label"><i class="ti ti-x"></i> Refusés</div><div class="metric-value" style="color:var(--red)">1</div><div class="metric-sub">campagne annulée</div></div>
+      </div>
+      <div class="toolbar">
+        <div class="search-wrap"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher par entreprise ou responsable…" oninput="filterConsents(this.value)"></div>
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="setConsentFilter('all',this)">Tous (15)</button>
+          <button class="filter-btn" onclick="setConsentFilter('pending',this)">En attente (1)</button>
+          <button class="filter-btn" onclick="setConsentFilter('validated',this)">Validés (13)</button>
+          <button class="filter-btn" onclick="setConsentFilter('refused',this)">Refusés (1)</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden"><div class="consent-timeline" id="consent-list"></div></div>
+      <div style="margin-top:16px;padding:14px 18px;background:var(--blue-light);border:1px solid rgba(26,95,160,.2);border-radius:var(--radius);display:flex;align-items:flex-start;gap:10px;font-size:12.5px;color:var(--text2)">
+        <i class="ti ti-info-circle" style="color:var(--blue);font-size:16px;flex-shrink:0;margin-top:1px"></i>
+        <span><strong>Cadre de gouvernance H-SHIELD237 :</strong> aucune campagne ne peut être lancée sans validation explicite et horodatée du responsable habilité de l'entreprise cliente. Chaque décision est journalisée de façon irréversible dans le registre d'audit, conformément à la loi camerounaise n°2010/012 relative à la cybersécurité et à la cybercriminalité.</span>
+      </div>
+    </div>
+
+    <div class="view" id="view-settings">
+      <div class="settings-layout">
+        <div class="settings-nav">
+          <div class="settings-nav-item active" onclick="showSettingsPanel('profile',this)"><i class="ti ti-user"></i> Profil</div>
+          <div class="settings-nav-item" onclick="showSettingsPanel('security',this)"><i class="ti ti-lock"></i> Sécurité</div>
+          <div class="settings-nav-item" onclick="showSettingsPanel('notifications',this)"><i class="ti ti-bell"></i> Notifications</div>
+          <div class="settings-nav-item" onclick="showSettingsPanel('team',this)"><i class="ti ti-users"></i> Équipe</div>
+          <div class="settings-nav-item" onclick="showSettingsPanel('llm',this)"><i class="ti ti-robot"></i> API & IA</div>
+          <div class="settings-nav-item" onclick="showSettingsPanel('billing',this)"><i class="ti ti-credit-card"></i> Facturation</div>
+          <div class="settings-nav-item" onclick="showSettingsPanel('danger',this)"><i class="ti ti-alert-triangle"></i> Zone sensible</div>
+        </div>
+        <div>
+          <div class="settings-panel active" id="panel-profile">
+            <div class="settings-section">
+              <div class="settings-section-title">Informations du profil</div>
+              <div class="settings-section-sub">Ces informations sont visibles par les autres membres de votre équipe CSRL</div>
+              <div class="settings-avatar-row">
+                <div class="settings-avatar">LJ</div>
+                <div><button class="btn"><i class="ti ti-upload"></i> Changer la photo</button><div class="form-hint">JPG, PNG — 2 Mo maximum</div></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Nom complet</label><input class="form-input" type="text" value="NDJOCK NJAP JEREMIE LEVY"></div>
+                <div class="form-group"><label class="form-label">Rôle</label><input class="form-input" type="text" value="Consultant — Stagiaire" disabled style="opacity:.6"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Adresse email</label><input class="form-input" type="email" value="j.levy@csrl-yaounde.cm"></div>
+                <div class="form-group"><label class="form-label">Téléphone</label><input class="form-input" type="text" value="+237 6XX XXX XXX"></div>
+              </div>
+              <div class="form-group"><label class="form-label">Établissement / Structure</label><input class="form-input" type="text" value="IUSJC Eyang · CyberSecurity Research Laboratory (CSRL) Yaoundé"></div>
+              <button class="btn btn-primary" onclick="showToast('Profil mis à jour avec succès','success')" style="margin-top:6px"><i class="ti ti-device-floppy"></i> Enregistrer les modifications</button>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="panel-security">
+            <div class="settings-section">
+              <div class="settings-section-title">Mot de passe</div>
+              <div class="settings-section-sub">Modifiez régulièrement votre mot de passe pour sécuriser votre compte</div>
+              <div class="form-group"><label class="form-label">Mot de passe actuel</label><input class="form-input" type="password" placeholder="••••••••••"></div>
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Nouveau mot de passe</label><input class="form-input" type="password" placeholder="••••••••••"></div>
+                <div class="form-group"><label class="form-label">Confirmer le mot de passe</label><input class="form-input" type="password" placeholder="••••••••••"></div>
+              </div>
+              <button class="btn btn-navy" onclick="showToast('Mot de passe mis à jour','success')"><i class="ti ti-lock"></i> Mettre à jour le mot de passe</button>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-title">Authentification à deux facteurs</div>
+              <div class="settings-section-sub">Renforcez la sécurité de votre compte consultant</div>
+              <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Authentification à deux facteurs (2FA)</div><div class="toggle-desc">Code de vérification envoyé par SMS à chaque connexion</div></div><label class="switch"><input type="checkbox" checked onchange="showToast(this.checked?'2FA activée':'2FA désactivée','info')"><span class="switch-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Alertes de connexion</div><div class="toggle-desc">Email en cas de connexion depuis un nouvel appareil</div></div><label class="switch"><input type="checkbox" checked onchange="showToast('Préférence mise à jour','info')"><span class="switch-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Déconnexion automatique</div><div class="toggle-desc">Après 30 minutes d'inactivité</div></div><label class="switch"><input type="checkbox" checked onchange="showToast('Préférence mise à jour','info')"><span class="switch-slider"></span></label></div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-title">Sessions actives</div>
+              <div class="settings-section-sub">Appareils actuellement connectés à votre compte</div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:8px">
+                <i class="ti ti-device-laptop" style="font-size:22px;color:var(--text3)"></i>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:600">Ordinateur — Yaoundé, Cameroun</div><div style="font-size:11px;color:var(--text3)">Session actuelle · Chrome sur Windows</div></div>
+                <span class="badge badge-success">Actif</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)">
+                <i class="ti ti-device-mobile" style="font-size:22px;color:var(--text3)"></i>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:600">iPhone — Yaoundé, Cameroun</div><div style="font-size:11px;color:var(--text3)">Dernière activité : il y a 2 jours</div></div>
+                <button class="btn btn-sm" onclick="showToast('Session déconnectée','info')">Déconnecter</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="panel-notifications">
+            <div class="settings-section">
+              <div class="settings-section-title">Préférences de notification</div>
+              <div class="settings-section-sub">Choisissez les événements pour lesquels vous souhaitez être notifié</div>
+              <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Nouvelle interaction détectée</div><div class="toggle-desc">Clic, soumission ou signalement sur une campagne active</div></div><label class="switch"><input type="checkbox" checked onchange="showToast('Préférence mise à jour','info')"><span class="switch-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Consentement en attente</div><div class="toggle-desc">Rappel après 48h sans réponse du responsable client</div></div><label class="switch"><input type="checkbox" checked onchange="showToast('Préférence mise à jour','info')"><span class="switch-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Rapport PDF généré</div><div class="toggle-desc">Confirmation lorsqu'un rapport est prêt à être envoyé</div></div><label class="switch"><input type="checkbox" checked onchange="showToast('Préférence mise à jour','info')"><span class="switch-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Alerte risque élevé</div><div class="toggle-desc">Taux de clic supérieur à 60 % sur une campagne</div></div><label class="switch"><input type="checkbox" checked onchange="showToast('Préférence mise à jour','info')"><span class="switch-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Résumé hebdomadaire</div><div class="toggle-desc">Synthèse envoyée chaque lundi matin par email</div></div><label class="switch"><input type="checkbox" onchange="showToast('Préférence mise à jour','info')"><span class="switch-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Nouveautés produit</div><div class="toggle-desc">Nouvelles fonctionnalités et mises à jour H-SHIELD237</div></div><label class="switch"><input type="checkbox" onchange="showToast('Préférence mise à jour','info')"><span class="switch-slider"></span></label></div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-title">Canal de notification</div>
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Email de notification</label><input class="form-input" type="email" value="j.levy@csrl-yaounde.cm"></div>
+                <div class="form-group"><label class="form-label">Fréquence maximale</label><select class="form-select"><option>Temps réel</option><option selected>Résumé toutes les heures</option><option>Résumé quotidien</option></select></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="panel-team">
+            <div class="settings-section">
+              <div class="card-header" style="margin-bottom:6px">
+                <div><div class="settings-section-title" style="margin-bottom:2px">Membres de l'équipe</div><div class="settings-section-sub" style="margin-bottom:0">3 consultants actifs sur cette instance CSRL</div></div>
+                <button class="btn btn-primary" onclick="showToast('Invitation envoyée','success')"><i class="ti ti-user-plus"></i> Inviter</button>
+              </div>
+              <div class="team-list">
+                <div class="team-row"><div class="team-avatar">LJ</div><div class="team-info"><div class="team-name">LEVY Jérémie <span class="badge badge-accent" style="margin-left:6px">Vous</span></div><div class="team-email">j.levy@csrl-yaounde.cm</div></div><select class="role-select" disabled style="opacity:.6"><option>Administrateur</option></select></div>
+                <div class="team-row"><div class="team-avatar" style="background:var(--teal)">CP</div><div class="team-info"><div class="team-name">Chef de Projet CSRL</div><div class="team-email">encadreur@csrl-yaounde.cm</div></div><select class="role-select" onchange="showToast('Rôle mis à jour','info')"><option>Superviseur</option><option>Consultant</option></select></div>
+                <div class="team-row"><div class="team-avatar" style="background:var(--gold)">AD</div><div class="team-info"><div class="team-name">Administrateur Système</div><div class="team-email">admin@csrl-yaounde.cm</div></div><select class="role-select" onchange="showToast('Rôle mis à jour','info')"><option selected>Administrateur</option><option>Consultant</option></select></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="panel-llm">
+            <div class="settings-section">
+              <div class="settings-section-title">Configuration du modèle LLM</div>
+              <div class="settings-section-sub">Paramètres du service d'intelligence artificielle utilisé pour la génération de scénarios</div>
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Fournisseur LLM</label><select class="form-select"><option>Anthropic Claude</option><option>OpenAI GPT</option><option>Modèle local (Llama/Mistral)</option></select></div>
+                <div class="form-group"><label class="form-label">Modèle</label><select class="form-select"><option>claude-sonnet-4-6</option><option>claude-opus-4-8</option></select></div>
+              </div>
+              <div class="form-group"><label class="form-label">Température de génération</label><input class="form-input" type="range" min="0" max="10" value="6" style="padding:9px 0"><div class="form-hint">Valeur actuelle : 0.6 — équilibre entre créativité et cohérence des scénarios</div></div>
+              <button class="btn btn-navy" onclick="showToast('Configuration IA enregistrée','success')"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-title">Clés API</div>
+              <div class="settings-section-sub">Gérez les clés d'accès aux services externes</div>
+              <div class="api-key-row"><i class="ti ti-key" style="color:var(--text3);font-size:16px"></i><span class="api-key-val">sk-ant-••••••••••••••••••••••••4f2a</span><button class="btn btn-sm" onclick="showToast('Clé copiée','success')"><i class="ti ti-copy"></i></button><button class="btn btn-sm" onclick="showToast('Clé régénérée','info')"><i class="ti ti-refresh"></i></button></div>
+              <div class="api-key-row"><i class="ti ti-mail" style="color:var(--text3);font-size:16px"></i><span class="api-key-val">smtp.csrl-yaounde.cm:587</span><button class="btn btn-sm" onclick="showToast('Configuration SMTP testée avec succès','success')"><i class="ti ti-plug-connected"></i></button></div>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="panel-billing">
+            <div class="settings-section">
+              <div class="settings-section-title">Plan actuel</div>
+              <div class="settings-section-sub">Votre abonnement H-SHIELD237</div>
+              <div class="plan-card">
+                <span class="plan-badge-current">Plan actif</span>
+                <div style="font-size:15px;font-weight:600;color:var(--navy-mid)">Plan Professionnel CSRL</div>
+                <div class="plan-price">80 000 <span style="font-size:13px;font-weight:400;color:var(--text3)">FCFA / mois</span></div>
+                <div class="plan-features">
+                  <div class="plan-feature"><i class="ti ti-circle-check"></i> Campagnes illimitées</div>
+                  <div class="plan-feature"><i class="ti ti-circle-check"></i> Génération IA illimitée</div>
+                  <div class="plan-feature"><i class="ti ti-circle-check"></i> Jusqu'à 10 entreprises clientes</div>
+                  <div class="plan-feature"><i class="ti ti-circle-check"></i> Rapports PDF illimités</div>
+                  <div class="plan-feature"><i class="ti ti-circle-check"></i> Support prioritaire CSRL</div>
+                </div>
+                <button class="btn btn-navy" style="margin-top:14px" onclick="showToast('Redirection vers la gestion du plan','info')">Gérer l'abonnement</button>
+              </div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-title">Historique de facturation</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:12.5px"><span>Juillet 2026</span><span style="color:var(--text3)">80 000 FCFA</span><span class="badge badge-success">Payée</span><button class="btn btn-sm" onclick="showToast('Téléchargement de la facture','success')"><i class="ti ti-download"></i></button></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:12.5px"><span>Juin 2026</span><span style="color:var(--text3)">80 000 FCFA</span><span class="badge badge-success">Payée</span><button class="btn btn-sm" onclick="showToast('Téléchargement de la facture','success')"><i class="ti ti-download"></i></button></div>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="panel-danger">
+            <div class="settings-section danger-zone">
+              <div class="settings-section-title"><i class="ti ti-alert-triangle" style="vertical-align:-2px;margin-right:6px"></i> Zone sensible</div>
+              <div class="settings-section-sub">Ces actions sont irréversibles — procédez avec prudence</div>
+              <div class="toggle-row" style="border-color:rgba(192,57,43,.2)"><div class="toggle-info"><div class="toggle-title">Exporter toutes mes données</div><div class="toggle-desc">Télécharger un export complet (campagnes, rapports, journal d'audit)</div></div><button class="btn" onclick="showToast('Export des données lancé — vous recevrez un email','info')">Exporter</button></div>
+              <div class="toggle-row" style="border-color:rgba(192,57,43,.2)"><div class="toggle-info"><div class="toggle-title">Archiver toutes les campagnes</div><div class="toggle-desc">Retire les campagnes actives sans supprimer l'historique</div></div><button class="btn" style="color:var(--red);border-color:var(--red-border)" onclick="showToast('Toutes les campagnes ont été archivées','info')">Archiver</button></div>
+              <div class="toggle-row" style="border-color:rgba(192,57,43,.2)"><div class="toggle-info"><div class="toggle-title">Supprimer le compte</div><div class="toggle-desc">Suppression définitive de toutes vos données après 30 jours</div></div><button class="btn btn-primary" onclick="if(confirm('Êtes-vous certain de vouloir supprimer votre compte ? Cette action est irréversible.')) showToast('Demande de suppression enregistrée','error')">Supprimer le compte</button></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<div class="ent-detail-overlay" id="ent-detail-overlay" onclick="closeEntDetail()"></div>
+<div class="ent-detail-panel" id="ent-detail-panel">
+  <div class="ed-header">
+    <div class="ed-header-left">
+      <div class="ed-logo" id="ed-logo" style="background:rgba(255,255,255,.12)"><i class="ti ti-building" id="ed-logo-icon"></i></div>
+      <div><div class="ed-title" id="ed-title">Clinique Sainte-Marie</div><div class="ed-sub" id="ed-sub">Santé / Clinique · Client depuis Mai 2026</div></div>
+    </div>
+    <div class="ed-close" onclick="closeEntDetail()"><i class="ti ti-x"></i></div>
+  </div>
+  <div class="ed-body">
+    <div>
+      <div class="ed-section-title">Informations générales</div>
+      <div class="ed-info-grid">
+        <div class="ed-info-item"><div class="ed-info-label">Secteur</div><div class="ed-info-val" id="ed-sector">Santé</div></div>
+        <div class="ed-info-item"><div class="ed-info-label">Taille</div><div class="ed-info-val" id="ed-size">11–50 employés</div></div>
+        <div class="ed-info-item"><div class="ed-info-label">Score de risque</div><div class="ed-info-val" id="ed-score" style="color:var(--red)">72 / 100</div></div>
+        <div class="ed-info-item"><div class="ed-info-label">Campagnes</div><div class="ed-info-val" id="ed-camp-count">2</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="ed-section-title">Contact responsable</div>
+      <div class="ed-contact-row">
+        <div class="ed-contact-avatar" id="ed-contact-avatar">DA</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:600" id="ed-contact-name">Dr. Amougou Élise</div><div style="font-size:11.5px;color:var(--text3)" id="ed-contact-role">Directrice Générale</div></div>
+        <button class="btn btn-sm" onclick="showToast('Email ouvert','info')"><i class="ti ti-mail"></i></button>
+      </div>
+    </div>
+    <div><div class="ed-section-title">Campagnes récentes</div><div class="ed-campaigns-list" id="ed-campaigns-list"></div></div>
+    <div>
+      <div class="ed-section-title">Adresse & Coordonnées</div>
+      <div style="font-size:12.5px;color:var(--text2);line-height:1.8">
+        <div><i class="ti ti-map-pin" style="color:var(--text3);margin-right:6px;font-size:14px"></i><span id="ed-address">Quartier Bastos, Yaoundé, Cameroun</span></div>
+        <div><i class="ti ti-phone" style="color:var(--text3);margin-right:6px;font-size:14px"></i><span id="ed-phone">+237 6XX XXX XXX</span></div>
+        <div><i class="ti ti-world" style="color:var(--text3);margin-right:6px;font-size:14px"></i><span id="ed-domain">clinique-saintemarie.cm</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="ed-footer">
+    <button class="btn" onclick="showToast('Fiche entreprise modifiée','info')"><i class="ti ti-pencil"></i> Modifier</button>
+    <button class="btn btn-primary" onclick="showToast('Redirection vers Nouvelle campagne','success')"><i class="ti ti-send"></i> Nouvelle campagne</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="company-modal-overlay" onclick="if(event.target===this)closeCompanyModal()">
+  <div class="modal">
+    <div class="modal-header"><h3>Nouvelle entreprise cliente</h3><div class="close-btn" onclick="closeCompanyModal()"><i class="ti ti-x"></i></div></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nom de l'entreprise *</label><input class="form-input" type="text" placeholder="Ex : Clinique Sainte-Marie"></div>
+        <div class="form-group"><label class="form-label">Secteur d'activité *</label><select class="form-select"><option value="">Choisir…</option><option>Santé / Clinique</option><option>Microfinance / MFI</option><option>Commerce / Import-Export</option><option>BTP / Génie Civil</option><option>Enseignement privé</option><option>Hôtellerie / Restauration</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Taille</label><select class="form-select"><option>1–10 employés</option><option selected>11–50 employés</option><option>51–200 employés</option></select></div>
+        <div class="form-group"><label class="form-label">Nom du responsable</label><input class="form-input" type="text" placeholder="Ex : M. Jean-Pierre MVOMO"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Email du responsable *</label><input class="form-input" type="email" placeholder="directeur@entreprise.cm"></div>
+      <div class="form-group"><label class="form-label">Adresse</label><input class="form-input" type="text" placeholder="Quartier, Ville, Cameroun"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeCompanyModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="closeCompanyModal();showToast('Entreprise cliente créée avec succès','success')"><i class="ti ti-plus"></i> Créer l'entreprise</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"><i class="ti ti-info-circle" id="toast-icon"></i><span id="toast-msg"></span></div>
+
+<script>
+const companies = [
+  { id:0, name:'Clinique Sainte-Marie', sector:'Santé', sectorTag:'tag-health', iconBg:'#922', icon:'ti-stethoscope', size:'11–50 employés', score:72, campaigns:2, employees:34, since:'Mai 2026', recurring:true, contactName:'Dr. Amougou Élise', contactRole:'Directrice Générale', contactInit:'DA', address:'Quartier Bastos, Yaoundé, Cameroun', phone:'+237 6XX XXX XXX', domain:'clinique-saintemarie.cm',
+    camps:[{name:'Alerte CENAME',date:'02/07/2026',click:'68 %',color:'var(--red)'},{name:'Fausse urgence MINSANTE',date:'15/05/2026',click:'71 %',color:'var(--red)'}] },
+  { id:1, name:'MFI Cameroun Sud', sector:'Microfinance', sectorTag:'tag-finance', iconBg:'#1A5FA0', icon:'ti-building-bank', size:'11–50 employés', score:58, campaigns:3, employees:28, since:'Janvier 2026', recurring:true, contactName:'Mme Ekwalla Sandrine', contactRole:'Directrice des Opérations', contactInit:'ES', address:'Avenue Kennedy, Yaoundé, Cameroun', phone:'+237 6XX XXX XXX', domain:'mfi-camerounsud.cm',
+    camps:[{name:'Fausse suspension BEAC',date:'05/07/2026',click:'49 %',color:'var(--orange)'},{name:'Alerte Mobile Money',date:'20/05/2026',click:'52 %',color:'var(--red)'},{name:'Mise à jour réglementaire',date:'20/01/2026',click:'58 %',color:'var(--red)'}] },
+  { id:2, name:'Bâti-Yaoundé SARL', sector:'BTP', sectorTag:'tag-btp', iconBg:'#7D4600', icon:'ti-crane', size:'11–50 employés', score:55, campaigns:2, employees:19, since:'Avril 2026', recurring:true, contactName:'M. Owona Patrick', contactRole:'Directeur Général', contactInit:'OP', address:'Zone Industrielle, Yaoundé, Cameroun', phone:'+237 6XX XXX XXX', domain:'bati-yaounde.cm',
+    camps:[{name:'Faux courrier ARMP',date:'07/07/2026',click:'43 %',color:'var(--orange)'},{name:'Alerte ARMP (1ère campagne)',date:'10/04/2026',click:'58 %',color:'var(--red)'}] },
+  { id:3, name:'Import-Export Nguemo', sector:'Commerce', sectorTag:'tag-commerce', iconBg:'#1A7F4A', icon:'ti-package', size:'51–200 employés', score:61, campaigns:1, employees:41, since:'Juillet 2026', recurring:false, contactName:'M. Nguemo Alain', contactRole:'Directeur Général', contactInit:'NA', address:'Marché Central, Yaoundé, Cameroun', phone:'+237 6XX XXX XXX', domain:'nguemo-trading.cm',
+    camps:[{name:'Changement RIB fournisseur',date:'08/07/2026',click:'—',color:'var(--text3)'}] },
+  { id:4, name:'École Privée Excellence', sector:'Enseignement', sectorTag:'tag-edu', iconBg:'#0E7C7B', icon:'ti-school', size:'11–50 employés', score:37, campaigns:2, employees:22, since:'Mars 2026', recurring:true, contactName:'M. Biya Junior', contactRole:'Directeur Académique', contactInit:'BJ', address:'Quartier Mvog-Ada, Yaoundé, Cameroun', phone:'+237 6XX XXX XXX', domain:'ecole-excellence.cm',
+    camps:[{name:'Fausse alerte MINESUP',date:'28/06/2026',click:'37 %',color:'var(--blue)'},{name:'Alerte MINESUP (1ère campagne)',date:'15/03/2026',click:'62 %',color:'var(--red)'}] },
+  { id:5, name:'Hôtel des Collines', sector:'Hôtellerie', sectorTag:'tag-hotel', iconBg:'#C49A1A', icon:'ti-building-hotel', size:'1–10 employés', score:30, campaigns:2, employees:15, since:'Février 2026', recurring:true, contactName:'Mme Fouda Marie', contactRole:'Gérante', contactInit:'FM', address:'Route de Mbalmayo, Yaoundé, Cameroun', phone:'+237 6XX XXX XXX', domain:'hotel-collines.cm',
+    camps:[{name:'Fausses réservations Booking',date:'25/06/2026',click:'28 %',color:'var(--blue)'},{name:'Fausse alerte paiement',date:'10/02/2026',click:'35 %',color:'var(--orange)'}] },
+];
+
+let companyFilter = 'all'; let companySearch = '';
+function riskLevel(score){ return score>=60?{c:'var(--red)',l:'Élevé'}:score>=40?{c:'var(--orange)',l:'Modéré'}:{c:'var(--green)',l:'Faible'}; }
+
+function renderCompanies(){
+  const grid=document.getElementById('ent-grid');
+  let data=companies;
+  if(companyFilter==='high') data=data.filter(c=>c.score>=60);
+  if(companyFilter==='recurring') data=data.filter(c=>c.recurring);
+  if(companySearch) data=data.filter(c=>c.name.toLowerCase().includes(companySearch));
+  grid.innerHTML='';
+  if(!data.length){ grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text3);padding:32px">Aucune entreprise trouvée.</div>'; return; }
+  data.forEach(c=>{
+    const risk=riskLevel(c.score);
+    grid.insertAdjacentHTML('beforeend',`
+      <div class="ent-card" onclick="openEntDetail(${c.id})">
+        <div class="ent-card-top">
+          <div class="ent-logo" style="background:${c.iconBg}22"><i class="ti ${c.icon}" style="color:${c.iconBg}"></i></div>
+          <div style="flex:1"><div class="ent-name">${c.name}</div><div class="ent-sector">${c.sector} · ${c.size}</div></div>
+          <span class="tag ${c.sectorTag}">${c.sector}</span>
+        </div>
+        <div class="ent-card-body">
+          <div class="ent-stats-row">
+            <div class="ent-stat"><div class="ent-stat-val" style="color:${risk.c}">${c.score}</div><div class="ent-stat-lbl">score risque</div></div>
+            <div class="ent-stat"><div class="ent-stat-val">${c.campaigns}</div><div class="ent-stat-lbl">campagnes</div></div>
+            <div class="ent-stat"><div class="ent-stat-val">${c.employees}</div><div class="ent-stat-lbl">employés</div></div>
+          </div>
+        </div>
+        <div class="ent-card-footer"><span><span class="risk-dot" style="background:${risk.c}"></span>Risque ${risk.l}</span><span>Client depuis ${c.since}</span></div>
+      </div>`);
+  });
+}
+function setCompanyFilter(f,btn){ companyFilter=f; document.querySelectorAll('#view-companies .filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderCompanies(); }
+function filterCompanies(q){ companySearch=q.toLowerCase(); renderCompanies(); }
+
+function openEntDetail(id){
+  const c=companies.find(x=>x.id===id); if(!c) return;
+  document.getElementById('ed-logo').style.background=c.iconBg+'33';
+  document.getElementById('ed-logo-icon').className='ti '+c.icon;
+  document.getElementById('ed-logo-icon').style.color=c.iconBg;
+  document.getElementById('ed-title').textContent=c.name;
+  document.getElementById('ed-sub').textContent=c.sector+' · Client depuis '+c.since;
+  document.getElementById('ed-sector').textContent=c.sector;
+  document.getElementById('ed-size').textContent=c.size;
+  const risk=riskLevel(c.score);
+  const scoreEl=document.getElementById('ed-score'); scoreEl.textContent=c.score+' / 100'; scoreEl.style.color=risk.c;
+  document.getElementById('ed-camp-count').textContent=c.campaigns;
+  document.getElementById('ed-contact-avatar').textContent=c.contactInit;
+  document.getElementById('ed-contact-name').textContent=c.contactName;
+  document.getElementById('ed-contact-role').textContent=c.contactRole;
+  document.getElementById('ed-address').textContent=c.address;
+  document.getElementById('ed-phone').textContent=c.phone;
+  document.getElementById('ed-domain').textContent=c.domain;
+  document.getElementById('ed-campaigns-list').innerHTML=c.camps.map(cp=>`<div class="ed-camp-item"><span style="font-weight:500">${cp.name}</span><span style="color:var(--text3)">${cp.date}</span><span style="color:${cp.color};font-weight:700">${cp.click}</span></div>`).join('');
+  document.getElementById('ent-detail-overlay').classList.add('open');
+  document.getElementById('ent-detail-panel').classList.add('open');
+}
+function closeEntDetail(){ document.getElementById('ent-detail-overlay').classList.remove('open'); document.getElementById('ent-detail-panel').classList.remove('open'); }
+function openCompanyModal(){ document.getElementById('company-modal-overlay').classList.add('open'); }
+function closeCompanyModal(){ document.getElementById('company-modal-overlay').classList.remove('open'); }
+
+const consents = [
+  { company:'Import-Export Nguemo', status:'pending', requester:'LEVY Jérémie', responsible:'M. Nguemo Alain', date:'06/07/2026', campaign:'Changement RIB fournisseur CN', icon:'ti-clock', iconBg:'var(--orange)' },
+  { company:'Bâti-Yaoundé SARL', status:'validated', requester:'LEVY Jérémie', responsible:'M. Owona Patrick', date:'04/07/2026', campaign:'Faux courrier ARMP / MINTP', icon:'ti-check', iconBg:'var(--green)', signed:'Signature électronique validée le 04/07/2026 à 16h00' },
+  { company:'MFI Cameroun Sud', status:'validated', requester:'LEVY Jérémie', responsible:'Mme Ekwalla Sandrine', date:'01/07/2026', campaign:'Fausse suspension BEAC', icon:'ti-check', iconBg:'var(--green)', signed:'Signature électronique validée le 01/07/2026 à 14h22' },
+  { company:'Clinique Sainte-Marie', status:'validated', requester:'LEVY Jérémie', responsible:'Dr. Amougou Élise', date:'28/06/2026', campaign:'Alerte CENAME — portail piégé', icon:'ti-check', iconBg:'var(--green)', signed:'Signature électronique validée le 28/06/2026 à 09h14' },
+  { company:'École Privée Excellence', status:'validated', requester:'LEVY Jérémie', responsible:'M. Biya Junior', date:'24/06/2026', campaign:'Fausse alerte MINESUP', icon:'ti-check', iconBg:'var(--green)', signed:'Signature électronique validée le 24/06/2026 à 11h00' },
+  { company:'Hôtel des Collines', status:'validated', requester:'LEVY Jérémie', responsible:'Mme Fouda Marie', date:'22/06/2026', campaign:'Fausses réservations Booking', icon:'ti-check', iconBg:'var(--green)', signed:'Signature électronique validée le 22/06/2026 à 15h30' },
+  { company:'Bâti-Yaoundé SARL', status:'refused', requester:'LEVY Jérémie', responsible:'M. Owona Patrick', date:'02/04/2026', campaign:'Scénario SMS (hors périmètre)', icon:'ti-x', iconBg:'var(--red)', signed:'Refusé — périmètre non conforme au consentement initial' },
+];
+
+let consentFilter='all'; let consentSearch='';
+function renderConsents(){
+  const list=document.getElementById('consent-list');
+  let data=consents;
+  if(consentFilter!=='all') data=data.filter(c=>c.status===consentFilter);
+  if(consentSearch) data=data.filter(c=>`${c.company} ${c.responsible}`.toLowerCase().includes(consentSearch));
+  list.innerHTML='';
+  if(!data.length){ list.innerHTML='<div style="text-align:center;color:var(--text3);padding:32px">Aucun consentement trouvé.</div>'; return; }
+  data.forEach(c=>{
+    const statusBadge = c.status==='pending' ? '<span class="badge badge-warning">En attente</span>' : c.status==='validated' ? '<span class="badge badge-success">Validé</span>' : '<span class="badge badge-danger">Refusé</span>';
+    const actions = c.status==='pending'
+      ? `<button class="btn btn-sm" style="color:var(--red);border-color:var(--red-border)" onclick="showToast('Consentement refusé — campagne annulée','error')">Refuser</button><button class="btn btn-sm btn-primary" onclick="showToast('Consentement validé — campagne autorisée','success')">Valider</button>`
+      : `<button class="btn btn-sm" onclick="showToast('Journal d\\'audit ouvert','info')"><i class="ti ti-file-text"></i> Audit</button>`;
+    list.insertAdjacentHTML('beforeend',`
+      <div class="consent-row">
+        <div class="consent-status-icon" style="background:${c.iconBg}22"><i class="ti ${c.icon}" style="color:${c.iconBg}"></i></div>
+        <div class="consent-body">
+          <div class="consent-top-row"><div><div class="consent-title">${c.company}</div><div class="consent-sub">${c.campaign}</div></div>${statusBadge}</div>
+          <div class="consent-meta">
+            <div class="consent-meta-item"><i class="ti ti-user"></i> Responsable : ${c.responsible}</div>
+            <div class="consent-meta-item"><i class="ti ti-calendar"></i> ${c.date}</div>
+            <div class="consent-meta-item"><i class="ti ti-user-check"></i> Demandé par ${c.requester}</div>
+          </div>
+          ${c.signed ? `<div class="consent-signature"><i class="ti ${c.status==='refused'?'ti-x':'ti-signature'}"></i> ${c.signed}</div>` : ''}
+        </div>
+        <div class="consent-actions">${actions}</div>
+      </div>`);
+  });
+}
+function setConsentFilter(f,btn){ consentFilter=f; document.querySelectorAll('#view-consents .filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderConsents(); }
+function filterConsents(q){ consentSearch=q.toLowerCase(); renderConsents(); }
+
+function showSettingsPanel(id,el){
+  document.querySelectorAll('.settings-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.settings-nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+function showView(viewId, navEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + viewId).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  const titles = {
+    dashboard:['Tableau de bord','Campagnes actives — Juillet 2026'],
+    generate: ['Générer un scénario','Création assistée par IA'],
+    campaigns:['Campagnes','7 campagnes ce mois'],
+    results:  ['Résultats & Analyses','Vue agrégée — 187 employés'],
+    reports:  ['Rapports PDF','12 rapports générés'],
+    history:  ['Historique','Journal complet des campagnes'],
+    templates:['Templates sectoriels','28 templates actifs'],
+    companies:['Entreprises clientes','6 entreprises actives · 14 campagnes cumulées'],
+    consents: ['Consentements','15 consentements · 1 en attente de validation'],
+    settings: ['Paramètres','Gérez votre compte et vos préférences H-SHIELD237'],
+  };
+  const t = titles[viewId] || ['H-SHIELD237',''];
+  document.getElementById('page-title').textContent = t[0];
+  document.getElementById('page-sub').textContent   = t[1];
+
+  const exportBtn=document.getElementById('topbar-export'), ctaBtn=document.getElementById('topbar-cta');
+  if(viewId==='companies'){ exportBtn.style.display='inline-flex'; ctaBtn.style.display='inline-flex'; ctaBtn.innerHTML='<i class="ti ti-plus"></i> Nouvelle entreprise'; ctaBtn.onclick=openCompanyModal; }
+  else if(viewId==='consents'){ exportBtn.style.display='inline-flex'; ctaBtn.style.display='none'; }
+  else if(viewId==='settings'){ exportBtn.style.display='none'; ctaBtn.style.display='none'; }
+  else { exportBtn.style.display='inline-flex'; ctaBtn.style.display='inline-flex'; ctaBtn.innerHTML='<i class="ti ti-plus"></i> Nouvelle campagne'; ctaBtn.onclick=()=>showToast('Redirection vers Nouvelle campagne','info'); }
+
+  window.scrollTo(0,0);
+}
+
+function showToast(msg, type='info') {
+  const el = document.getElementById('toast-el');
+  const ic = document.getElementById('toast-icon');
+  const ms = document.getElementById('toast-msg');
+  const icons = {success:'ti-check',info:'ti-info-circle',error:'ti-alert-circle'};
+  el.className = 'toast ' + type;
+  ic.className = 'ti ' + (icons[type]||'ti-info-circle');
+  ms.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), 3500);
+}
+
+renderCompanies();
+renderConsents();
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeEntDetail(); closeCompanyModal(); } });
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.Python
+build/
+dist/
+venv/
+.venv/
+env/
+*.sqlite3
+staticfiles/
+media/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Node / React / Vite ---
+node_modules/
+frontend/dist/
+frontend/build/
+.npm/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vite/
+
+# --- Env / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Docker ---
+*.pid
+docker-compose.override.yml
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+logs/
+
+# --- TLS certs (self-signed / local) ---
+nginx/certs/*.pem
+nginx/certs/*.key
+nginx/certs/*.crt

@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H-SHIELD237 — Templates sectoriels</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F1F3D;--navy-mid:#1B2A5A;--navy-light:#2C3F6B;
+  --red:#C0392B;--red-dark:#a93226;--red-light:rgba(192,57,43,.09);--red-border:rgba(192,57,43,.28);--red-soft:#F5B7B1;--red-text:#7B241C;
+  --gold:#C49A1A;--gold-light:#FEF9E7;
+  --green:#1A7F4A;--green-light:#EAFAF1;
+  --orange:#E67E22;--orange-light:#FEF5E7;
+  --blue:#1A5FA0;--blue-light:#EBF5FB;
+  --teal:#0E7C7B;--teal-light:#E0F2F1;
+  --purple:#6B21A8;--purple-light:#F5F3FF;
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;
+  --border:rgba(0,0,0,0.08);--border-str:rgba(0,0,0,0.14);
+  --text:#0F1F3D;--text2:#4A5568;--text3:#8A97AC;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.09);
+}
+html,body{min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+.app{display:grid;grid-template-columns:228px 1fr;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--navy);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:20px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:11px}
+.logo-icon{width:38px;height:38px;background:var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(192,57,43,.35)}
+.logo-icon i{color:#fff;font-size:19px}
+.logo-name{font-size:15.5px;font-weight:600;color:#fff;letter-spacing:-.02em;line-height:1}
+.logo-name span{color:var(--red)}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.34);margin-top:3px}
+.nav{padding:14px 10px;flex:1}
+.nav-section{font-size:9.5px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;padding:10px 10px 5px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);font-size:13px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:1px;transition:background .12s,color .12s;border:1px solid transparent;text-decoration:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.88)}
+.nav-item.active{background:rgba(192,57,43,.22);color:var(--red-soft);border-color:rgba(192,57,43,.38)}
+.nav-item i{font-size:17px;color:rgba(255,255,255,.32)}
+.nav-item.active i,.nav-item:hover i{color:inherit}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+.sidebar-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:rgba(255,255,255,.8);flex-shrink:0}
+.ava-name{font-size:12px;color:rgba(255,255,255,.8);font-weight:500}
+.ava-role{font-size:10px;color:rgba(255,255,255,.33)}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:var(--shadow)}
+.topbar-left h1{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.topbar-left span{font-size:11.5px;color:var(--text3);display:block;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:9px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--radius);font-size:12.5px;cursor:pointer;border:1px solid var(--border-str);background:var(--surface);color:var(--text2);font-family:inherit;transition:background .12s;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn i{font-size:15px}
+.btn-icon{padding:7px 9px}
+.btn-primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn-primary:hover{background:var(--red-dark)}
+.btn-navy{background:var(--navy-mid);border-color:var(--navy-mid);color:#fff}
+.btn-navy:hover{background:var(--navy-light)}
+.btn-green{background:var(--green);border-color:var(--green);color:#fff}
+.content{padding:22px 24px 48px;flex:1}
+.view{display:none}.view.active{display:block}
+
+/* ── COMMUN ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.card-pad{padding:18px 20px}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:13.5px;font-weight:600}
+.card-sub{font-size:11.5px;color:var(--text3);margin-top:2px}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.badge-danger{background:var(--red-light);color:var(--red)}
+.badge-success{background:var(--green-light);color:var(--green)}
+.badge-warning{background:var(--orange-light);color:var(--orange)}
+.badge-accent{background:var(--blue-light);color:var(--blue)}
+.badge-neutral{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.tag{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.tag-health{background:#FEE;color:#922}.tag-finance{background:#E8F0FE;color:#1A5FA0}
+.tag-btp{background:var(--orange-light);color:#7D4600}.tag-commerce{background:var(--green-light);color:var(--green)}
+.tag-edu{background:var(--teal-light);color:var(--teal)}.tag-hotel{background:var(--gold-light);color:var(--gold)}
+.tag-all{background:var(--purple-light);color:var(--purple)}
+
+/* ── MÉTRIQUES ── */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.metric::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.metric.m-navy::after{background:var(--navy-mid)}.metric.m-red::after{background:var(--red)}.metric.m-green::after{background:var(--green)}.metric.m-gold::after{background:var(--gold)}
+.metric-label{font-size:10px;color:var(--text3);margin-bottom:6px;display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.06em}
+.metric-label i{font-size:13px}
+.metric-value{font-size:24px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* ── LAYOUT TEMPLATES ── */
+.tpl-layout{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+
+/* ── SECTEURS SIDEBAR ── */
+.sector-nav{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;position:sticky;top:78px}
+.sector-nav-header{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between}
+.sector-btn{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;transition:background .12s;border-bottom:1px solid var(--border);position:relative}
+.sector-btn:last-child{border-bottom:none}
+.sector-btn:hover{background:var(--surface2)}
+.sector-btn.active{background:#EBF0F9;border-left:3px solid var(--navy-mid)}
+.sector-btn.active .sector-btn-name{color:var(--navy-mid);font-weight:600}
+.sector-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sector-icon i{font-size:18px}
+.sector-btn-name{font-size:13px;color:var(--text);flex:1}
+.sector-btn-count{font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:1px 7px}
+
+/* ── GRILLE TEMPLATES ── */
+.tpl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.tpl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:all .15s}
+.tpl-card:hover{border-color:var(--navy-mid);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.tpl-card.selected{border-color:var(--navy-mid);border-width:2px}
+.tpl-card-header{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.tpl-card-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tpl-card-icon i{font-size:19px}
+.tpl-card-top-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.tpl-card-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.tpl-card-pretexte{font-size:11.5px;color:var(--text3)}
+.tpl-card-body{padding:0 16px 12px}
+.tpl-card-snippet{font-size:12px;color:var(--text2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tpl-card-footer{padding:10px 16px;border-top:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between}
+.tpl-footer-stats{display:flex;gap:10px}
+.tpl-stat{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text3)}
+.tpl-stat i{font-size:13px}
+.tpl-stat strong{color:var(--text2)}
+.tpl-actions{display:flex;gap:6px}
+.tpl-act-btn{width:26px;height:26px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:14px;transition:all .12s}
+.tpl-act-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--border-str)}
+
+/* ── ÉDITEUR DE TEMPLATE ── */
+.editor-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;margin-top:16px}
+.editor-header{background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.editor-title{font-size:14px;font-weight:600;color:#fff}
+.editor-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+.editor-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surface2)}
+.editor-tab{padding:10px 16px;font-size:12.5px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;font-weight:500}
+.editor-tab:hover{color:var(--text)}
+.editor-tab.active{color:var(--navy-mid);border-bottom-color:var(--navy-mid);background:var(--surface)}
+.editor-body{padding:18px 20px}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;transition:border-color .15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,42,90,.09);background:var(--surface)}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text3)}
+.form-textarea{resize:vertical;line-height:1.65}
+.form-hint{font-size:11px;color:var(--text3);margin-top:4px;display:flex;align-items:flex-start;gap:5px}
+.form-hint i{font-size:13px;flex-shrink:0;margin-top:1px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.prompt-editor{font-family:'Courier New',monospace;font-size:12px;min-height:140px;background:#0F1F3D;color:#A8D4A8;border-color:var(--navy-mid);border-radius:var(--radius);padding:12px;line-height:1.7}
+.prompt-editor:focus{background:#111D35;box-shadow:0 0 0 3px rgba(27,42,90,.15)}
+.var-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.var-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:var(--navy-mid);color:#fff;font-size:11px;cursor:pointer;transition:background .12s;font-family:'Courier New',monospace}
+.var-chip:hover{background:var(--navy-light)}
+
+/* ── PRÉVISUALISATION EMAIL ── */
+.email-preview{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.email-toolbar{display:flex;gap:5px;padding:8px 10px;border-bottom:1px solid var(--border);background:var(--bg)}
+.email-circle{width:10px;height:10px;border-radius:50%}
+.email-meta-bar{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:5px}
+.email-meta-row{display:flex;align-items:center;gap:8px;font-size:11.5px}
+.email-meta-key{color:var(--text3);min-width:42px}
+.email-meta-val{color:var(--text);font-weight:500}
+.email-subject-bar{padding:12px 14px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600}
+.email-body-content{padding:14px;font-size:12.5px;color:var(--text2);line-height:1.75}
+.email-cta-btn{display:inline-flex;align-items:center;gap:6px;background:var(--navy-mid);color:#fff;padding:8px 16px;border-radius:var(--radius);font-size:12px;font-weight:500;margin-top:12px;cursor:pointer}
+.email-sim-badge{margin:10px 14px;padding:8px 12px;background:var(--red-light);border:1px solid var(--red-border);border-radius:var(--radius);font-size:11px;color:var(--red-text);display:flex;align-items:center;gap:7px}
+.email-sim-badge i{font-size:13px;color:var(--red);flex-shrink:0}
+
+/* ── VARIABLES DISPONIBLES ── */
+.vars-table{width:100%;border-collapse:collapse;font-size:12px}
+.vars-table th{text-align:left;font-size:10.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:0 12px 8px;border-bottom:1px solid var(--border)}
+.vars-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.vars-table tr:last-child td{border-bottom:none}
+.vars-table tr:hover td{background:var(--surface2)}
+.var-code{font-family:'Courier New',monospace;font-size:11.5px;background:var(--navy-mid);color:#fff;padding:2px 7px;border-radius:4px}
+
+/* ── MODAL NOUVEAU TEMPLATE ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.18)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:17px;font-weight:600}
+.modal-body{padding:22px 24px}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+.close-btn{width:30px;height:30px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3)}
+.close-btn:hover{background:var(--bg)}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:160px}
+.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3);pointer-events:none}
+.search-wrap input{width:100%;padding:8px 12px 8px 34px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit}
+.search-wrap input:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,42,90,.08)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;max-width:360px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast i{font-size:17px;flex-shrink:0}
+.toast.success i{color:#4ADE80}.toast.error i{color:#F87171}.toast.info i{color:#60A5FA}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ════════ SIDEBAR ════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-shield-lock"></i></div>
+    <div>
+      <div class="logo-name">H-SHIELD<span>237</span></div>
+      <div class="logo-sub">Simulateur de phishing éducatif</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Principal</div>
+    <a class="nav-item" id="nav-dashboard" onclick="showView('dashboard',this);return false" href="#"><i class="ti ti-layout-dashboard"></i> Tableau de bord</a>
+    <a class="nav-item" id="nav-generate" onclick="showView('generate',this);return false" href="#"><i class="ti ti-robot"></i> Générer un scénario</a>
+    <a class="nav-item" id="nav-campaigns" onclick="showView('campaigns',this);return false" href="#"><i class="ti ti-send"></i> Campagnes <span class="nav-badge">4</span></a>
+    <div class="nav-section">Analyse</div>
+    <a class="nav-item" id="nav-results" onclick="showView('results',this);return false" href="#"><i class="ti ti-chart-bar"></i> Résultats</a>
+    <a class="nav-item" id="nav-reports" onclick="showView('reports',this);return false" href="#"><i class="ti ti-file-report"></i> Rapports PDF <span class="nav-badge">2</span></a>
+    <a class="nav-item" id="nav-history" onclick="showView('history',this);return false" href="#"><i class="ti ti-history"></i> Historique</a>
+    <div class="nav-section">Configuration</div>
+    <a class="nav-item active" id="nav-templates" onclick="showView('templates',this);return false" href="#"><i class="ti ti-template"></i> Templates sectoriels</a>
+    <a class="nav-item" onclick="showToast('Entreprises clientes','info');return false" href="#"><i class="ti ti-building"></i> Entreprises clientes</a>
+    <a class="nav-item" onclick="showToast('Consentements','info');return false" href="#"><i class="ti ti-shield-check"></i> Consentements</a>
+    <a class="nav-item" onclick="showToast('Paramètres','info');return false" href="#"><i class="ti ti-settings"></i> Paramètres</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar">LJ</div>
+    <div><div class="ava-name">LEVY Jérémie</div><div class="ava-role">Consultant — CSRL Yaoundé</div></div>
+  </div>
+</aside>
+
+<!-- ════════ MAIN ════════ -->
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 id="page-title">Templates sectoriels</h1>
+      <span id="page-sub">28 templates actifs · 6 secteurs d'activité couverts</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-icon"><i class="ti ti-search"></i></button>
+      <button class="btn btn-icon" style="position:relative">
+        <i class="ti ti-bell"></i>
+        <span style="position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid #fff"></span>
+      </button>
+      <button class="btn" onclick="showToast('Export JSON des templates','info')"><i class="ti ti-download"></i> Exporter</button>
+      <button class="btn btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> Nouveau template</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Vues placeholder -->
+    <div class="view" id="view-dashboard"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('templates',document.getElementById('nav-templates'));return false" style="color:var(--blue)">Revenir aux templates</a></p></div>
+    <div class="view" id="view-generate"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('templates',document.getElementById('nav-templates'));return false" style="color:var(--blue)">Revenir aux templates</a></p></div>
+    <div class="view" id="view-campaigns"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('templates',document.getElementById('nav-templates'));return false" style="color:var(--blue)">Revenir aux templates</a></p></div>
+    <div class="view" id="view-results"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('templates',document.getElementById('nav-templates'));return false" style="color:var(--blue)">Revenir aux templates</a></p></div>
+    <div class="view" id="view-reports"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('templates',document.getElementById('nav-templates'));return false" style="color:var(--blue)">Revenir aux templates</a></p></div>
+    <div class="view" id="view-history"><p style="color:var(--text3);padding:40px;text-align:center">← <a href="#" onclick="showView('templates',document.getElementById('nav-templates'));return false" style="color:var(--blue)">Revenir aux templates</a></p></div>
+
+    <!-- ══════ VUE TEMPLATES ══════ -->
+    <div class="view active" id="view-templates">
+
+      <!-- Métriques -->
+      <div class="metrics">
+        <div class="metric m-navy"><div class="metric-label"><i class="ti ti-template"></i> Templates actifs</div><div class="metric-value">28</div><div class="metric-sub">6 secteurs couverts</div></div>
+        <div class="metric m-red"><div class="metric-label"><i class="ti ti-flame"></i> Plus utilisé</div><div class="metric-value" style="color:var(--red);font-size:16px">Alerte BEAC</div><div class="metric-sub">7 campagnes ce mois</div></div>
+        <div class="metric m-green"><div class="metric-label"><i class="ti ti-star"></i> Taux de clic moyen</div><div class="metric-value" style="color:var(--green)">54 %</div><div class="metric-sub">sur tous les templates</div></div>
+        <div class="metric m-gold"><div class="metric-label"><i class="ti ti-clock"></i> Dernière mise à jour</div><div class="metric-value" style="font-size:16px;color:var(--gold)">08/07/2026</div><div class="metric-sub">Template ARMP modifié</div></div>
+      </div>
+
+      <!-- Layout -->
+      <div class="tpl-layout">
+
+        <!-- Navigation secteurs -->
+        <div>
+          <div class="sector-nav">
+            <div class="sector-nav-header">
+              Secteurs
+              <span style="font-size:11px;color:var(--text3)">6 actifs</span>
+            </div>
+            <div class="sector-btn active" id="sect-all" onclick="selectSector('all',this)">
+              <div class="sector-icon" style="background:var(--purple-light)"><i class="ti ti-layout-grid" style="color:var(--purple)"></i></div>
+              <span class="sector-btn-name">Tous les secteurs</span>
+              <span class="sector-btn-count">28</span>
+            </div>
+            <div class="sector-btn" id="sect-sante" onclick="selectSector('sante',this)">
+              <div class="sector-icon" style="background:#FEE"><i class="ti ti-stethoscope" style="color:#922"></i></div>
+              <span class="sector-btn-name">Santé / Clinique</span>
+              <span class="sector-btn-count">5</span>
+            </div>
+            <div class="sector-btn" id="sect-finance" onclick="selectSector('finance',this)">
+              <div class="sector-icon" style="background:var(--blue-light)"><i class="ti ti-building-bank" style="color:var(--blue)"></i></div>
+              <span class="sector-btn-name">Microfinance / MFI</span>
+              <span class="sector-btn-count">6</span>
+            </div>
+            <div class="sector-btn" id="sect-commerce" onclick="selectSector('commerce',this)">
+              <div class="sector-icon" style="background:var(--green-light)"><i class="ti ti-package" style="color:var(--green)"></i></div>
+              <span class="sector-btn-name">Commerce / Import-Export</span>
+              <span class="sector-btn-count">5</span>
+            </div>
+            <div class="sector-btn" id="sect-btp" onclick="selectSector('btp',this)">
+              <div class="sector-icon" style="background:var(--orange-light)"><i class="ti ti-crane" style="color:var(--orange)"></i></div>
+              <span class="sector-btn-name">BTP / Génie Civil</span>
+              <span class="sector-btn-count">4</span>
+            </div>
+            <div class="sector-btn" id="sect-edu" onclick="selectSector('edu',this)">
+              <div class="sector-icon" style="background:var(--teal-light)"><i class="ti ti-school" style="color:var(--teal)"></i></div>
+              <span class="sector-btn-name">Enseignement privé</span>
+              <span class="sector-btn-count">4</span>
+            </div>
+            <div class="sector-btn" id="sect-hotel" onclick="selectSector('hotel',this)">
+              <div class="sector-icon" style="background:var(--gold-light)"><i class="ti ti-building-hotel" style="color:var(--gold)"></i></div>
+              <span class="sector-btn-name">Hôtellerie / Restauration</span>
+              <span class="sector-btn-count">4</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <div>
+          <!-- Toolbar -->
+          <div class="toolbar">
+            <div class="search-wrap">
+              <i class="ti ti-search"></i>
+              <input type="text" placeholder="Rechercher un template…" oninput="filterTemplates(this.value)">
+            </div>
+            <select style="padding:7px 12px;border-radius:var(--radius);border:1px solid var(--border-str);background:var(--surface);font-size:12px;font-family:inherit" onchange="showToast('Tri : '+this.value,'info')">
+              <option>Trier par : Plus utilisé</option>
+              <option>Trier par : Taux de clic</option>
+              <option>Trier par : Date de création</option>
+              <option>Trier par : Nom</option>
+            </select>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-icon" onclick="showToast('Vue grille','info')" title="Vue grille"><i class="ti ti-layout-grid"></i></button>
+              <button class="btn btn-icon" onclick="showToast('Vue liste','info')" title="Vue liste"><i class="ti ti-list"></i></button>
+            </div>
+          </div>
+
+          <!-- Grille templates -->
+          <div class="tpl-grid" id="tpl-grid">
+            <!-- Injecté par JS -->
+          </div>
+
+          <!-- Éditeur de prompt -->
+          <div class="editor-panel" id="editor-panel" style="display:none">
+            <div class="editor-header">
+              <div>
+                <div class="editor-title" id="editor-title">Alerte réglementaire BEAC / MINFI</div>
+                <div class="editor-sub" id="editor-sub">Microfinance / MFI · Prétexte : Alerte réglementaire</div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn" style="border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7);background:transparent" onclick="closeEditor()"><i class="ti ti-x"></i></button>
+              </div>
+            </div>
+
+            <!-- Tabs éditeur -->
+            <div class="editor-tabs">
+              <div class="editor-tab active" onclick="switchEditorTab('prompt',this)">Prompt LLM</div>
+              <div class="editor-tab" onclick="switchEditorTab('preview',this)">Prévisualisation</div>
+              <div class="editor-tab" onclick="switchEditorTab('variables',this)">Variables disponibles</div>
+              <div class="editor-tab" onclick="switchEditorTab('stats',this)">Statistiques</div>
+            </div>
+
+            <!-- Tab : Prompt -->
+            <div class="editor-body" id="tab-prompt">
+              <div class="form-row" style="margin-bottom:14px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Nom du template</label>
+                  <input class="form-input" type="text" id="tpl-name-input" value="Alerte réglementaire BEAC / MINFI">
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Type de prétexte</label>
+                  <select class="form-select" id="tpl-type-input">
+                    <option selected>Alerte réglementaire</option>
+                    <option>Changement de coordonnées</option>
+                    <option>Attribution de marché</option>
+                    <option>Alerte Mobile Money</option>
+                    <option>Notification institutionnelle</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Prompt structuré (instruction LLM)</label>
+                <textarea class="form-textarea prompt-editor" id="prompt-editor" style="min-height:160px">Tu es un expert en simulation de phishing éducatif. Génère un email de phishing crédible pour sensibiliser les employés d'une {{SECTEUR}}.
+
+CONTEXTE : {{CONTEXTE_ENTREPRISE}}
+EXPÉDITEUR SIMULÉ : Banque des États de l'Afrique Centrale (BEAC) — Direction de la Supervision Financière
+PRÉTEXTE : Suspension urgente du compte {{NUMERO_COMPTE}} suite à un contrôle de conformité réglementaire.
+
+CONSIGNES :
+- Ton officiel et formel, vocabulaire réglementaire camerounais
+- Mentionner une référence de circulaire fictive mais crédible
+- Délai de 48h maximum pour créer l'urgence
+- Inclure un lien vers le "portail de conformité BEAC"
+- Langue : Français professionnel
+
+GÉNÈRE : Objet de l'email + Corps complet + Texte du bouton CTA</textarea>
+                <div class="form-hint"><i class="ti ti-info-circle"></i> Utilisez les variables entre {{accolades}} pour personnaliser dynamiquement le prompt. Cliquez sur une variable pour l'insérer.</div>
+              </div>
+              <div>
+                <div class="form-label">Variables rapides</div>
+                <div class="var-chips">
+                  <span class="var-chip" onclick="insertVar('{{SECTEUR}}')">{{SECTEUR}}</span>
+                  <span class="var-chip" onclick="insertVar('{{ENTREPRISE}}')">{{ENTREPRISE}}</span>
+                  <span class="var-chip" onclick="insertVar('{{CONTEXTE_ENTREPRISE}}')">{{CONTEXTE_ENTREPRISE}}</span>
+                  <span class="var-chip" onclick="insertVar('{{NUMERO_COMPTE}}')">{{NUMERO_COMPTE}}</span>
+                  <span class="var-chip" onclick="insertVar('{{DATE_LIMITE}}')">{{DATE_LIMITE}}</span>
+                  <span class="var-chip" onclick="insertVar('{{NOM_DESTINATAIRE}}')">{{NOM_DESTINATAIRE}}</span>
+                  <span class="var-chip" onclick="insertVar('{{MONTANT}}')">{{MONTANT}}</span>
+                  <span class="var-chip" onclick="insertVar('{{REFERENCE_CIRCULAIRE}}')">{{REFERENCE_CIRCULAIRE}}</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:16px">
+                <button class="btn btn-primary" onclick="showToast('Template sauvegardé avec succès','success')"><i class="ti ti-device-floppy"></i> Sauvegarder</button>
+                <button class="btn btn-navy" onclick="switchEditorTab('preview',document.querySelectorAll('.editor-tab')[1]);testPrompt()"><i class="ti ti-eye"></i> Tester le prompt</button>
+                <button class="btn" onclick="showToast('Template dupliqué','info')"><i class="ti ti-copy"></i> Dupliquer</button>
+                <button class="btn" style="margin-left:auto;color:var(--red);border-color:var(--red-border)" onclick="showToast('Template archivé','info')"><i class="ti ti-archive"></i> Archiver</button>
+              </div>
+            </div>
+
+            <!-- Tab : Prévisualisation -->
+            <div class="editor-body" id="tab-preview" style="display:none">
+              <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:12px;color:var(--text3)">Aperçu généré à partir du template · Secteur : <strong id="preview-sector-label">Microfinance / MFI</strong></div>
+                <button class="btn" onclick="testPrompt()"><i class="ti ti-refresh"></i> Régénérer</button>
+              </div>
+              <div class="email-preview">
+                <div class="email-toolbar">
+                  <div class="email-circle" style="background:#FF5F57"></div>
+                  <div class="email-circle" style="background:#FFBD2E"></div>
+                  <div class="email-circle" style="background:#28C840"></div>
+                  <div style="flex:1;text-align:center;font-size:10px;color:var(--text3)">Messagerie professionnelle — simulation éducative</div>
+                </div>
+                <div class="email-meta-bar">
+                  <div class="email-meta-row"><span class="email-meta-key">De :</span><span class="email-meta-val" id="prev-from">noreply@beac-conformite-dsf.cm</span></div>
+                  <div class="email-meta-row"><span class="email-meta-key">À :</span><span class="email-meta-val">personnel@mfi-camerounsud.cm</span></div>
+                  <div class="email-meta-row"><span class="email-meta-key">Objet :</span><span class="email-meta-val" id="prev-subject">⚠️ Suspension urgente — Mise en conformité BEAC avant le 20 juillet 2026</span></div>
+                </div>
+                <div class="email-subject-bar" id="prev-subject-large">⚠️ Suspension urgente — Mise en conformité BEAC avant le 20 juillet 2026</div>
+                <div class="email-body-content" id="prev-body">
+                  Madame, Monsieur,<br><br>
+                  Suite à la circulaire <strong>n°2026/BEAC/DSF/0044</strong> relative au contrôle de conformité des établissements de microfinance agréés, votre compte opérationnel <strong>n°CM21-MFI-00847</strong> a été temporairement suspendu en attente de mise à jour de vos documents réglementaires.<br><br>
+                  Vous disposez de <strong>48 heures</strong> pour régulariser votre situation auprès de la Direction de la Supervision Financière. Passé ce délai, un rapport sera transmis à la Commission Bancaire de l'AFRITAC et votre agrément d'exercice pourra être suspendu.<br><br>
+                  Accédez au portail sécurisé pour soumettre vos documents :<br>
+                  <div class="email-cta-btn"><i class="ti ti-external-link" style="font-size:15px"></i> Accéder au portail BEAC Conformité →</div>
+                </div>
+                <div class="email-sim-badge"><i class="ti ti-shield-exclamation"></i> Simulation éducative H-SHIELD237 — aucune donnée réelle n'est collectée.</div>
+              </div>
+            </div>
+
+            <!-- Tab : Variables -->
+            <div class="editor-body" id="tab-variables" style="display:none">
+              <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.65">Les variables sont substituées automatiquement lors de la génération du scénario, à partir du profil de l'entreprise cliente saisi par le consultant.</p>
+              <table class="vars-table">
+                <thead><tr><th>Variable</th><th>Description</th><th>Exemple de valeur</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="var-code">{{SECTEUR}}</span></td><td>Secteur d'activité de l'entreprise</td><td>Microfinance / MFI</td></tr>
+                  <tr><td><span class="var-code">{{ENTREPRISE}}</span></td><td>Nom de l'entreprise cliente</td><td>MFI Cameroun Sud</td></tr>
+                  <tr><td><span class="var-code">{{CONTEXTE_ENTREPRISE}}</span></td><td>Contexte additionnel saisi par le consultant</td><td>Utilise messagerie Gmail, agence principale à Yaoundé Mfoundi</td></tr>
+                  <tr><td><span class="var-code">{{NUMERO_COMPTE}}</span></td><td>Numéro de compte fictif généré</td><td>CM21-MFI-00847</td></tr>
+                  <tr><td><span class="var-code">{{DATE_LIMITE}}</span></td><td>Date limite calculée automatiquement (J+2)</td><td>20 juillet 2026</td></tr>
+                  <tr><td><span class="var-code">{{NOM_DESTINATAIRE}}</span></td><td>Nom de l'employé destinataire (si fourni)</td><td>M. Jean-Pierre MVOMO</td></tr>
+                  <tr><td><span class="var-code">{{MONTANT}}</span></td><td>Montant fictif contextualisé</td><td>4 850 000 FCFA</td></tr>
+                  <tr><td><span class="var-code">{{REFERENCE_CIRCULAIRE}}</span></td><td>Référence de circulaire fictive mais crédible</td><td>n°2026/BEAC/DSF/0044</td></tr>
+                  <tr><td><span class="var-code">{{EXPEDITEUR_NOM}}</span></td><td>Nom de l'expéditeur simulé</td><td>Direction Supervision Financière BEAC</td></tr>
+                  <tr><td><span class="var-code">{{EXPEDITEUR_EMAIL}}</span></td><td>Email de l'expéditeur simulé</td><td>noreply@beac-conformite-dsf.cm</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Tab : Statistiques -->
+            <div class="editor-body" id="tab-stats" style="display:none">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center">
+                  <div style="font-size:26px;font-weight:700;color:var(--navy-mid)" id="stat-uses">7</div>
+                  <div style="font-size:11px;color:var(--text3);margin-top:4px">Campagnes utilisant ce template</div>
+                </div>
+                <div style="background:var(--red-light);border:1px solid var(--red-border);border-radius:var(--radius);padding:14px;text-align:center">
+                  <div style="font-size:26px;font-weight:700;color:var(--red)" id="stat-click">54 %</div>
+                  <div style="font-size:11px;color:var(--red-text);margin-top:4px">Taux de clic moyen</div>
+                </div>
+                <div style="background:var(--green-light);border:1px solid rgba(26,127,74,.2);border-radius:var(--radius);padding:14px;text-align:center">
+                  <div style="font-size:26px;font-weight:700;color:var(--green)" id="stat-report">11 %</div>
+                  <div style="font-size:11px;color:var(--green);opacity:.8;margin-top:4px">Taux de signalement</div>
+                </div>
+              </div>
+              <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Dernières campagnes utilisant ce template</div>
+              <div style="display:flex;flex-direction:column;gap:8px" id="stat-campaigns">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);font-size:12px">
+                  <span style="font-weight:500">MFI Cameroun Sud</span>
+                  <span style="color:var(--text3)">05/07/2026</span>
+                  <span style="color:var(--orange);font-weight:700">49 %</span>
+                  <span class="badge badge-warning">Active</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);font-size:12px">
+                  <span style="font-weight:500">MFI Cameroun Sud</span>
+                  <span style="color:var(--text3)">20/05/2026</span>
+                  <span style="color:var(--red);font-weight:700">52 %</span>
+                  <span class="badge badge-success">Terminée</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);font-size:12px">
+                  <span style="font-weight:500">MFI Nord Cameroun</span>
+                  <span style="color:var(--text3)">20/01/2026</span>
+                  <span style="color:var(--red);font-weight:700">58 %</span>
+                  <span class="badge badge-success">Terminée</span>
+                </div>
+              </div>
+            </div>
+          </div><!-- /editor-panel -->
+        </div><!-- /main col -->
+      </div><!-- /tpl-layout -->
+    </div><!-- /view-templates -->
+  </div><!-- /content -->
+</main>
+</div><!-- /app -->
+
+<!-- Modal nouveau template -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Nouveau template</h3>
+      <div class="close-btn" onclick="closeModal()"><i class="ti ti-x"></i></div>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nom du template *</label>
+          <input class="form-input" type="text" placeholder="Ex : Alerte fiscale DGI">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Secteur d'activité *</label>
+          <select class="form-select">
+            <option value="">Choisir un secteur…</option>
+            <option>Santé / Clinique</option>
+            <option>Microfinance / MFI</option>
+            <option>Commerce / Import-Export</option>
+            <option>BTP / Génie Civil</option>
+            <option>Enseignement privé</option>
+            <option>Hôtellerie / Restauration</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type de prétexte *</label>
+        <select class="form-select">
+          <option>Alerte réglementaire</option>
+          <option>Changement de coordonnées bancaires</option>
+          <option>Attribution de marché public</option>
+          <option>Alerte Mobile Money</option>
+          <option>Notification institutionnelle</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Prompt initial (optionnel)</label>
+        <textarea class="form-textarea" placeholder="Décrivez le scénario que le LLM devra générer… Vous pourrez l'affiner dans l'éditeur." style="min-height:100px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="closeModal();showToast('Nouveau template créé — ouvrez l\'éditeur pour configurer le prompt','success')"><i class="ti ti-plus"></i> Créer le template</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast-el"><i class="ti ti-info-circle" id="toast-icon"></i><span id="toast-msg"></span></div>
+
+<script>
+/* ════════════════════
+   DONNÉES TEMPLATES
+════════════════════ */
+const templates = [
+  { id:0, sector:'finance', name:'Alerte réglementaire BEAC / MINFI', pretexte:'Alerte réglementaire', uses:7, click:54, report:11, updated:'05/07/2026', iconBg:'var(--blue-light)', iconColor:'var(--blue)', icon:'ti-building-bank', sectorTag:'tag-finance', sectorLabel:'Microfinance', prompt:'Tu es un expert en simulation de phishing éducatif. Génère un email de phishing crédible pour sensibiliser les employés d\'une {{SECTEUR}}.\n\nCONTEXTE : {{CONTEXTE_ENTREPRISE}}\nEXPÉDITEUR SIMULÉ : BEAC — Direction de la Supervision Financière\nPRÉTEXTE : Suspension urgente du compte {{NUMERO_COMPTE}}.\n\nCONSIGNES :\n- Ton officiel et formel\n- Délai de 48h pour créer l\'urgence\n- Inclure un lien vers le "portail de conformité BEAC"\n\nGÉNÈRE : Objet + Corps + Texte CTA', prevFrom:'noreply@beac-conformite-dsf.cm', prevSubject:'⚠️ Suspension urgente — Mise en conformité BEAC avant le 20 juillet 2026', prevBody:'Suite à la circulaire <strong>n°2026/BEAC/DSF/0044</strong>, votre compte opérationnel <strong>n°CM21-MFI-00847</strong> a été temporairement suspendu. Vous disposez de <strong>48 heures</strong> pour régulariser votre situation...' },
+  { id:1, sector:'sante', name:'Mise à jour CENAME / MINSANTE', pretexte:'Notification institutionnelle', uses:5, click:68, report:9, updated:'02/07/2026', iconBg:'#FEE', iconColor:'#922', icon:'ti-file-certificate', sectorTag:'tag-health', sectorLabel:'Santé', prompt:'Génère un email imitant le MINSANTE pour une {{SECTEUR}}. Prétexte : mise à jour obligatoire des déclarations CENAME avant une date butoir.', prevFrom:'noreply@cename-minsante.cm', prevSubject:'⚠️ Mise à jour obligatoire CENAME avant le 15 juillet 2026', prevBody:'Suite à la circulaire <strong>n°2026/MSP/CENAME/008</strong>, toutes les structures sanitaires sont tenues de mettre à jour leurs déclarations de stock médicamenteux avant la date butoir...' },
+  { id:2, sector:'commerce', name:'Changement RIB fournisseur international', pretexte:'Changement de coordonnées', uses:6, click:61, report:6, updated:'08/07/2026', iconBg:'var(--green-light)', iconColor:'var(--green)', icon:'ti-cash', sectorTag:'tag-commerce', sectorLabel:'Commerce', prompt:'Génère un email imitant un fournisseur international annonçant un changement de coordonnées bancaires avant un règlement urgent de {{MONTANT}}.', prevFrom:'finance@guangzhou-trade-intl.com', prevSubject:'[URGENT] Mise à jour coordonnées bancaires — Règlement facture #INV-2026-7821', prevBody:'Nos coordonnées bancaires ont changé suite à l\'ouverture d\'un nouveau compte européen. Utilisez ces nouvelles informations pour le règlement de <strong>{{MONTANT}}</strong>...' },
+  { id:3, sector:'btp', name:'Attribution de marché ARMP / MINTP', pretexte:'Attribution de marché public', uses:4, click:43, report:8, updated:'07/07/2026', iconBg:'var(--orange-light)', iconColor:' #7D4600', icon:'ti-briefcase', sectorTag:'tag-btp', sectorLabel:'BTP', prompt:'Génère un email imitant l\'ARMP notifiant l\'attribution d\'un marché public MINTP. Inclure un numéro de marché fictif et un délai pour télécharger la notification officielle.', prevFrom:'notifications@armp-mintp.cm', prevSubject:'[RÉSULTAT] Notification attribution marché n°MINTP-2026-0372', prevBody:'L\'Autorité de Régulation des Marchés Publics vous informe que votre offre pour le lot 3 a été retenue. Téléchargez votre notification officielle dans les <strong>72 heures</strong>...' },
+  { id:4, sector:'edu', name:'Alerte portail MINESUP / SIGES', pretexte:'Notification institutionnelle', uses:3, click:37, report:18, updated:'28/06/2026', iconBg:'var(--teal-light)', iconColor:'var(--teal)', icon:'ti-school', sectorTag:'tag-edu', sectorLabel:'Enseignement', prompt:'Génère un email imitant le MINESUP notifiant un problème de mise à jour du portail SIGES susceptible de bloquer les inscriptions étudiantes.', prevFrom:'noreply@minesup-infos.cm', prevSubject:'⚠️ Blocage inscriptions 2026-2027 — Portail MINESUP à mettre à jour', prevBody:'Le Ministère de l\'Enseignement Supérieur vous informe que votre établissement n\'a pas complété la procédure de renouvellement d\'accréditation...' },
+  { id:5, sector:'hotel', name:'Fausses réservations plateforme', pretexte:'Notification de paiement', uses:2, click:28, report:14, updated:'25/06/2026', iconBg:'var(--gold-light)', iconColor:'var(--gold)', icon:'ti-building-hotel', sectorTag:'tag-hotel', sectorLabel:'Hôtellerie', prompt:'Génère un email imitant une plateforme de réservation (type Booking) signalant des réservations en attente qui expireront dans 24h si non confirmées.', prevFrom:'reservations@booking-confirmations.cm', prevSubject:'12 nouvelles réservations en attente — Action requise sous 24h', prevBody:'Votre établissement a reçu <strong>12 nouvelles demandes de réservation</strong> pour un montant total de <strong>1 240 000 FCFA</strong>. Ces réservations expirent dans 24 heures si vous ne les confirmez pas...' },
+  { id:6, sector:'finance', name:'Alerte MTN Mobile Money', pretexte:'Alerte Mobile Money', uses:4, click:42, report:13, updated:'20/05/2026', iconBg:'#FEF9C3', iconColor:'#A16207', icon:'ti-device-mobile', sectorTag:'tag-finance', sectorLabel:'Microfinance', prompt:'Génère un email imitant MTN Cameroun signalant une activité suspecte sur un compte Mobile Money et demandant une vérification urgente.', prevFrom:'security@mtn-momo-cm.net', prevSubject:'🔒 Activité suspecte détectée — Compte MTN MoMo bloqué temporairement', prevBody:'Une activité inhabituelle a été détectée sur votre compte MTN Mobile Money. Pour protéger votre compte, nous l\'avons temporairement bloqué. Vérifiez et sécurisez votre compte immédiatement...' },
+  { id:7, sector:'commerce', name:'Alerte Orange Money / Paiement', pretexte:'Alerte Mobile Money', uses:3, click:38, report:10, updated:'15/05/2026', iconBg:'#FFF7ED', iconColor:'var(--orange)', icon:'ti-device-mobile', sectorTag:'tag-commerce', sectorLabel:'Commerce', prompt:'Génère un email imitant Orange Cameroun signalant un problème de paiement en attente à valider.', prevFrom:'noreply@orange-money-secure.cm', prevSubject:'[ACTION REQUISE] Paiement Orange Money en attente de validation', prevBody:'Un paiement de <strong>{{MONTANT}}</strong> est en attente de validation sur votre compte Orange Money. Confirmez ou refusez cette transaction dans les prochaines 24 heures...' },
+];
+
+let currentSector = 'all';
+let currentSearch = '';
+let selectedTplId = null;
+
+/* ════════════════════
+   RENDU DES TEMPLATES
+════════════════════ */
+function renderTemplates() {
+  const grid = document.getElementById('tpl-grid');
+  let data = templates;
+  if (currentSector !== 'all') data = data.filter(t => t.sector === currentSector);
+  if (currentSearch) data = data.filter(t => t.name.toLowerCase().includes(currentSearch) || t.pretexte.toLowerCase().includes(currentSearch));
+
+  grid.innerHTML = '';
+  if (!data.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text3);padding:32px;font-size:13px">Aucun template trouvé.</div>';
+    return;
+  }
+  data.forEach(t => {
+    const clickColor = t.click >= 60 ? 'var(--red)' : t.click >= 40 ? 'var(--orange)' : 'var(--green)';
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="tpl-card ${selectedTplId === t.id ? 'selected' : ''}" id="tpl-card-${t.id}" onclick="selectTemplate(${t.id})">
+        <div class="tpl-card-header">
+          <div style="display:flex;align-items:flex-start;gap:10px;flex:1">
+            <div class="tpl-card-icon" style="background:${t.iconBg}"><i class="ti ${t.icon}" style="color:${t.iconColor}"></i></div>
+            <div>
+              <div class="tpl-card-title">${t.name}</div>
+              <div class="tpl-card-pretexte">${t.pretexte}</div>
+            </div>
+          </div>
+          <div class="tpl-card-top-right">
+            <span class="tag ${t.sectorTag}">${t.sectorLabel}</span>
+          </div>
+        </div>
+        <div class="tpl-card-body">
+          <div class="tpl-card-snippet">${t.prompt}</div>
+        </div>
+        <div class="tpl-card-footer">
+          <div class="tpl-footer-stats">
+            <div class="tpl-stat"><i class="ti ti-send"></i><span><strong>${t.uses}×</strong> utilisé</span></div>
+            <div class="tpl-stat"><i class="ti ti-pointer" style="color:${clickColor}"></i><span style="color:${clickColor}"><strong>${t.click}%</strong> clic</span></div>
+            <div class="tpl-stat"><i class="ti ti-flag" style="color:var(--green)"></i><span><strong>${t.report}%</strong> signal.</span></div>
+          </div>
+          <div class="tpl-actions">
+            <div class="tpl-act-btn" title="Modifier" onclick="event.stopPropagation();selectTemplate(${t.id})"><i class="ti ti-pencil"></i></div>
+            <div class="tpl-act-btn" title="Dupliquer" onclick="event.stopPropagation();showToast('Template \"${t.name}\" dupliqué','success')"><i class="ti ti-copy"></i></div>
+            <div class="tpl-act-btn" title="Archiver" onclick="event.stopPropagation();showToast('Template archivé','info')"><i class="ti ti-archive"></i></div>
+          </div>
+        </div>
+      </div>`);
+  });
+}
+
+/* ════════════════════
+   SÉLECTION TEMPLATE
+════════════════════ */
+function selectTemplate(id) {
+  selectedTplId = id;
+  document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById(`tpl-card-${id}`);
+  if (card) card.classList.add('selected');
+
+  const t = templates.find(x => x.id === id);
+  if (!t) return;
+
+  const panel = document.getElementById('editor-panel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  document.getElementById('editor-title').textContent = t.name;
+  document.getElementById('editor-sub').textContent   = t.sectorLabel + ' · Prétexte : ' + t.pretexte;
+  document.getElementById('tpl-name-input').value     = t.name;
+  document.getElementById('prompt-editor').value      = t.prompt;
+  document.getElementById('prev-from').textContent    = t.prevFrom;
+  document.getElementById('prev-subject').textContent = t.prevSubject;
+  document.getElementById('prev-subject-large').textContent = t.prevSubject;
+  document.getElementById('prev-body').innerHTML      = t.prevBody + '<br><br><div class="email-cta-btn"><i class="ti ti-external-link" style="font-size:15px"></i> Accéder au portail →</div>';
+  document.getElementById('preview-sector-label').textContent = t.sectorLabel;
+  document.getElementById('stat-uses').textContent    = t.uses;
+  document.getElementById('stat-click').textContent   = t.click + ' %';
+  document.getElementById('stat-report').textContent  = t.report + ' %';
+
+  switchEditorTab('prompt', document.querySelector('.editor-tab'));
+}
+
+function closeEditor() {
+  document.getElementById('editor-panel').style.display = 'none';
+  selectedTplId = null;
+  document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
+}
+
+/* ════════════════════
+   TABS ÉDITEUR
+════════════════════ */
+function switchEditorTab(tab, el) {
+  ['prompt','preview','variables','stats'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.editor-tab').forEach(e => e.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+function testPrompt() {
+  showToast('Génération en cours via le LLM…','info');
+}
+
+/* ════════════════════
+   VARIABLES RAPIDES
+════════════════════ */
+function insertVar(v) {
+  const ta = document.getElementById('prompt-editor');
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  ta.value = ta.value.substring(0, start) + v + ta.value.substring(end);
+  ta.selectionStart = ta.selectionEnd = start + v.length;
+  ta.focus();
+  showToast('Variable insérée : ' + v, 'info');
+}
+
+/* ════════════════════
+   FILTRES
+════════════════════ */
+function selectSector(sector, btn) {
+  currentSector = sector;
+  document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTemplates();
+  closeEditor();
+}
+
+function filterTemplates(q) {
+  currentSearch = q.toLowerCase();
+  renderTemplates();
+}
+
+/* ════════════════════
+   MODAL
+════════════════════ */
+function openModal() { document.getElementById('modal-overlay').classList.add('open'); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+/* ════════════════════
+   NAVIGATION
+════════════════════ */
+function showView(viewId, navEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + viewId).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  const titles = {
+    dashboard:['Tableau de bord','Campagnes actives — Juillet 2026'],
+    generate: ['Générer un scénario','Création assistée par IA'],
+    campaigns:['Campagnes','7 campagnes ce mois'],
+    results:  ['Résultats & Analyses','Vue agrégée — 187 employés'],
+    reports:  ['Rapports PDF','12 rapports générés'],
+    history:  ['Historique','Journal complet des campagnes'],
+    templates:['Templates sectoriels','28 templates actifs · 6 secteurs d\'activité couverts'],
+  };
+  const t = titles[viewId] || ['H-SHIELD237',''];
+  document.getElementById('page-title').textContent = t[0];
+  document.getElementById('page-sub').textContent   = t[1];
+  window.scrollTo(0,0);
+}
+
+/* ════════════════════
+   TOAST
+════════════════════ */
+function showToast(msg, type='info') {
+  const el = document.getElementById('toast-el');
+  const ic = document.getElementById('toast-icon');
+  const ms = document.getElementById('toast-msg');
+  const icons = {success:'ti-check',info:'ti-info-circle',error:'ti-alert-circle'};
+  el.className = 'toast ' + type;
+  ic.className = 'ti ' + (icons[type]||'ti-info-circle');
+  ms.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), 3500);
+}
+
+/* ════════════════════
+   INIT
+════════════════════ */
+renderTemplates();
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeEditor(); } });
+</script>
+</body>
+</html>
