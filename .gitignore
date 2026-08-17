@@ -49,6 +49,9 @@ Thumbs.db
 *.log
 logs/
 
+# --- Documents internes (non versionnes) ---
+docs/presentations/
+
 # --- TLS certs (self-signed / local) ---
 nginx/certs/*.pem
 nginx/certs/*.key
