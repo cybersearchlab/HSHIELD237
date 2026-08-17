@@ -10,11 +10,15 @@ class Role(models.TextChoices):
 
 
 class Utilisateur(AbstractUser):
+    email = models.EmailField("adresse e-mail", unique=True)
     role = models.CharField(
         max_length=20,
         choices=Role.choices,
         default=Role.EMPLOYE,
     )
 
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username"]
+
     def __str__(self):
-        return self.get_full_name() or self.username
+        return self.get_full_name() or self.email
