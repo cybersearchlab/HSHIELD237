@@ -28,7 +28,6 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
       - static_data:/app/staticfiles
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/api/health/"]
@@ -65,8 +64,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - ./nginx/certs:/etc/nginx/certs:ro
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "--no-check-certificate", "https://127.0.0.1:443/"]
       interval: 10s
