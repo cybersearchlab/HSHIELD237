@@ -1,0 +1,45 @@
+from django.db import models
+
+
+class Statut(models.TextChoices):
+    BROUILLON = "brouillon", "Brouillon"
+    EN_ATTENTE = "en_attente", "En attente"
+    ACTIVE = "active", "Active"
+    TERMINEE = "terminee", "Terminée"
+
+
+class Departement(models.TextChoices):
+    DIRECTION = "direction", "Direction générale"
+    RH = "rh", "Ressources humaines"
+    COMPTABILITE = "comptabilite", "Comptabilité / Finance"
+    IT = "it", "Informatique"
+    COMMERCIAL = "commercial", "Commercial / Ventes"
+    JURIDIQUE = "juridique", "Juridique"
+    MARKETING = "marketing", "Marketing / Communication"
+    PRODUCTION = "production", "Production / Opérations"
+    ACHATS = "achats", "Achats / Logistique"
+    AUTRE = "autre", "Autre"
+
+
+class Campagne(models.Model):
+    departement = models.CharField(max_length=20, choices=Departement.choices)
+    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.BROUILLON)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    perimetre_valide = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-date_creation"]
+
+    def __str__(self):
+        return f"{self.get_departement_display()} — {self.get_statut_display()}"
+
+
+class ScenarioPhishing(models.Model):
+    campagne = models.ForeignKey(Campagne, on_delete=models.CASCADE, related_name="scenarios")
+    objet_email = models.CharField(max_length=255)
+    corps_email = models.TextField()
+    url_fausse_page = models.URLField()
+    secteur_cible = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.objet_email

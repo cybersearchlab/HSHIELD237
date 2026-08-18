@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.accounts.views import MeView
-from apps.entreprises.views import EntrepriseViewSet
+from apps.campagnes.views import CampagneViewSet
 
 
 def health(request):
@@ -13,7 +13,7 @@ def health(request):
 
 
 router = DefaultRouter()
-router.register("entreprises", EntrepriseViewSet, basename="entreprise")
+router.register("campagnes", CampagneViewSet, basename="campagne")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

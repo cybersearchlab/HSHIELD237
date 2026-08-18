@@ -1,0 +1,64 @@
+[
+  {
+    "model": "campagnes.campagne",
+    "pk": 10,
+    "fields": {
+      "departement": "comptabilite",
+      "statut": "terminee",
+      "date_creation": "2026-07-12T08:00:00Z",
+      "perimetre_valide": true
+    }
+  },
+  {
+    "model": "campagnes.campagne",
+    "pk": 11,
+    "fields": {
+      "departement": "it",
+      "statut": "active",
+      "date_creation": "2026-07-20T08:00:00Z",
+      "perimetre_valide": true
+    }
+  },
+  {
+    "model": "campagnes.campagne",
+    "pk": 12,
+    "fields": {
+      "departement": "commercial",
+      "statut": "en_attente",
+      "date_creation": "2026-08-01T08:00:00Z",
+      "perimetre_valide": false
+    }
+  },
+  {
+    "model": "campagnes.campagne",
+    "pk": 13,
+    "fields": {
+      "departement": "rh",
+      "statut": "brouillon",
+      "date_creation": "2026-08-15T08:00:00Z",
+      "perimetre_valide": false
+    }
+  },
+  {
+    "model": "campagnes.scenariophishing",
+    "pk": 10,
+    "fields": {
+      "campagne": 10,
+      "objet_email": "Suspension de compte urgente — Mise en conformité BEAC",
+      "corps_email": "Votre compte opérationnel a été temporairement suspendu en attente de mise à jour de vos documents réglementaires.",
+      "url_fausse_page": "https://beac-conformite.hshield237.local/portail",
+      "secteur_cible": "Comptabilité / Finance"
+    }
+  },
+  {
+    "model": "campagnes.scenariophishing",
+    "pk": 11,
+    "fields": {
+      "campagne": 11,
+      "objet_email": "Notification attribution marché n°MINTP-2026-0372",
+      "corps_email": "Votre offre a été retenue. Téléchargez votre notification officielle d'attribution.",
+      "url_fausse_page": "https://armp-mintp.hshield237.local/notification",
+      "secteur_cible": "Informatique"
+    }
+  }
+]
