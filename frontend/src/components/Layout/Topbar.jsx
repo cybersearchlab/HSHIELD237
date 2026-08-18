@@ -1,4 +1,4 @@
-export default function Topbar({ title, subtitle, actions }) {
+export default function Topbar({ title, subtitle, actions, onNewCampaign }) {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -27,7 +27,7 @@ export default function Topbar({ title, subtitle, actions }) {
         <button className="btn">
           <i className="ti ti-download" /> Exporter
         </button>
-        <button className="btn btn-primary">
+        <button className="btn btn-primary" onClick={onNewCampaign} disabled={!onNewCampaign}>
           <i className="ti ti-plus" /> Nouvelle campagne
         </button>
         {actions}
