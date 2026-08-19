@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "apps.accounts",
     "apps.campagnes",
+    "apps.generation",
 ]
 
 MIDDLEWARE = [
@@ -99,6 +100,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Email — toujours via variables d'environnement, jamais en dur.
@@ -110,4 +114,10 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 
 # API Claude (console.anthropic.com) — dépendance runtime de l'application.
+# Clé indépendante de l'abonnement Claude Pro utilisé pour Claude Code.
+# Peut rester vide tant que la clé n'a pas été provisionnée : le mode
+# manuel (POST /api/generation/manuel/) reste utilisable sans elle.
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
+# Identifiant exact du modèle à vérifier sur console.anthropic.com au moment
+# de l'activation de la clé — configurable sans changer le code.
+ANTHROPIC_MODEL = env("ANTHROPIC_MODEL", default="claude-sonnet-4-5-20250929")

@@ -40,6 +40,7 @@ class ScenarioPhishing(models.Model):
     corps_email = models.TextField()
     url_fausse_page = models.URLField()
     secteur_cible = models.CharField(max_length=255)
+    piece_jointe = models.FileField(upload_to="scenarios/%Y/%m/", blank=True, null=True)
 
     def __str__(self):
         return self.objet_email

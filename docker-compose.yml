@@ -29,6 +29,7 @@ services:
       - "8000:8000"
     volumes:
       - static_data:/app/staticfiles
+      - media_data:/app/media
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/api/health/"]
       interval: 10s
@@ -74,3 +75,4 @@ services:
 volumes:
   db_data:
   static_data:
+  media_data:

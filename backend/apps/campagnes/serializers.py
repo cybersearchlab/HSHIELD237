@@ -1,6 +1,21 @@
 from rest_framework import serializers
 
-from .models import Campagne
+from .models import Campagne, ScenarioPhishing
+
+
+class ScenarioPhishingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScenarioPhishing
+        fields = [
+            "id",
+            "campagne",
+            "objet_email",
+            "corps_email",
+            "url_fausse_page",
+            "secteur_cible",
+            "piece_jointe",
+        ]
+        read_only_fields = ["id"]
 
 
 class CampagneSerializer(serializers.ModelSerializer):
