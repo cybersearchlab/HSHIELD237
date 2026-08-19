@@ -15,8 +15,6 @@ export async function generateManuel(formValues) {
       form.append(key, value);
     }
   });
-  const { data } = await axiosClient.post("/generation/manuel/", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await axiosClient.post("/generation/manuel/", form);
   return data;
 }

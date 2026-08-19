@@ -41,6 +41,10 @@ class ScenarioPhishing(models.Model):
     url_fausse_page = models.URLField()
     secteur_cible = models.CharField(max_length=255)
     piece_jointe = models.FileField(upload_to="scenarios/%Y/%m/", blank=True, null=True)
+    expediteur_nom = models.CharField(max_length=255, blank=True, default="")
+    expediteur_email = models.EmailField(blank=True, default="")
+    destinataire_email = models.EmailField(blank=True, default="")
+    est_html = models.BooleanField(default=False)
 
     def __str__(self):
         return self.objet_email

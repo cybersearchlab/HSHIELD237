@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { listCampagnes } from "../../api/campagnes";
 import { generateManuel, generateViaAPI } from "../../api/generation";
@@ -9,7 +10,23 @@ import { statutLabel } from "../../utils/statuts";
 const TOAST_ICONS = { success: "ti-check", info: "ti-info-circle", error: "ti-alert-circle" };
 const TOAST_COLORS = { success: "#4ADE80", info: "#60A5FA", error: "#F87171" };
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidEmail(value) {
+  return EMAIL_RE.test(value.trim());
+}
+
+function isValidUrl(value) {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export default function GenererScenarioPage() {
+  const navigate = useNavigate();
   const [mode, setMode] = useState("api"); // "api" | "manuel"
 
   const [campagnes, setCampagnes] = useState([]);
@@ -25,12 +42,61 @@ export default function GenererScenarioPage() {
   const [corpsEmail, setCorpsEmail] = useState("");
   const [urlFaussePage, setUrlFaussePage] = useState("");
   const [pieceJointe, setPieceJointe] = useState(null);
+  const [expediteurNom, setExpediteurNom] = useState("");
+  const [expediteurEmail, setExpediteurEmail] = useState("");
+  const [destinataireEmail, setDestinataireEmail] = useState("");
+  const [estHtml, setEstHtml] = useState(false);
+  const [previewTab, setPreviewTab] = useState("rendu"); // "rendu" | "code"
+  const corpsEmailRef = useRef(null);
+
+  const [fieldErrors, setFieldErrors] = useState({});
+  const campagneRef = useRef(null);
+  const expediteurEmailRef = useRef(null);
+  const destinataireEmailRef = useRef(null);
+  const objetEmailRef = useRef(null);
+  const urlFaussePageRef = useRef(null);
+
+  const FIELD_REFS = {
+    campagne: campagneRef,
+    expediteur_email: expediteurEmailRef,
+    destinataire_email: destinataireEmailRef,
+    objet_email: objetEmailRef,
+    corps_email: corpsEmailRef,
+    url_fausse_page: urlFaussePageRef,
+  };
+  const FIELD_ORDER = ["campagne", "expediteur_email", "destinataire_email", "objet_email", "corps_email", "url_fausse_page"];
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const previewHeaderRef = useRef(null);
 
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
+
+  useEffect(() => {
+    if ((loading || result) && previewHeaderRef.current) {
+      previewHeaderRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [loading, result]);
+
+  function clearFieldError(field) {
+    setFieldErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function scrollToFirstError(errors) {
+    for (const key of FIELD_ORDER) {
+      if (errors[key] && FIELD_REFS[key]?.current) {
+        FIELD_REFS[key].current.scrollIntoView({ behavior: "smooth", block: "center" });
+        FIELD_REFS[key].current.focus?.();
+        break;
+      }
+    }
+  }
 
   function showToast(message, type = "info") {
     clearTimeout(toastTimer.current);
@@ -54,6 +120,42 @@ export default function GenererScenarioPage() {
   function switchMode(nextMode) {
     setMode(nextMode);
     setResult(null);
+    setPreviewTab("rendu");
+    setFieldErrors({});
+  }
+
+  function validateManuel() {
+    const errors = {};
+    if (!campagneId) errors.campagne = "Sélectionnez une campagne.";
+    if (!objetEmail.trim()) errors.objet_email = "L'objet de l'email est requis.";
+    if (!corpsEmail.trim()) errors.corps_email = "Le corps de l'email est requis.";
+    if (!urlFaussePage.trim()) errors.url_fausse_page = "L'URL de la fausse page est requise.";
+    else if (!isValidUrl(urlFaussePage)) errors.url_fausse_page = "URL non valide.";
+    if (expediteurEmail.trim() && !isValidEmail(expediteurEmail)) {
+      errors.expediteur_email = "Email non valide.";
+    }
+    if (destinataireEmail.trim() && !isValidEmail(destinataireEmail)) {
+      errors.destinataire_email = "Email non valide.";
+    }
+    return errors;
+  }
+
+  function handleInsertImage() {
+    const url = window.prompt("URL de l'image à insérer (ex : https://exemple.cm/logo.png)");
+    if (!url) return;
+    const tag = `<img src="${url}" alt="" style="max-width:100%" />`;
+    const textarea = corpsEmailRef.current;
+    if (textarea && typeof textarea.selectionStart === "number") {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      setCorpsEmail((prev) => prev.slice(0, start) + tag + prev.slice(end));
+    } else {
+      setCorpsEmail((prev) => `${prev}\n${tag}`);
+    }
+  }
+
+  function handleCreerCampagne() {
+    navigate("/campagnes");
   }
 
   async function handleGenerateAPI(event) {
@@ -81,14 +183,14 @@ export default function GenererScenarioPage() {
 
   async function handleSaveManuel(event) {
     event.preventDefault();
-    if (!campagneId) {
-      showToast("Sélectionnez une campagne.", "error");
+    const errors = validateManuel();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      showToast("Veuillez corriger les champs signalés en rouge.", "error");
+      scrollToFirstError(errors);
       return;
     }
-    if (!objetEmail || !corpsEmail || !urlFaussePage) {
-      showToast("Veuillez remplir l'objet, le corps et l'URL de la fausse page.", "error");
-      return;
-    }
+    setFieldErrors({});
     setLoading(true);
     try {
       const scenario = await generateManuel({
@@ -98,11 +200,25 @@ export default function GenererScenarioPage() {
         url_fausse_page: urlFaussePage,
         secteur_cible: selectedCampagne ? departementLabel(selectedCampagne.departement) : "",
         piece_jointe: pieceJointe,
+        expediteur_nom: expediteurNom,
+        expediteur_email: expediteurEmail,
+        destinataire_email: destinataireEmail,
+        est_html: estHtml,
       });
       setResult(scenario);
       showToast("Scénario enregistré avec succès.", "success");
-    } catch {
-      showToast("Impossible d'enregistrer le scénario.", "error");
+    } catch (error) {
+      const data = error.response?.data;
+      if (data && typeof data === "object") {
+        const serverErrors = {};
+        Object.entries(data).forEach(([key, value]) => {
+          serverErrors[key] = Array.isArray(value) ? value.join(" ") : String(value);
+        });
+        setFieldErrors(serverErrors);
+        scrollToFirstError(serverErrors);
+      }
+      const detail = data && typeof data === "object" ? Object.values(data).flat().join(" ") : null;
+      showToast(detail || "Impossible d'enregistrer le scénario.", "error");
     } finally {
       setLoading(false);
     }
@@ -138,7 +254,7 @@ export default function GenererScenarioPage() {
 
       <div className="gen-layout">
         <div className="gen-left">
-          <form onSubmit={mode === "api" ? handleGenerateAPI : handleSaveManuel}>
+          <form onSubmit={mode === "api" ? handleGenerateAPI : handleSaveManuel} noValidate>
             <div className="step-card" style={{ marginBottom: 16 }}>
               <div className="step-head">
                 <div className="step-num">1</div>
@@ -149,7 +265,15 @@ export default function GenererScenarioPage() {
               </div>
               <div className="form-group">
                 <label className="form-label">Campagne *</label>
-                <select className="form-select" value={campagneId} onChange={(e) => setCampagneId(e.target.value)}>
+                <select
+                  ref={campagneRef}
+                  className={`form-select${fieldErrors.campagne ? " input-error" : ""}`}
+                  value={campagneId}
+                  onChange={(e) => {
+                    setCampagneId(e.target.value);
+                    clearFieldError("campagne");
+                  }}
+                >
                   {campagnesLoading && <option value="">Chargement…</option>}
                   {!campagnesLoading && campagnes.length === 0 && <option value="">Aucune campagne disponible</option>}
                   {campagnes.map((c) => (
@@ -158,6 +282,11 @@ export default function GenererScenarioPage() {
                     </option>
                   ))}
                 </select>
+                {fieldErrors.campagne && (
+                  <div className="form-error-text">
+                    <i className="ti ti-alert-circle" /> {fieldErrors.campagne}
+                  </div>
+                )}
               </div>
 
               {mode === "api" && (
@@ -178,6 +307,66 @@ export default function GenererScenarioPage() {
                 <div className="step-head">
                   <div className="step-num">2</div>
                   <div>
+                    <div className="step-title">Expéditeur et destinataire</div>
+                    <div className="step-sub">Affichés dans l'aperçu de l'email simulé</div>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Nom de l'expéditeur affiché</label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    placeholder="Ex : Portail MINESUP"
+                    value={expediteurNom}
+                    onChange={(e) => setExpediteurNom(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Email de l'expéditeur affiché</label>
+                  <input
+                    ref={expediteurEmailRef}
+                    className={`form-input${fieldErrors.expediteur_email ? " input-error" : ""}`}
+                    type="email"
+                    placeholder="noreply@minesup-infos.cm"
+                    value={expediteurEmail}
+                    onChange={(e) => {
+                      setExpediteurEmail(e.target.value);
+                      clearFieldError("expediteur_email");
+                    }}
+                  />
+                  {fieldErrors.expediteur_email && (
+                    <div className="form-error-text">
+                      <i className="ti ti-alert-circle" /> {fieldErrors.expediteur_email}
+                    </div>
+                  )}
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Email du destinataire (test)</label>
+                  <input
+                    ref={destinataireEmailRef}
+                    className={`form-input${fieldErrors.destinataire_email ? " input-error" : ""}`}
+                    type="email"
+                    placeholder="personnel@votre-entreprisecm.cm"
+                    value={destinataireEmail}
+                    onChange={(e) => {
+                      setDestinataireEmail(e.target.value);
+                      clearFieldError("destinataire_email");
+                    }}
+                  />
+                  {fieldErrors.destinataire_email && (
+                    <div className="form-error-text">
+                      <i className="ti ti-alert-circle" /> {fieldErrors.destinataire_email}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {mode === "manuel" && (
+              <div className="step-card" style={{ marginBottom: 16 }}>
+                <div className="step-head">
+                  <div className="step-num">3</div>
+                  <div>
                     <div className="step-title">Contenu du scénario</div>
                     <div className="step-sub">Collez ici le texte déjà rédigé via claude.ai</div>
                   </div>
@@ -185,32 +374,86 @@ export default function GenererScenarioPage() {
                 <div className="form-group">
                   <label className="form-label">Objet de l'email *</label>
                   <input
-                    className="form-input"
+                    ref={objetEmailRef}
+                    className={`form-input${fieldErrors.objet_email ? " input-error" : ""}`}
                     type="text"
                     placeholder="Ex : Suspension de compte urgente — Mise en conformité BEAC"
                     value={objetEmail}
-                    onChange={(e) => setObjetEmail(e.target.value)}
+                    onChange={(e) => {
+                      setObjetEmail(e.target.value);
+                      clearFieldError("objet_email");
+                    }}
                   />
+                  {fieldErrors.objet_email && (
+                    <div className="form-error-text">
+                      <i className="ti ti-alert-circle" /> {fieldErrors.objet_email}
+                    </div>
+                  )}
                 </div>
+
+                <div className="content-mode-toggle" role="group" aria-label="Format du corps de l'email">
+                  <button
+                    type="button"
+                    className={`mini-toggle-btn${!estHtml ? " selected" : ""}`}
+                    onClick={() => setEstHtml(false)}
+                  >
+                    <i className="ti ti-file-text" /> Texte
+                  </button>
+                  <button
+                    type="button"
+                    className={`mini-toggle-btn${estHtml ? " selected" : ""}`}
+                    onClick={() => setEstHtml(true)}
+                  >
+                    <i className="ti ti-code" /> HTML
+                  </button>
+                  {estHtml && (
+                    <button type="button" className="mini-toggle-btn" onClick={handleInsertImage}>
+                      <i className="ti ti-photo" /> Insérer une image
+                    </button>
+                  )}
+                </div>
+
                 <div className="form-group">
-                  <label className="form-label">Corps de l'email *</label>
+                  <label className="form-label">Corps de l'email * {estHtml && "(HTML)"}</label>
                   <textarea
-                    className="form-textarea"
-                    style={{ minHeight: 140 }}
-                    placeholder="Collez ici le texte généré par claude.ai…"
+                    ref={corpsEmailRef}
+                    className={`form-textarea${fieldErrors.corps_email ? " input-error" : ""}`}
+                    style={{ minHeight: 140, fontFamily: estHtml ? "monospace" : "inherit" }}
+                    placeholder={
+                      estHtml
+                        ? "<p>Collez ou rédigez ici le HTML de l'email…</p>"
+                        : "Collez ici le texte généré par claude.ai…"
+                    }
                     value={corpsEmail}
-                    onChange={(e) => setCorpsEmail(e.target.value)}
+                    onChange={(e) => {
+                      setCorpsEmail(e.target.value);
+                      clearFieldError("corps_email");
+                    }}
                   />
+                  {fieldErrors.corps_email && (
+                    <div className="form-error-text">
+                      <i className="ti ti-alert-circle" /> {fieldErrors.corps_email}
+                    </div>
+                  )}
                 </div>
                 <div className="form-group">
                   <label className="form-label">URL de la fausse page *</label>
                   <input
-                    className="form-input"
+                    ref={urlFaussePageRef}
+                    className={`form-input${fieldErrors.url_fausse_page ? " input-error" : ""}`}
                     type="url"
                     placeholder="https://portail-verif.hshield237.local/"
                     value={urlFaussePage}
-                    onChange={(e) => setUrlFaussePage(e.target.value)}
+                    onChange={(e) => {
+                      setUrlFaussePage(e.target.value);
+                      clearFieldError("url_fausse_page");
+                    }}
                   />
+                  {fieldErrors.url_fausse_page && (
+                    <div className="form-error-text">
+                      <i className="ti ti-alert-circle" /> {fieldErrors.url_fausse_page}
+                    </div>
+                  )}
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Pièce jointe (optionnel)</label>
@@ -235,7 +478,7 @@ export default function GenererScenarioPage() {
         </div>
 
         <div className="gen-right">
-          <div className="preview-card">
+          <div className="preview-card" ref={previewHeaderRef}>
             {!result && !loading && (
               <div className="preview-placeholder">
                 <div className="placeholder-icon">
@@ -278,12 +521,22 @@ export default function GenererScenarioPage() {
                 <div className="preview-body">
                   <div className="email-meta">
                     <div className="email-meta-row">
-                      <span className="em-key">Objet :</span>
-                      <span className="em-val">{result.objet_email}</span>
+                      <span className="em-key">De :</span>
+                      <span className="em-val">
+                        {result.expediteur_nom || result.expediteur_email
+                          ? `${result.expediteur_nom ? `${result.expediteur_nom} ` : ""}${
+                              result.expediteur_email ? `<${result.expediteur_email}>` : ""
+                            }`
+                          : "—"}
+                      </span>
                     </div>
                     <div className="email-meta-row">
-                      <span className="em-key">Page :</span>
-                      <span className="em-val">{result.url_fausse_page}</span>
+                      <span className="em-key">À :</span>
+                      <span className="em-val">{result.destinataire_email || "—"}</span>
+                    </div>
+                    <div className="email-meta-row">
+                      <span className="em-key">Objet :</span>
+                      <span className="em-val">{result.objet_email}</span>
                     </div>
                     {result.piece_jointe && (
                       <div className="email-meta-row">
@@ -293,7 +546,45 @@ export default function GenererScenarioPage() {
                     )}
                   </div>
                   <div className="email-subject-line">{result.objet_email}</div>
-                  <div className="email-content">{result.corps_email}</div>
+
+                  {result.est_html && (
+                    <div className="preview-tabs" role="group" aria-label="Affichage du contenu HTML">
+                      <button
+                        type="button"
+                        className={`mini-toggle-btn${previewTab === "rendu" ? " selected" : ""}`}
+                        onClick={() => setPreviewTab("rendu")}
+                      >
+                        <i className="ti ti-eye" /> Aperçu
+                      </button>
+                      <button
+                        type="button"
+                        className={`mini-toggle-btn${previewTab === "code" ? " selected" : ""}`}
+                        onClick={() => setPreviewTab("code")}
+                      >
+                        <i className="ti ti-code" /> Code HTML
+                      </button>
+                    </div>
+                  )}
+
+                  {result.est_html && previewTab === "rendu" && (
+                    <div className="email-content" dangerouslySetInnerHTML={{ __html: result.corps_email }} />
+                  )}
+                  {result.est_html && previewTab === "code" && (
+                    <pre className="email-code-block">{result.corps_email}</pre>
+                  )}
+                  {!result.est_html && <div className="email-content">{result.corps_email}</div>}
+
+                  {result.url_fausse_page && (
+                    <a
+                      href={result.url_fausse_page}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="email-cta"
+                    >
+                      <i className="ti ti-external-link" /> Accéder à la page →
+                    </a>
+                  )}
+
                   <div className="sim-warning">
                     <i className="ti ti-shield-exclamation" />
                     <span>
@@ -319,6 +610,9 @@ export default function GenererScenarioPage() {
                       <i className="ti ti-refresh" /> Régénérer
                     </button>
                   )}
+                  <button type="button" className="btn btn-primary" onClick={handleCreerCampagne}>
+                    <i className="ti ti-send" /> Créer une campagne
+                  </button>
                 </div>
               </div>
             )}

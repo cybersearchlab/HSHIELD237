@@ -14,6 +14,10 @@ class ScenarioPhishingSerializer(serializers.ModelSerializer):
             "url_fausse_page",
             "secteur_cible",
             "piece_jointe",
+            "expediteur_nom",
+            "expediteur_email",
+            "destinataire_email",
+            "est_html",
         ]
         read_only_fields = ["id"]
 
