@@ -2,13 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { createCampagne, deleteCampagne, listCampagnes, updateCampagne } from "../../api/campagnes";
 import Layout from "../../components/Layout";
-
-const STATUT_LABELS = {
-  brouillon: "Brouillon",
-  en_attente: "En attente",
-  active: "Active",
-  terminee: "Terminée",
-};
+import { DEPARTEMENT_LABELS } from "../../utils/departements";
+import { STATUT_LABELS } from "../../utils/statuts";
 
 const STATUT_PILL_CLASS = {
   brouillon: "s-draft dot-draft",
@@ -24,19 +19,6 @@ const STATUT_FILTERS = [
   { key: "active", label: "Active" },
   { key: "terminee", label: "Terminée" },
 ];
-
-const DEPARTEMENT_LABELS = {
-  direction: "Direction générale",
-  rh: "Ressources humaines",
-  comptabilite: "Comptabilité / Finance",
-  it: "Informatique",
-  commercial: "Commercial / Ventes",
-  juridique: "Juridique",
-  marketing: "Marketing / Communication",
-  production: "Production / Opérations",
-  achats: "Achats / Logistique",
-  autre: "Autre",
-};
 
 const TOAST_ICONS = { success: "ti-check", info: "ti-info-circle", error: "ti-alert-circle" };
 const TOAST_COLORS = { success: "#4ADE80", info: "#60A5FA", error: "#F87171" };
