@@ -6,13 +6,13 @@
 
 ## État d'avancement
 
-- **Dernier jour entièrement terminé et vérifié en conditions réelles : Jour 9**
-  (modèle `Interaction`, pixel de suivi, tracking clic/soumission) — voir
-  « Journal du 2026-08-20 » ci-dessous.
+- **Dernier jour entièrement terminé, vérifié ET poussé sur GitHub : Jour 9**
+  (modèle `Interaction`, pixel de suivi, tracking clic/soumission, tests
+  automatisés) — voir « Journal du 2026-08-20 » ci-dessous.
   - ✅ Backend fait, vérifié en conditions réelles (pixel, clic, soumission
     tous confirmés via curl + interactions visibles en base).
-  - ⚠️ **PAS ENCORE committé ni poussé sur GitHub** — c'est la toute
-    prochaine action (voir dernière section).
+  - ✅ Test automatisé écrit et exécuté avec succès (`3 tests OK`).
+  - ✅ Committé et poussé (commits `7247586`, `7ed1a2c`, `9b0cd10`).
 - Jour 8 (envoi SMTP, expéditeur configurable, fausse page de capture) reste
   entièrement terminé, vérifié, **committé et poussé** (commits `0630615`,
   `7d7d8d0`).
@@ -134,8 +134,17 @@ Jour 8 committé et poussé sur GitHub le même jour (commits `0630615`, `7d7d8d
    (`python:3.12-slim`, `unexpected EOF` depuis le registre Docker Hub) —
    sans lien avec le code, résolu au 3ᵉ essai (voir « Bugs connus »).
 
-Aucune régression connue. Les 4 services Docker sont `healthy`. Jour 9 pas
-encore committé (voir « Prochaine action précise »).
+7. **Test automatisé écrit** (`backend/apps/simulation/tests.py`, via
+   `django.test.TestCase` + client de test Django, sans dépendance à
+   Mailtrap ni à un navigateur) : parcours complet pixel → clic →
+   soumission avec vérification de l'ordre et de l'horodatage des 3
+   `Interaction` ; identifiant de tracking inconnu → `404` ; absence de
+   tout champ pouvant stocker un identifiant saisi sur la soumission.
+   Exécuté avec succès : `docker compose exec backend python manage.py
+   test apps.simulation` → `Ran 3 tests ... OK`.
+
+Aucune régression connue. Les 4 services Docker sont `healthy`. Jour 9
+committé et poussé sur GitHub (commits `7247586`, `7ed1a2c`, `9b0cd10`).
 
 ## Modules implémentés
 
@@ -147,7 +156,7 @@ encore committé (voir « Prochaine action précise »).
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
 | `campagnes` | ✅ Fait | Modèles `Campagne` (departement, statut, perimetre_valide) et `ScenarioPhishing` (+ `piece_jointe`), ViewSet CRUD, filtres statut/departement, pagination, fixture de test |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
-| `simulation` | ✅ Fait (jours 8-9) | `EnvoiCampagneService`, `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu au jour 9), segmentation par département (jour 10) |
+| `simulation` | ✅ Fait (jours 8-9) | `EnvoiCampagneService`, `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission, `tests.py` (3 tests, jour 9). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu au jour 9), segmentation par département (jour 10) |
 | `gouvernance` | ⬜ Pas commencé | Prévu jour 11 (Consentement, JournalAudit) |
 | `rapports` | ⬜ Pas commencé | Prévu jour 13 (PDF via WeasyPrint) |
 | `templates_sectoriels` | ⬜ Pas commencé | Prévu jour 14 |
@@ -184,6 +193,7 @@ encore committé (voir « Prochaine action précise »).
 14. **Le pixel de suivi impose une alternative HTML systématique**, même pour les scénarios en mode texte (`est_html=False`) — un pixel invisible ne peut être chargé que par un client email capable d'afficher du HTML. Le corps texte visible reste inchangé ; seule une version HTML supplémentaire (contenant le même texte échappé + le pixel) est jointe en `text/html` via `EmailMultiAlternatives.attach_alternative`.
 15. **La vue de la fausse page de capture est marquée `csrf_exempt`** pour accepter la soumission du formulaire (POST) : c'est une page publique sans session ni compte, censée imiter un vrai site externe (un vrai attaquant n'utilise pas de jeton CSRF Django). Aucune valeur saisie (email, mot de passe) n'est lue ni stockée par la vue — seul l'événement `soumission` (horodatage + adresse IP) est enregistré.
 16. **Le type `signalement` existe dans l'énumération `Interaction.type`** (demandé littéralement par le plan) mais n'a aucun déclencheur automatique construit ce jour — le plan ne décrit pas de mécanisme pour cet événement au jour 9 (probablement à raccorder plus tard à l'adresse Reply-To de test définie au jour 8).
+17. **Premier fichier de tests automatisés du projet** : `backend/apps/simulation/tests.py`. Aucune infrastructure de test n'existait avant (pas de `tests/` à la racine de `backend/`, malgré sa présence dans l'arborescence prévue par le plan) — ce fichier suit la convention Django standard (`tests.py` par app) plutôt que le dossier `backend/tests/` du plan initial, cohérent avec la structure réelle du reste du backend (chaque app a son propre code, pas de dossier de tests centralisé).
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -207,7 +217,8 @@ gratuit (voir écart n°12).
 ## Bugs connus ou points bloquants
 
 - **Aucun bug actif** au niveau applicatif. Le code des jours 8 et 9 est
-  vérifié et fonctionnel de bout en bout (voir « Journal du 2026-08-20 »).
+  vérifié et fonctionnel de bout en bout (voir « Journal du 2026-08-20 »),
+  y compris via un test automatisé qui passe (`3 tests OK`).
 - **Contrainte externe à garder en tête** : le plan gratuit Mailtrap limite
   le débit d'envoi plus strictement que le débit configuré côté
   application — espacer les tentatives d'envoi de campagne pendant les
@@ -218,19 +229,19 @@ gratuit (voir écart n°12).
 
 ## Prochaine action précise
 
-1. **Committer et pousser le Jour 9**, actuellement non commité :
-   ```
-   git add backend/apps/simulation
-   git commit -m "feat(simulation): modele Interaction, pixel de suivi, tracking clic/soumission"
-   git push origin main
-   ```
-2. Puis enchaîner sur le **Jour 10** du plan (`docs/rapport_planification.md`) :
-   segmentation par département. **Attention** : le prompt du jour 10
-   suppose l'existence d'un modèle `Destinataire` (« ajoute un champ
-   departement au modèle Destinataire ») — **ce modèle n'existe pas encore**
-   dans le code actuel (voir écarts n°7 et 13 : seuls
-   `ScenarioPhishing.destinataire_email` et `EnvoiTracking.destinataire_email`
-   existent comme champs email de test). Il faudra donc probablement créer
-   ce modèle à cette occasion plutôt que simplement lui ajouter un champ, et
-   clarifier sa relation avec l'existant avant d'adapter `EnvoiCampagneService`
-   pour sélectionner le bon scénario par département au moment de l'envoi.
+Le Jour 9 est entièrement terminé, vérifié (y compris par test automatisé)
+et poussé sur GitHub (commits `7247586`, `7ed1a2c`, `9b0cd10`). Rien en
+attente côté commit/push.
+
+**Prochaine étape** : **Jour 10** du plan (`docs/rapport_planification.md`) —
+segmentation par département. **Attention** : le prompt du jour 10 suppose
+l'existence d'un modèle `Destinataire` (« ajoute un champ departement au
+modèle Destinataire ») — **ce modèle n'existe pas encore** dans le code
+actuel (voir écarts n°7 et 13 : seuls `ScenarioPhishing.destinataire_email`
+et `EnvoiTracking.destinataire_email` existent comme champs email de test).
+Il faudra donc probablement créer ce modèle à cette occasion plutôt que
+simplement lui ajouter un champ, et clarifier sa relation avec l'existant
+avant d'adapter `EnvoiCampagneService` pour sélectionner le bon scénario
+par département au moment de l'envoi. Ce sera aussi l'occasion d'écrire des
+tests pour ce module (voir écart n°17 — premier fichier de tests du projet,
+`apps/simulation/tests.py`, à prendre comme référence de style).
