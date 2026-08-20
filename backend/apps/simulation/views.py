@@ -1,5 +1,10 @@
+import base64
+
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -8,7 +13,7 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import IsAdministrateur, IsConsultant
 from apps.campagnes.models import Campagne
 
-from .models import ConfigurationEnvoi, EnvoiTracking
+from .models import ConfigurationEnvoi, EnvoiTracking, Interaction, TypeInteraction
 from .serializers import (
     ConfigurationEnvoiSerializer,
     EnvoiTrackingSerializer,
@@ -17,6 +22,16 @@ from .serializers import (
 from .services import EnvoiCampagneError, EnvoiCampagneService
 
 CAN_MANAGE_ENVOI = [IsAuthenticated & (IsConsultant | IsAdministrateur)]
+
+# GIF transparent 1x1 — le pixel de suivi.
+PIXEL_GIF = base64.b64decode("R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==")
+
+
+def _client_ip(request):
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR")
 
 
 class ConfigurationEnvoiView(APIView):
@@ -63,11 +78,30 @@ class EnvoyerCampagneView(APIView):
         return Response(EnvoiTrackingSerializer(trackings, many=True).data, status=status.HTTP_201_CREATED)
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class CapturePageView(View):
     """Vue publique (aucune authentification) servant la fausse page de
     capture. L'identifiant de tracking dans l'URL (UUID) identifie de façon
-    unique le destinataire et le scénario concernés."""
+    unique le destinataire et le scénario concernés. Un accès (GET) enregistre
+    un clic ; une soumission du formulaire (POST) enregistre une soumission —
+    sans jamais conserver les identifiants saisis par la personne testée."""
 
     def get(self, request, tracking_id):
         tracking = get_object_or_404(EnvoiTracking, pk=tracking_id)
+        Interaction.objects.create(envoi=tracking, type=TypeInteraction.CLIC, adresse_ip=_client_ip(request))
         return render(request, "simulation/capture.html", {"scenario": tracking.scenario})
+
+    def post(self, request, tracking_id):
+        tracking = get_object_or_404(EnvoiTracking, pk=tracking_id)
+        Interaction.objects.create(envoi=tracking, type=TypeInteraction.SOUMISSION, adresse_ip=_client_ip(request))
+        return render(request, "simulation/capture.html", {"scenario": tracking.scenario, "soumis": True})
+
+
+class PixelTrackingView(View):
+    """Vue publique servant un pixel de suivi (image 1x1 transparente) et
+    enregistrant l'ouverture correspondante."""
+
+    def get(self, request, tracking_id):
+        tracking = get_object_or_404(EnvoiTracking, pk=tracking_id)
+        Interaction.objects.create(envoi=tracking, type=TypeInteraction.OUVERTURE, adresse_ip=_client_ip(request))
+        return HttpResponse(PIXEL_GIF, content_type="image/gif")

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import CapturePageView, ConfigurationEnvoiView, EnvoyerCampagneView
+from .views import CapturePageView, ConfigurationEnvoiView, EnvoyerCampagneView, PixelTrackingView
 
 # Inclus sous /api/simulation/ — nécessite une authentification (consultant/administrateur).
 api_urlpatterns = [
@@ -11,4 +11,5 @@ api_urlpatterns = [
 # Inclus sous /simulation/ — page publique, aucune authentification.
 public_urlpatterns = [
     path("capture/<uuid:tracking_id>/", CapturePageView.as_view(), name="simulation-capture"),
+    path("pixel/<uuid:tracking_id>/", PixelTrackingView.as_view(), name="simulation-pixel"),
 ]

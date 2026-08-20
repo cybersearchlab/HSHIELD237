@@ -38,3 +38,26 @@ class EnvoiTracking(models.Model):
 
     def __str__(self):
         return f"{self.destinataire_email} — {self.scenario}"
+
+
+class TypeInteraction(models.TextChoices):
+    OUVERTURE = "ouverture", "Ouverture"
+    CLIC = "clic", "Clic"
+    SOUMISSION = "soumission", "Soumission"
+    SIGNALEMENT = "signalement", "Signalement"
+
+
+class Interaction(models.Model):
+    """Événement enregistré pour un envoi donné (identifié par le même
+    tracking utilisé dans l'URL de la fausse page et du pixel de suivi)."""
+
+    envoi = models.ForeignKey(EnvoiTracking, on_delete=models.CASCADE, related_name="interactions")
+    type = models.CharField(max_length=20, choices=TypeInteraction.choices)
+    horodatage = models.DateTimeField(auto_now_add=True)
+    adresse_ip = models.GenericIPAddressField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-horodatage"]
+
+    def __str__(self):
+        return f"{self.get_type_display()} — {self.envoi}"

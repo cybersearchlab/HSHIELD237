@@ -66,18 +66,22 @@
       <p>{{ scenario.secteur_cible }}</p>
     </div>
     <div class="card-body">
-      <p class="intro">Pour des raisons de sécurité, veuillez confirmer vos identifiants afin de maintenir l'accès à votre compte.</p>
-      <form>
-        <div class="field">
-          <label for="email">Adresse email professionnelle</label>
-          <input type="email" id="email" name="email" autocomplete="off">
-        </div>
-        <div class="field">
-          <label for="password">Mot de passe</label>
-          <input type="password" id="password" name="password" autocomplete="off">
-        </div>
-        <button type="submit">Confirmer mon compte</button>
-      </form>
+      {% if soumis %}
+        <p class="intro">Merci, vos informations ont été transmises. Votre compte reste actif.</p>
+      {% else %}
+        <p class="intro">Pour des raisons de sécurité, veuillez confirmer vos identifiants afin de maintenir l'accès à votre compte.</p>
+        <form method="post">
+          <div class="field">
+            <label for="email">Adresse email professionnelle</label>
+            <input type="email" id="email" name="email" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" name="password" autocomplete="off">
+          </div>
+          <button type="submit">Confirmer mon compte</button>
+        </form>
+      {% endif %}
       <p class="footer">H-SHIELD237 — Plateforme de simulation de sensibilisation</p>
     </div>
   </div>
