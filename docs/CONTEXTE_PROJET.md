@@ -6,23 +6,26 @@
 
 ## État d'avancement
 
-- **Dernier jour entièrement terminé, vérifié ET poussé sur GitHub : Jour 9**
-  (modèle `Interaction`, pixel de suivi, tracking clic/soumission, tests
-  automatisés) — voir « Journal du 2026-08-20 » ci-dessous.
-  - ✅ Backend fait, vérifié en conditions réelles (pixel, clic, soumission
-    tous confirmés via curl + interactions visibles en base).
-  - ✅ Test automatisé écrit et exécuté avec succès (`3 tests OK`).
-  - ✅ Committé et poussé (commits `7247586`, `7ed1a2c`, `9b0cd10`).
+- **Dernier jour entièrement terminé, vérifié ET poussé sur GitHub : Jour 10**
+  (segmentation des campagnes par département) — voir « Journal du
+  2026-08-20 » ci-dessous.
+  - ✅ Backend fait : modèle `Destinataire`, champ `departements_cibles`,
+    `EnvoiCampagneService` adapté, 3 nouveaux tests (6/6 au total).
+  - ✅ Frontend fait : ciblage par département sur « Générer un scénario »,
+    gestion des destinataires dans la modale de lancement.
+  - ✅ Vérifié en conditions réelles (endpoints testés via curl, tests
+    automatisés). Committé et poussé (commit `8ffc128`).
+- Jour 9 (modèle `Interaction`, pixel, tracking clic/soumission) reste
+  entièrement terminé, vérifié, **committé et poussé** (commits `7247586`,
+  `7ed1a2c`, `9b0cd10`).
 - Jour 8 (envoi SMTP, expéditeur configurable, fausse page de capture) reste
   entièrement terminé, vérifié, **committé et poussé** (commits `0630615`,
   `7d7d8d0`).
 - Jour 7 (génération de scénario) reste entièrement terminé, vérifié et
   poussé (commits `f1f8ad2`, `42fc3bb`, `3b33198`).
 - Jalon 1 (jour 5, connexion + interface visible en Docker complet) : **atteint**.
-- Jalon 2 (jour 10, scénario généré + envoyé par département + tracking) :
-  **pas encore atteint** — l'envoi (jour 8) et le tracking des interactions
-  (jour 9) sont faits ; il manque uniquement la segmentation par département
-  (jour 10).
+- **Jalon 2 (jour 10, scénario généré + envoyé par département + tracking) : ATTEINT.**
+  Fin de la Phase 2 du sprint (« Modules cœur », jours 6-10) — mi-sprint.
 
 ## Journal du 2026-08-19 (session de suivi post-Jour 7)
 
@@ -146,6 +149,37 @@ Jour 8 committé et poussé sur GitHub le même jour (commits `0630615`, `7d7d8d
 Aucune régression connue. Les 4 services Docker sont `healthy`. Jour 9
 committé et poussé sur GitHub (commits `7247586`, `7ed1a2c`, `9b0cd10`).
 
+### Jour 10 — segmentation des campagnes par département
+
+1. **Modèle `Destinataire`** (`apps.campagnes`, migration `0004`) : `email`
+   + `departement`, rattaché à une `Campagne`. Représente la vraie liste de
+   destinataires d'une campagne (contrairement à `ScenarioPhishing.destinataire_email`,
+   qui reste un simple email de test — voir écart n°7).
+2. **`ScenarioPhishing.departements_cibles`** : `ArrayField` de départements
+   ciblés par ce scénario au sein de sa campagne. Vide = scénario générique
+   de repli.
+3. **`EnvoiCampagneService` adapté** : quand une campagne possède des
+   `Destinataire`, chacun reçoit automatiquement le scénario ciblant son
+   département (ou le scénario générique à défaut) ; erreur claire si ni
+   l'un ni l'autre n'existe. Le comportement des jours 8-9 (liste d'emails
+   explicite ou email de test par scénario) reste intact pour compatibilité.
+4. **Endpoints** `GET/POST /api/campagnes/{id}/destinataires/` et
+   `DELETE /api/campagnes/{id}/destinataires/{id}/`.
+5. **Frontend** : sélecteur de départements ciblés (chips) sur la page
+   « Générer un scénario » (commun aux modes API et manuel) ; nouvelle
+   section « Destinataires par département » dans la modale de lancement de
+   campagne (ajout/liste/suppression), alimentant directement le nouveau
+   comportement d'envoi.
+6. **3 nouveaux tests** (`apps/simulation/tests.py`, `SegmentationDepartementTests`) :
+   sélection correcte par département, erreur si aucun scénario ne
+   correspond, repli sur le scénario générique. Total : 6/6 tests OK.
+7. **Vérification réelle complète** : `POST /api/generation/manuel/` avec
+   `departements_cibles` confirmé persistant ; endpoints `Destinataire`
+   testés en conditions réelles (`201`/`200`/`204`).
+
+**Jalon 2 atteint** : fin de la Phase 2 du sprint. Jour 10 committé et
+poussé sur GitHub (commit `8ffc128`). Les 4 services Docker sont `healthy`.
+
 ## Modules implémentés
 
 ### Backend (`backend/apps/`)
@@ -154,9 +188,9 @@ committé et poussé sur GitHub (commits `7247586`, `7ed1a2c`, `9b0cd10`).
 |---|---|---|
 | `accounts` | ✅ Fait | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur` |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
-| `campagnes` | ✅ Fait | Modèles `Campagne` (departement, statut, perimetre_valide) et `ScenarioPhishing` (+ `piece_jointe`), ViewSet CRUD, filtres statut/departement, pagination, fixture de test |
-| `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
-| `simulation` | ✅ Fait (jours 8-9) | `EnvoiCampagneService`, `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission, `tests.py` (3 tests, jour 9). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu au jour 9), segmentation par département (jour 10) |
+| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test |
+| `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` et `/api/generation/manuel/` (multipart, pièce jointe, `departements_cibles`) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
+| `simulation` | ✅ Fait (jours 8-10) | `EnvoiCampagneService` (avec sélection par département, jour 10), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `gouvernance` | ⬜ Pas commencé | Prévu jour 11 (Consentement, JournalAudit) |
 | `rapports` | ⬜ Pas commencé | Prévu jour 13 (PDF via WeasyPrint) |
 | `templates_sectoriels` | ⬜ Pas commencé | Prévu jour 14 |
@@ -168,8 +202,8 @@ committé et poussé sur GitHub (commits `7247586`, `7ed1a2c`, `9b0cd10`).
 | `Login/LoginPage.jsx` | ✅ Fait | Fidèle à `login.html`, connectée à l'API |
 | `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages |
 | `Dashboard/DashboardPage.jsx` | 🟡 Placeholder minimal | Affiche juste l'utilisateur connecté ; le vrai contenu (métriques, tableau campagnes) arrive jour 12 |
-| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création, **modale de lancement** (expéditeur/Reply-To/débit + avertissement DNS, jour 8) |
-| `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique — voir « Journal du 2026-08-19 » |
+| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création, modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8), **gestion des destinataires par département** (jour 10) |
+| `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7), **sélecteur de départements ciblés** (jour 10) |
 | Résultats, RapportsPDF, Historique, TemplatesSectoriels, Consentements, Paramètres | ⬜ Pas commencé | Liens de nav déjà présents dans `navConfig.js`, pointent vers des routes non câblées (redirection vers `/`) |
 
 ## Décisions ou écarts par rapport au plan
@@ -194,6 +228,10 @@ committé et poussé sur GitHub (commits `7247586`, `7ed1a2c`, `9b0cd10`).
 15. **La vue de la fausse page de capture est marquée `csrf_exempt`** pour accepter la soumission du formulaire (POST) : c'est une page publique sans session ni compte, censée imiter un vrai site externe (un vrai attaquant n'utilise pas de jeton CSRF Django). Aucune valeur saisie (email, mot de passe) n'est lue ni stockée par la vue — seul l'événement `soumission` (horodatage + adresse IP) est enregistré.
 16. **Le type `signalement` existe dans l'énumération `Interaction.type`** (demandé littéralement par le plan) mais n'a aucun déclencheur automatique construit ce jour — le plan ne décrit pas de mécanisme pour cet événement au jour 9 (probablement à raccorder plus tard à l'adresse Reply-To de test définie au jour 8).
 17. **Premier fichier de tests automatisés du projet** : `backend/apps/simulation/tests.py`. Aucune infrastructure de test n'existait avant (pas de `tests/` à la racine de `backend/`, malgré sa présence dans l'arborescence prévue par le plan) — ce fichier suit la convention Django standard (`tests.py` par app) plutôt que le dossier `backend/tests/` du plan initial, cohérent avec la structure réelle du reste du backend (chaque app a son propre code, pas de dossier de tests centralisé).
+18. **Le modèle `Destinataire`** (jour 10) a été créé dans `apps.campagnes` (pas dans `apps.simulation`), car conceptuellement rattaché à `Campagne` — cohérent avec l'emplacement de `Departement`/`ScenarioPhishing`. `EnvoiTracking` (dans `apps.simulation`) continue de référencer un simple email, sans FK vers `Destinataire` — voir point de vigilance de l'écart n°13.
+19. **`ScenarioPhishing.departements_cibles` utilise un `ArrayField` PostgreSQL** (`django.contrib.postgres.fields`) plutôt qu'un modèle de jointure séparé ou un champ texte — le plus direct pour stocker « un ou plusieurs départements » sur un seul scénario, et déjà utilisable avec `__contains` pour la sélection dans `EnvoiCampagneService`. Dépendance à PostgreSQL déjà assumée par le projet (postgres:16 en base).
+20. **`EnvoiCampagneService.envoyer_campagne` reste rétrocompatible** : si la campagne n'a aucun `Destinataire` (jours 8-9, tests existants), le comportement précédent (liste d'emails explicite ou email de test par scénario) continue de fonctionner sans changement. Le nouveau chemin par département n'est utilisé que si des `Destinataire` existent.
+21. **Petit ajout backend hors du périmètre « FRONTEND » demandé** : `GenerationAPIRequestSerializer` et `GenerationAPIView` acceptent désormais `departements_cibles`, pour que le sélecteur ajouté côté frontend fonctionne aussi en mode génération par IA (pas seulement en saisie manuelle, qui l'acceptait déjà via `ScenarioPhishingSerializer`). Plomberie minimale nécessaire pour que la fonctionnalité demandée soit réellement utilisable dans les deux modes.
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -229,19 +267,19 @@ gratuit (voir écart n°12).
 
 ## Prochaine action précise
 
-Le Jour 9 est entièrement terminé, vérifié (y compris par test automatisé)
-et poussé sur GitHub (commits `7247586`, `7ed1a2c`, `9b0cd10`). Rien en
-attente côté commit/push.
+Le Jour 10 est entièrement terminé, vérifié (y compris par les 6 tests
+automatisés) et poussé sur GitHub (commit `8ffc128`). **Jalon 2 atteint —
+fin de la Phase 2 du sprint.** Rien en attente côté commit/push.
 
-**Prochaine étape** : **Jour 10** du plan (`docs/rapport_planification.md`) —
-segmentation par département. **Attention** : le prompt du jour 10 suppose
-l'existence d'un modèle `Destinataire` (« ajoute un champ departement au
-modèle Destinataire ») — **ce modèle n'existe pas encore** dans le code
-actuel (voir écarts n°7 et 13 : seuls `ScenarioPhishing.destinataire_email`
-et `EnvoiTracking.destinataire_email` existent comme champs email de test).
-Il faudra donc probablement créer ce modèle à cette occasion plutôt que
-simplement lui ajouter un champ, et clarifier sa relation avec l'existant
-avant d'adapter `EnvoiCampagneService` pour sélectionner le bon scénario
-par département au moment de l'envoi. Ce sera aussi l'occasion d'écrire des
-tests pour ce module (voir écart n°17 — premier fichier de tests du projet,
-`apps/simulation/tests.py`, à prendre comme référence de style).
+**Prochaine étape** : **Jour 11** du plan (`docs/rapport_planification.md`),
+premier jour de la Phase 3 (« Gouvernance & résultats ») — module
+`apps/gouvernance/` : modèle `Consentement` (campagne FK OneToOne,
+responsable_nom, responsable_email, statut [en_attente/valide/refuse],
+date_validation) et `JournalAudit` (action, auteur FK, horodatage, details
+JSONField). Ajouter une vérification bloquant explicitement le lancement
+d'une campagne si aucun `Consentement` au statut « valide » n'existe.
+Côté frontend, connecter la page Consentements (déjà maquettée dans
+`docs/maquettes/entreprises_consentements_parametres.html`) aux endpoints
+réels. Point de vigilance : le blocage de lancement devra s'intégrer à la
+modale de lancement déjà construite au jour 8 (`CampagnesPage.jsx`), pas la
+remplacer.
