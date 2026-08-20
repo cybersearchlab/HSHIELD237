@@ -676,7 +676,7 @@ tr:hover td {
   margin-bottom: 12px;
 }
 
-.content-mode-toggle .mini-toggle-btn {
+.mini-toggle-btn {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text3);
@@ -686,10 +686,75 @@ tr:hover td {
   cursor: pointer;
 }
 
-.content-mode-toggle .mini-toggle-btn.selected {
+.mini-toggle-btn.selected {
   background: var(--navy-mid);
   color: #fff;
   border-color: var(--navy-mid);
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.destinataire-list {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.destinataire-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.destinataire-row:last-child {
+  border-bottom: none;
+}
+
+.destinataire-row .dest-email {
+  color: var(--text);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.destinataire-row .dest-dept {
+  color: var(--text3);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.destinataire-row .dest-remove {
+  cursor: pointer;
+  color: var(--red);
+  flex-shrink: 0;
+}
+
+.destinataire-empty {
+  padding: 12px;
+  font-size: 12px;
+  color: var(--text3);
+  text-align: center;
+}
+
+.destinataire-add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.destinataire-add-row .form-input,
+.destinataire-add-row .form-select {
+  margin-bottom: 0;
 }
 
 .preview-tabs {

@@ -1,9 +1,10 @@
 import axiosClient from "./axiosClient";
 
-export async function generateViaAPI({ campagne, contexte_additionnel }) {
+export async function generateViaAPI({ campagne, contexte_additionnel, departements_cibles }) {
   const { data } = await axiosClient.post("/generation/api/", {
     campagne,
     contexte_additionnel: contexte_additionnel || "",
+    departements_cibles: departements_cibles || [],
   });
   return data;
 }
@@ -11,7 +12,10 @@ export async function generateViaAPI({ campagne, contexte_additionnel }) {
 export async function generateManuel(formValues) {
   const form = new FormData();
   Object.entries(formValues).forEach(([key, value]) => {
-    if (value !== null && value !== undefined && value !== "") {
+    if (value === null || value === undefined || value === "") return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => form.append(key, item));
+    } else {
       form.append(key, value);
     }
   });

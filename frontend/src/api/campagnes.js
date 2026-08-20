@@ -21,3 +21,17 @@ export async function updateCampagne(id, payload) {
 export async function deleteCampagne(id) {
   await axiosClient.delete(`/campagnes/${id}/`);
 }
+
+export async function listDestinataires(campagneId) {
+  const { data } = await axiosClient.get(`/campagnes/${campagneId}/destinataires/`);
+  return data;
+}
+
+export async function createDestinataire(campagneId, payload) {
+  const { data } = await axiosClient.post(`/campagnes/${campagneId}/destinataires/`, payload);
+  return data;
+}
+
+export async function deleteDestinataire(campagneId, destinataireId) {
+  await axiosClient.delete(`/campagnes/${campagneId}/destinataires/${destinataireId}/`);
+}

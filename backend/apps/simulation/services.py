@@ -90,16 +90,51 @@ class EnvoiCampagneService:
         logger.info("Scénario #%s envoyé à %s (tracking %s)", scenario.id, destinataire_email, tracking.id)
         return tracking
 
+    def _scenario_pour_departement(self, departement):
+        """Sélectionne le scénario de la campagne ciblant explicitement ce
+        département ; à défaut, le scénario générique (aucun département
+        ciblé) s'il en existe un."""
+        scenarios = list(self.campagne.scenarios.all())
+        for scenario in scenarios:
+            if departement in scenario.departements_cibles:
+                return scenario
+        for scenario in scenarios:
+            if not scenario.departements_cibles:
+                return scenario
+        return None
+
     def envoyer_campagne(self, destinataires_par_email=None):
-        """Envoie chaque scénario de la campagne aux destinataires fournis
-        (liste d'emails) ou, à défaut, à l'email de test du scénario s'il en
-        possède un. Respecte le délai configuré entre deux envois."""
+        """Envoie la campagne à ses destinataires.
+
+        Si la campagne possède une liste de `Destinataire` (jour 10), chacun
+        reçoit le scénario ciblant son département (ou le scénario générique
+        à défaut). Sinon, retombe sur le comportement des jours 8-9 : la
+        liste d'emails fournie (ou l'email de test de chaque scénario) reçoit
+        chaque scénario indistinctement. Respecte le délai configuré entre
+        deux envois."""
         scenarios = list(self.campagne.scenarios.all())
         if not scenarios:
             raise EnvoiCampagneError("Cette campagne ne contient aucun scénario à envoyer.")
 
         trackings = []
         premier_envoi = True
+
+        destinataires_campagne = list(self.campagne.destinataires.all())
+        if destinataires_campagne and destinataires_par_email is None:
+            for destinataire in destinataires_campagne:
+                scenario = self._scenario_pour_departement(destinataire.departement)
+                if scenario is None:
+                    raise EnvoiCampagneError(
+                        f"Aucun scénario ne cible le département "
+                        f"« {destinataire.get_departement_display()} » et aucun scénario "
+                        f"générique n'est défini sur cette campagne."
+                    )
+                if not premier_envoi and self.delai_entre_envois:
+                    time.sleep(self.delai_entre_envois)
+                premier_envoi = False
+                trackings.append(self.envoyer_scenario(scenario, destinataire.email))
+            return trackings
+
         for scenario in scenarios:
             destinataires = destinataires_par_email or (
                 [scenario.destinataire_email] if scenario.destinataire_email else []

@@ -1,3 +1,4 @@
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
 
@@ -45,6 +46,34 @@ class ScenarioPhishing(models.Model):
     expediteur_email = models.EmailField(blank=True, default="")
     destinataire_email = models.EmailField(blank=True, default="")
     est_html = models.BooleanField(default=False)
+    departements_cibles = ArrayField(
+        models.CharField(max_length=20, choices=Departement.choices),
+        default=list,
+        blank=True,
+        help_text=(
+            "Départements ciblés par ce scénario au sein de sa campagne. "
+            "Vide = scénario générique, utilisé par défaut pour tout "
+            "destinataire dont le département n'est ciblé par aucun autre "
+            "scénario de la campagne."
+        ),
+    )
 
     def __str__(self):
         return self.objet_email
+
+
+class Destinataire(models.Model):
+    """Un employé destinataire d'une campagne, rattaché à un département —
+    utilisé pour sélectionner automatiquement le bon scénario au moment de
+    l'envoi (voir apps.simulation.EnvoiCampagneService)."""
+
+    campagne = models.ForeignKey(Campagne, on_delete=models.CASCADE, related_name="destinataires")
+    email = models.EmailField()
+    departement = models.CharField(max_length=20, choices=Departement.choices)
+
+    class Meta:
+        ordering = ["email"]
+        unique_together = ("campagne", "email")
+
+    def __str__(self):
+        return f"{self.email} ({self.get_departement_display()})"

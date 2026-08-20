@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { createCampagne, deleteCampagne, listCampagnes, updateCampagne } from "../../api/campagnes";
+import {
+  createCampagne,
+  createDestinataire,
+  deleteCampagne,
+  deleteDestinataire,
+  listCampagnes,
+  listDestinataires,
+  updateCampagne,
+} from "../../api/campagnes";
 import { envoyerCampagne, getConfigurationEnvoi, updateConfigurationEnvoi } from "../../api/simulation";
 import Layout from "../../components/Layout";
 import { DEPARTEMENT_LABELS } from "../../utils/departements";
@@ -55,6 +63,11 @@ export default function CampagnesPage() {
   const [launchReplyTo, setLaunchReplyTo] = useState("");
   const [launchDelai, setLaunchDelai] = useState(2);
   const [launchFieldErrors, setLaunchFieldErrors] = useState({});
+  const [launchDestinataires, setLaunchDestinataires] = useState([]);
+  const [destEmail, setDestEmail] = useState("");
+  const [destDepartement, setDestDepartement] = useState("direction");
+  const [destSaving, setDestSaving] = useState(false);
+  const [destError, setDestError] = useState("");
 
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -108,17 +121,56 @@ export default function CampagnesPage() {
     setLaunchExpediteurEmail("");
     setLaunchReplyTo("");
     setLaunchDelai(2);
+    setLaunchDestinataires([]);
+    setDestEmail("");
+    setDestDepartement("direction");
+    setDestError("");
     setLaunchLoading(true);
     try {
-      const config = await getConfigurationEnvoi(campagne.id);
+      const [config, destinataires] = await Promise.all([
+        getConfigurationEnvoi(campagne.id),
+        listDestinataires(campagne.id),
+      ]);
       setLaunchExpediteurNom(config.expediteur_nom || "");
       setLaunchExpediteurEmail(config.expediteur_email || "");
       setLaunchReplyTo(config.reply_to || "");
       setLaunchDelai(config.delai_entre_envois ?? 2);
+      setLaunchDestinataires(destinataires);
     } catch {
       showToast("Impossible de charger la configuration d'envoi.", "error");
     } finally {
       setLaunchLoading(false);
+    }
+  }
+
+  async function handleAjouterDestinataire(event) {
+    event.preventDefault();
+    setDestError("");
+    if (!isValidEmail(destEmail)) {
+      setDestError("Email non valide.");
+      return;
+    }
+    setDestSaving(true);
+    try {
+      const destinataire = await createDestinataire(launchCampagne.id, {
+        email: destEmail,
+        departement: destDepartement,
+      });
+      setLaunchDestinataires((prev) => [...prev, destinataire]);
+      setDestEmail("");
+    } catch (error) {
+      setDestError(error.response?.data?.email?.[0] || "Impossible d'ajouter ce destinataire.");
+    } finally {
+      setDestSaving(false);
+    }
+  }
+
+  async function handleSupprimerDestinataire(destinataire) {
+    try {
+      await deleteDestinataire(launchCampagne.id, destinataire.id);
+      setLaunchDestinataires((prev) => prev.filter((d) => d.id !== destinataire.id));
+    } catch {
+      showToast("Impossible de supprimer ce destinataire.", "error");
     }
   }
 
@@ -495,6 +547,67 @@ export default function CampagnesPage() {
                       {launchFieldErrors.delai_entre_envois && (
                         <div className="form-error-text">
                           <i className="ti ti-alert-circle" /> {launchFieldErrors.delai_entre_envois}
+                        </div>
+                      )}
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        Destinataires par département {launchDestinataires.length > 0 && `(${launchDestinataires.length})`}
+                      </label>
+                      <div className="form-hint" style={{ marginTop: 0, marginBottom: 8 }}>
+                        Chaque destinataire reçoit automatiquement le scénario ciblant son
+                        département (ou le scénario générique à défaut).
+                      </div>
+                      <div className="destinataire-list">
+                        {launchDestinataires.length === 0 && (
+                          <div className="destinataire-empty">Aucun destinataire ajouté pour l'instant.</div>
+                        )}
+                        {launchDestinataires.map((d) => (
+                          <div className="destinataire-row" key={d.id}>
+                            <span className="dest-email">{d.email}</span>
+                            <span className="dest-dept">{d.departement_display}</span>
+                            <i
+                              className="ti ti-x dest-remove"
+                              role="button"
+                              tabIndex={0}
+                              title="Retirer"
+                              onClick={() => handleSupprimerDestinataire(d)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="destinataire-add-row">
+                        <input
+                          className="form-input"
+                          type="email"
+                          placeholder="employe@entreprise.cm"
+                          value={destEmail}
+                          onChange={(e) => setDestEmail(e.target.value)}
+                        />
+                        <select
+                          className="form-select"
+                          style={{ maxWidth: 190 }}
+                          value={destDepartement}
+                          onChange={(e) => setDestDepartement(e.target.value)}
+                        >
+                          {Object.entries(DEPARTEMENT_LABELS).map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="btn"
+                          disabled={destSaving}
+                          onClick={handleAjouterDestinataire}
+                        >
+                          <i className="ti ti-plus" /> Ajouter
+                        </button>
+                      </div>
+                      {destError && (
+                        <div className="form-error-text">
+                          <i className="ti ti-alert-circle" /> {destError}
                         </div>
                       )}
                     </div>

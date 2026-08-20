@@ -1,9 +1,10 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from apps.campagnes.models import Campagne, Departement, ScenarioPhishing
+from apps.campagnes.models import Campagne, Departement, Destinataire, ScenarioPhishing
 
-from .models import EnvoiTracking, TypeInteraction
+from .models import ConfigurationEnvoi, EnvoiTracking, TypeInteraction
+from .services import EnvoiCampagneError, EnvoiCampagneService
 
 
 class TrackingInteractionTests(TestCase):
@@ -65,3 +66,69 @@ class TrackingInteractionTests(TestCase):
         champs = {f.name for f in interaction._meta.get_fields()}
         self.assertNotIn("email", champs)
         self.assertNotIn("password", champs)
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class SegmentationDepartementTests(TestCase):
+    """Une campagne avec plusieurs scénarios, chacun ciblant un département
+    différent : chaque destinataire doit recevoir le scénario de son propre
+    département (jour 10)."""
+
+    def setUp(self):
+        self.campagne = Campagne.objects.create(departement=Departement.IT)
+        ConfigurationEnvoi.objects.create(
+            campagne=self.campagne,
+            expediteur_nom="Portail Test",
+            expediteur_email="noreply@test.cm",
+            reply_to="reponses-test@hshield237.local",
+            delai_entre_envois=0,
+        )
+        self.scenario_rh = ScenarioPhishing.objects.create(
+            campagne=self.campagne,
+            objet_email="Alerte RH",
+            corps_email="Contenu RH.",
+            url_fausse_page="https://exemple.cm/rh/",
+            secteur_cible="Test",
+            departements_cibles=[Departement.RH],
+        )
+        self.scenario_compta = ScenarioPhishing.objects.create(
+            campagne=self.campagne,
+            objet_email="Facture fournisseur",
+            corps_email="Contenu comptabilité.",
+            url_fausse_page="https://exemple.cm/compta/",
+            secteur_cible="Test",
+            departements_cibles=[Departement.COMPTABILITE],
+        )
+        Destinataire.objects.create(campagne=self.campagne, email="rh@entreprise.cm", departement=Departement.RH)
+        Destinataire.objects.create(
+            campagne=self.campagne, email="compta@entreprise.cm", departement=Departement.COMPTABILITE
+        )
+
+    def test_chaque_destinataire_recoit_le_scenario_de_son_departement(self):
+        trackings = EnvoiCampagneService(self.campagne).envoyer_campagne()
+        self.assertEqual(len(trackings), 2)
+        scenario_par_email = {t.destinataire_email: t.scenario_id for t in trackings}
+        self.assertEqual(scenario_par_email["rh@entreprise.cm"], self.scenario_rh.id)
+        self.assertEqual(scenario_par_email["compta@entreprise.cm"], self.scenario_compta.id)
+
+    def test_destinataire_sans_scenario_correspondant_leve_une_erreur_claire(self):
+        Destinataire.objects.create(
+            campagne=self.campagne, email="marketing@entreprise.cm", departement=Departement.MARKETING
+        )
+        with self.assertRaises(EnvoiCampagneError):
+            EnvoiCampagneService(self.campagne).envoyer_campagne()
+
+    def test_scenario_generique_recu_par_defaut(self):
+        Destinataire.objects.create(
+            campagne=self.campagne, email="marketing@entreprise.cm", departement=Departement.MARKETING
+        )
+        scenario_generique = ScenarioPhishing.objects.create(
+            campagne=self.campagne,
+            objet_email="Générique",
+            corps_email="Contenu générique.",
+            url_fausse_page="https://exemple.cm/generique/",
+            secteur_cible="Test",
+        )
+        trackings = EnvoiCampagneService(self.campagne).envoyer_campagne()
+        scenario_par_email = {t.destinataire_email: t.scenario_id for t in trackings}
+        self.assertEqual(scenario_par_email["marketing@entreprise.cm"], scenario_generique.id)

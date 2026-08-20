@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Campagne, ScenarioPhishing
+from .models import Campagne, Destinataire, ScenarioPhishing
 
 
 class ScenarioPhishingSerializer(serializers.ModelSerializer):
@@ -18,8 +18,18 @@ class ScenarioPhishingSerializer(serializers.ModelSerializer):
             "expediteur_email",
             "destinataire_email",
             "est_html",
+            "departements_cibles",
         ]
         read_only_fields = ["id"]
+
+
+class DestinataireSerializer(serializers.ModelSerializer):
+    departement_display = serializers.CharField(source="get_departement_display", read_only=True)
+
+    class Meta:
+        model = Destinataire
+        fields = ["id", "campagne", "email", "departement", "departement_display"]
+        read_only_fields = ["id", "campagne"]
 
 
 class CampagneSerializer(serializers.ModelSerializer):
