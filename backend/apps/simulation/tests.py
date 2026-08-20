@@ -1,0 +1,67 @@
+from django.test import TestCase
+from django.urls import reverse
+
+from apps.campagnes.models import Campagne, Departement, ScenarioPhishing
+
+from .models import EnvoiTracking, TypeInteraction
+
+
+class TrackingInteractionTests(TestCase):
+    """Simule le parcours d'un employé testé : ouverture du pixel, clic sur
+    le lien de la fausse page, soumission du formulaire. Vérifie que les
+    3 types d'interaction sont enregistrés, dans le bon ordre, sans jamais
+    conserver les identifiants saisis."""
+
+    def setUp(self):
+        self.campagne = Campagne.objects.create(departement=Departement.IT)
+        self.scenario = ScenarioPhishing.objects.create(
+            campagne=self.campagne,
+            objet_email="Test de suivi",
+            corps_email="Corps de test.",
+            url_fausse_page="https://exemple.cm/",
+            secteur_cible="Test",
+        )
+        self.tracking = EnvoiTracking.objects.create(
+            scenario=self.scenario,
+            destinataire_email="employe-test@entreprise.cm",
+        )
+        self.pixel_url = reverse("simulation-pixel", kwargs={"tracking_id": self.tracking.id})
+        self.capture_url = reverse("simulation-capture", kwargs={"tracking_id": self.tracking.id})
+
+    def test_parcours_ouverture_clic_soumission(self):
+        response = self.client.get(self.pixel_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/gif")
+
+        response = self.client.get(self.capture_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Vérification de compte requise")
+
+        response = self.client.post(self.capture_url, {"email": "x@y.cm", "password": "secret"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Merci, vos informations ont été transmises")
+
+        interactions = list(self.tracking.interactions.order_by("horodatage"))
+        self.assertEqual(len(interactions), 3)
+        self.assertEqual(
+            [i.type for i in interactions],
+            [TypeInteraction.OUVERTURE, TypeInteraction.CLIC, TypeInteraction.SOUMISSION],
+        )
+        for interaction in interactions:
+            self.assertIsNotNone(interaction.horodatage)
+
+    def test_pixel_et_clic_inconnus_renvoient_404(self):
+        faux_id = "00000000-0000-0000-0000-000000000000"
+        self.assertEqual(
+            self.client.get(reverse("simulation-pixel", kwargs={"tracking_id": faux_id})).status_code, 404
+        )
+        self.assertEqual(
+            self.client.get(reverse("simulation-capture", kwargs={"tracking_id": faux_id})).status_code, 404
+        )
+
+    def test_soumission_ne_stocke_aucun_identifiant_saisi(self):
+        self.client.post(self.capture_url, {"email": "victime@entreprise.cm", "password": "MotDePasseSecret123"})
+        interaction = self.tracking.interactions.get(type=TypeInteraction.SOUMISSION)
+        champs = {f.name for f in interaction._meta.get_fields()}
+        self.assertNotIn("email", champs)
+        self.assertNotIn("password", champs)
