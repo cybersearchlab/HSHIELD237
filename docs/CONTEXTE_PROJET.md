@@ -6,19 +6,21 @@
 
 ## État d'avancement
 
-- **Dernier jour entièrement terminé, vérifié ET poussé sur GitHub : Jour 7**
-  (génération de scénario — API Claude + mode manuel), y compris un
-  ensemble d'améliorations de l'aperçu email demandées après coup par
-  l'utilisateur (voir « Journal du 2026-08-19 » ci-dessous).
-  - ✅ Backend fait, vérifié en conditions réelles, committé et poussé
-    (commit `f1f8ad2`).
-  - ✅ Frontend fait (sélecteur API/Manuel, page `GenererScenarioPage`),
-    committé et poussé (commit `42fc3bb`).
-  - ✅ Améliorations de l'aperçu (expéditeur/destinataire, bouton CTA,
-    mode HTML, validation inline, scroll automatique) committées et
-    poussées (commit `3b33198`).
+- **Dernier jour entièrement terminé et vérifié en conditions réelles : Jour 8**
+  (envoi SMTP, expéditeur configurable, anti-spam, fausse page de capture
+  avec tracking) — voir « Journal du 2026-08-20 » ci-dessous.
+  - ✅ Backend fait (`apps/simulation/`), vérifié en conditions réelles
+    (envoi SMTP réel confirmé via Mailtrap + capture par le consultant).
+  - ✅ Frontend fait (modale de lancement de campagne, champs expéditeur/
+    Reply-To/débit, avertissement DNS).
+  - ⚠️ **PAS ENCORE committé ni poussé sur GitHub** — c'est la toute
+    prochaine action (voir dernière section).
+- Jour 7 (génération de scénario) reste entièrement terminé, vérifié et
+  poussé (commits `f1f8ad2`, `42fc3bb`, `3b33198`).
 - Jalon 1 (jour 5, connexion + interface visible en Docker complet) : **atteint**.
-- Jalon 2 (jour 10, scénario généré + envoyé par département + tracking) : **pas encore atteint** — prochaine étape est le Jour 8.
+- Jalon 2 (jour 10, scénario généré + envoyé par département + tracking) :
+  **pas encore atteint** — l'envoi est fait (jour 8) ; il manque le tracking
+  des interactions (jour 9) et la segmentation par département (jour 10).
 
 ## Journal du 2026-08-19 (session de suivi post-Jour 7)
 
@@ -65,6 +67,46 @@ Aucune régression connue. Les 4 services Docker restent `healthy` après
 chaque rebuild. Migration `0003` appliquée manuellement (voir écart n°3
 plus bas — toujours pas de bind mount backend).
 
+## Journal du 2026-08-20 (Jour 8 — envoi SMTP, anti-spam, capture)
+
+1. **Backend `apps/simulation/`** : modèles `ConfigurationEnvoi` (expéditeur
+   affiché, Reply-To, délai entre envois — par campagne) et `EnvoiTracking`
+   (UUID par envoi, sert d'identifiant de tracking dans l'URL de capture).
+   `EnvoiCampagneService` envoie via le backend SMTP natif de Django,
+   respecte le délai configuré (`time.sleep` synchrone entre deux envois),
+   et propage proprement toute erreur SMTP (`EnvoiCampagneError` → 400).
+2. **Vue publique** `GET /simulation/capture/<uuid>/` : sert une fausse page
+   de vérification générique (template `apps/simulation/templates/simulation/capture.html`),
+   sans authentification.
+3. **Endpoints** `GET/PUT /api/simulation/campagnes/{id}/configuration/` et
+   `POST /api/simulation/campagnes/{id}/envoyer/`, réservés aux rôles
+   consultant/administrateur.
+4. **Frontend** : nouvelle modale de lancement sur `CampagnesPage.jsx` (le
+   clic sur « Lancer » n'active plus directement la campagne — il ouvre la
+   modale, sauvegarde la configuration d'envoi, déclenche l'envoi réel, puis
+   passe la campagne à `active` seulement si l'envoi réussit). Nouveau
+   fichier `frontend/src/api/simulation.js`.
+5. **Bug d'infrastructure trouvé et corrigé** : nginx ne routait pas
+   `/simulation/` vers le backend (seuls `/api/`, `/admin/`, `/static/`
+   l'étaient) — la fausse page de capture renvoyait la page React au lieu
+   de la vue Django. Ajouté `location /simulation/` et, au passage,
+   `location /media/` (même trou pour les pièces jointes de scénario) dans
+   `nginx/conf.d/default.conf`.
+6. **Vérification réelle complète** : configuration sauvegardée, scénario
+   envoyé via Mailtrap (confirmé par capture d'écran de l'inbox Mailtrap —
+   expéditeur affiché et lien de capture corrects), page de capture publique
+   testée avec un UUID valide (`200`) et invalide (`404`). Un test isolé
+   avec le backend console de Django a permis de confirmer que le service
+   compose correctement From/Reply-To/corps/lien même quand Mailtrap
+   applique sa limite de débit (voir écart n°12).
+7. Petite correction de texte sur `GenererScenarioPage.jsx` (retrait d'une
+   liste d'exemples d'institutions dans le texte d'intro du mode API, sur
+   demande explicite de l'utilisateur).
+
+Aucune régression connue. Les 4 services Docker sont `healthy` (actuellement
+**arrêtés** à la demande de l'utilisateur pour libérer des ressources
+machine — voir « Prochaine action précise »).
+
 ## Modules implémentés
 
 ### Backend (`backend/apps/`)
@@ -75,7 +117,7 @@ plus bas — toujours pas de bind mount backend).
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
 | `campagnes` | ✅ Fait | Modèles `Campagne` (departement, statut, perimetre_valide) et `ScenarioPhishing` (+ `piece_jointe`), ViewSet CRUD, filtres statut/departement, pagination, fixture de test |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
-| `simulation` | ⬜ Pas commencé | Prévu jour 8 (SMTP, tracking) et jour 9 (pixel, clics) |
+| `simulation` | 🟡 Partiellement fait | Jour 8 fait : `EnvoiCampagneService`, `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture. **Manque encore** (jour 9) : modèle `Interaction`, pixel de suivi, enregistrement clic/soumission/signalement |
 | `gouvernance` | ⬜ Pas commencé | Prévu jour 11 (Consentement, JournalAudit) |
 | `rapports` | ⬜ Pas commencé | Prévu jour 13 (PDF via WeasyPrint) |
 | `templates_sectoriels` | ⬜ Pas commencé | Prévu jour 14 |
@@ -87,7 +129,7 @@ plus bas — toujours pas de bind mount backend).
 | `Login/LoginPage.jsx` | ✅ Fait | Fidèle à `login.html`, connectée à l'API |
 | `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages |
 | `Dashboard/DashboardPage.jsx` | 🟡 Placeholder minimal | Affiche juste l'utilisateur connecté ; le vrai contenu (métriques, tableau campagnes) arrive jour 12 |
-| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création |
+| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création, **modale de lancement** (expéditeur/Reply-To/débit + avertissement DNS, jour 8) |
 | `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique — voir « Journal du 2026-08-19 » |
 | Résultats, RapportsPDF, Historique, TemplatesSectoriels, Consentements, Paramètres | ⬜ Pas commencé | Liens de nav déjà présents dans `navConfig.js`, pointent vers des routes non câblées (redirection vers `/`) |
 
@@ -103,10 +145,21 @@ plus bas — toujours pas de bind mount backend).
 5. **`ANTHROPIC_MODEL`** ajouté comme variable d'environnement configurable (pas dans le plan initial) — évite de coder en dur un identifiant de modèle qui peut changer.
 6. Les endpoints de génération (`/api/generation/api/` et `/api/generation/manuel/`) sont réservés aux rôles `consultant`/`administrateur`, comme les autres endpoints métier (cohérence, pas explicitement demandé pour ce module précis).
 7. **Champs expéditeur/destinataire ajoutés à `ScenarioPhishing`** (et non à un futur modèle `Destinataire`, qui n'existe pas encore — prévu jour 9/10). Décision utilisateur du 2026-08-19 : besoin immédiat d'afficher un aperçu d'email réaliste (De/À) en mode manuel, avant que la vraie segmentation par destinataire n'existe. **Point de vigilance pour le jour 8/10** : `destinataire_email` ici n'est qu'un email de test rattaché au scénario, à ne pas confondre avec le futur modèle `Destinataire` (liste réelle de destinataires par campagne) — il faudra clarifier la relation entre les deux au moment d'implémenter l'envoi de masse.
+8. **`ConfigurationEnvoi` et `EnvoiTracking` créés comme modèles séparés dans `apps.simulation`** (pas de champ ajouté directement sur `Campagne`/`ScenarioPhishing`). `ConfigurationEnvoi` est en `OneToOne` avec `Campagne`, auto-créé (valeurs vides) au premier `GET` de la configuration pour simplifier le frontend (pas de gestion d'un état « non configuré »).
+9. **Le débit d'envoi est implémenté en synchrone** (`time.sleep()` dans la vue/service, pendant la requête HTTP), conformément à la formulation littérale du plan (« un email toutes les 2 secondes »). Aucune file de tâches asynchrone (Celery/RQ) n'a été introduite ce sprint. **Point de vigilance** : pour un grand nombre de destinataires, cela bloquera la requête HTTP pendant toute la durée de l'envoi — acceptable pour la taille actuelle des campagnes de test, à surveiller si le volume augmente.
+10. **Le bouton « Lancer » d'une campagne ne se contente plus de changer son statut** : il ouvre désormais une modale de configuration d'envoi, déclenche un envoi SMTP réel via `EnvoiCampagneService`, et ne passe la campagne à `active` qu'en cas de succès de l'envoi. Écart par rapport au comportement simplifié du jour 6 (qui appelait directement `PATCH statut=active`).
+11. **Nginx ne proxyait pas `/simulation/` ni `/media/` vers le backend** (seuls `/api/`, `/admin/`, `/static/` l'étaient depuis le jour 1/5) — trou découvert en testant la fausse page de capture (qui renvoyait la page React). Corrigé dans `nginx/conf.d/default.conf` ; concerne aussi l'accès public aux pièces jointes de scénario (jour 7), qui était silencieusement cassé jusqu'ici.
+12. **Le plan gratuit Mailtrap limite le débit d'envoi** (« Too many emails per second ») plus strictement que le débit configuré côté application. Ce n'est pas un défaut du code — confirmé par un test isolé avec le backend console de Django, qui montre que `EnvoiCampagneService` compose correctement chaque email (From, Reply-To, corps, lien de capture) indépendamment de Mailtrap. À garder en tête pour les tests manuels : espacer les tentatives d'envoi de campagne.
 
 ## Variables d'environnement (`.env`, jamais commité)
 
 **Renseignées avec une vraie valeur locale** : `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
+
+**Renseignées le 2026-08-20 avec un compte de test Mailtrap (Sandbox)** :
+`EMAIL_HOST` (`sandbox.smtp.mailtrap.io`), `EMAIL_PORT` (`587`),
+`EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` (`True`). Aucun
+email réel envoyé — capturé dans l'inbox Mailtrap. Rate-limité par le plan
+gratuit (voir écart n°12).
 
 **Présentes mais avec une valeur invalide/placeholder** :
 - `ANTHROPIC_API_KEY` — l'utilisateur n'a pas encore payé/provisionné de clé sur console.anthropic.com. Le service `ClaudeGenerationService` gère déjà ce cas proprement (renvoie une 503 avec message clair au lieu de planter). **Le mode manuel fonctionne dès maintenant sans cette clé.**
@@ -114,28 +167,46 @@ plus bas — toujours pas de bind mount backend).
 **Absentes du `.env` actuel** (donc valeurs par défaut du code utilisées) :
 - `CORS_ALLOWED_ORIGINS` — non bloquant en dev (`dev.py` a un défaut)
 - `ANTHROPIC_MODEL` — défaut code : `claude-sonnet-4-5-20250929` (à vérifier sur console.anthropic.com une fois la clé provisionnée)
-- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` — à renseigner au jour 8 (SMTP)
+- `SIMULATION_BASE_URL` — défaut code : `https://localhost` (correct pour l'environnement local actuel ; à renseigner explicitement lors d'un déploiement sur un vrai domaine, pour que le lien de capture dans les emails pointe au bon endroit)
 - `VITE_API_BASE_URL` — non nécessaire (le proxy Vite/nginx gère `/api` en relatif)
 
 ## Bugs connus ou points bloquants
 
-- **Aucun bug actif** au moment de la rédaction. Les 4 services Docker (`db`, `backend`, `frontend`, `nginx`) sont `healthy`.
-- **Bug corrigé le 2026-08-19** (pour référence, plus d'action requise) : l'enregistrement d'un scénario en mode manuel échouait silencieusement à cause d'un header `Content-Type: multipart/form-data` fixé en dur sans `boundary` côté frontend. Corrigé dans `frontend/src/api/generation.js`.
-- **Point de vigilance permanent** : ne plus compter sur un bind mount pour le code backend (voir écart n°3) — toujours rebuild l'image après modification de code Python, et écrire les migrations à la main si `docker compose run --rm` est utilisé pour les générer.
-- Compte de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe) et `consultant@hshield237.local` / `Consultant1234!` (rôle consultant, à utiliser pour tester campagnes/génération).
+- **Aucun bug actif** au niveau applicatif. Le code du Jour 8 est vérifié
+  et fonctionnel de bout en bout (voir « Journal du 2026-08-20 »).
+- **Conteneurs actuellement arrêtés** (`docker compose stop`, demandé par
+  l'utilisateur pour libérer des ressources machine) — pas un bug, mais
+  la toute première étape pour reprendre est de les relancer.
+- **Contrainte externe à garder en tête** : le plan gratuit Mailtrap limite
+  le débit d'envoi plus strictement que le débit configuré côté
+  application — espacer les tentatives d'envoi de campagne pendant les
+  tests manuels (voir écart n°12). N'affecte pas la correction du code.
+- **Point de vigilance permanent** : ne plus compter sur un bind mount pour le code backend (voir écart n°3) — toujours rebuild l'image après modification de code Python (**y compris nginx** si `nginx/conf.d/` change), et écrire les migrations à la main si `docker compose run --rm` est utilisé pour les générer.
+- **Docker Desktop reste occasionnellement instable** au redémarrage (déjà documenté) : après un restart de Docker Desktop, vérifier que l'image utilisée par un conteneur recréé est bien la plus récente (`docker images <nom> --format "{{.ID}} {{.CreatedAt}}"`) — un rebuild peut se perdre si le moteur redémarre pendant ou juste après.
+- Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe) et `consultant@hshield237.local` / `Consultant1234!` (rôle consultant, à utiliser pour tester campagnes/génération/envoi).
 
 ## Prochaine action précise
 
-Le Jour 7 et ses améliorations post-hoc (voir « Journal du 2026-08-19 ») sont
-terminés, vérifiés en conditions réelles et poussés sur GitHub (commits
-`f1f8ad2`, `42fc3bb`, `3b33198`). Rien en attente côté commit/push.
-
-**Prochaine étape** : **Jour 8** du plan (`docs/rapport_planification.md`) —
-`apps/simulation/` : `EnvoiCampagneService` (SMTP natif Django, expéditeur
-configurable, en-tête Reply-To, limitation de débit) + vue publique de
-fausse page de capture avec identifiant de tracking par destinataire.
-Nécessitera de renseigner `EMAIL_HOST`/`EMAIL_PORT`/`EMAIL_HOST_USER`/
-`EMAIL_HOST_PASSWORD` dans `.env` (compte SMTP de test type Mailtrap
-recommandé par le plan, jamais de vrais emails en dev). À cette occasion,
-clarifier la relation entre le `destinataire_email` de test ajouté au
-`ScenarioPhishing` (écart n°7) et le futur modèle `Destinataire`.
+1. **Relancer les conteneurs** (arrêtés en fin de session) :
+   ```
+   docker compose up -d
+   ```
+2. **Committer et pousser le Jour 8**, actuellement non commité :
+   ```
+   git add backend/apps/simulation frontend/src/api/simulation.js \
+     backend/config/settings/base.py backend/config/urls.py \
+     frontend/src/pages/Campagnes/CampagnesPage.jsx \
+     frontend/src/pages/GenererScenario/GenererScenarioPage.jsx \
+     frontend/src/styles/components.css nginx/conf.d/default.conf \
+     .env.example
+   git commit -m "feat(simulation): envoi SMTP, expediteur configurable, fausse page de capture"
+   git push origin main
+   ```
+3. Puis enchaîner sur le **Jour 9** du plan (`docs/rapport_planification.md`) :
+   modèle `Interaction` (destinataire, type [ouverture/clic/soumission/
+   signalement], horodatage, adresse_ip) dans `apps/simulation/`, pixel de
+   suivi 1x1 inséré automatiquement dans chaque email, enregistrement du
+   clic à l'accès de la fausse page de capture (déjà servie, jour 8) et de
+   la soumission au formulaire. À cette occasion, clarifier la relation
+   entre le `destinataire_email` de test sur `ScenarioPhishing` (écart n°7)
+   et le futur modèle `Destinataire`.
