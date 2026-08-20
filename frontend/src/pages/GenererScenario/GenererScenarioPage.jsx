@@ -230,7 +230,7 @@ export default function GenererScenarioPage() {
         <h2>Générer un scénario de phishing</h2>
         <p>
           {mode === "api"
-            ? "L'IA adapte le scénario au département ciblé et à la réalité numérique locale — BEAC, MTN MoMo, MINESUP, ARMP, fournisseurs internationaux…"
+            ? "L'IA adapte le scénario au département ciblé et à la réalité numérique locale de votre entreprise."
             : "Rédigez le texte du scénario vous-même dans claude.ai (ou tout autre LLM), puis collez-le ci-dessous."}
         </p>
       </div>

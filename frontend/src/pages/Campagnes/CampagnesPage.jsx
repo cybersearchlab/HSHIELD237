@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { createCampagne, deleteCampagne, listCampagnes, updateCampagne } from "../../api/campagnes";
+import { envoyerCampagne, getConfigurationEnvoi, updateConfigurationEnvoi } from "../../api/simulation";
 import Layout from "../../components/Layout";
 import { DEPARTEMENT_LABELS } from "../../utils/departements";
 import { STATUT_LABELS } from "../../utils/statuts";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function isValidEmail(value) {
+  return EMAIL_RE.test(value.trim());
+}
 
 const STATUT_PILL_CLASS = {
   brouillon: "s-draft dot-draft",
@@ -40,6 +46,15 @@ export default function CampagnesPage() {
   const [formDepartement, setFormDepartement] = useState("direction");
   const [formStatut, setFormStatut] = useState("brouillon");
   const [formPerimetreValide, setFormPerimetreValide] = useState(false);
+
+  const [launchCampagne, setLaunchCampagne] = useState(null);
+  const [launchLoading, setLaunchLoading] = useState(false);
+  const [launchSaving, setLaunchSaving] = useState(false);
+  const [launchExpediteurNom, setLaunchExpediteurNom] = useState("");
+  const [launchExpediteurEmail, setLaunchExpediteurEmail] = useState("");
+  const [launchReplyTo, setLaunchReplyTo] = useState("");
+  const [launchDelai, setLaunchDelai] = useState(2);
+  const [launchFieldErrors, setLaunchFieldErrors] = useState({});
 
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -86,13 +101,73 @@ export default function CampagnesPage() {
     return data.results.filter((c) => (c.departement_display || "").toLowerCase().includes(q));
   }, [data.results, search]);
 
-  async function handleLancer(campagne) {
+  async function openLaunchModal(campagne) {
+    setLaunchCampagne(campagne);
+    setLaunchFieldErrors({});
+    setLaunchExpediteurNom("");
+    setLaunchExpediteurEmail("");
+    setLaunchReplyTo("");
+    setLaunchDelai(2);
+    setLaunchLoading(true);
     try {
-      await updateCampagne(campagne.id, { statut: "active" });
-      showToast(`Campagne lancée pour ${campagne.departement_display}`, "success");
-      load();
+      const config = await getConfigurationEnvoi(campagne.id);
+      setLaunchExpediteurNom(config.expediteur_nom || "");
+      setLaunchExpediteurEmail(config.expediteur_email || "");
+      setLaunchReplyTo(config.reply_to || "");
+      setLaunchDelai(config.delai_entre_envois ?? 2);
     } catch {
-      showToast("Impossible de lancer cette campagne.", "error");
+      showToast("Impossible de charger la configuration d'envoi.", "error");
+    } finally {
+      setLaunchLoading(false);
+    }
+  }
+
+  function clearLaunchFieldError(field) {
+    setLaunchFieldErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function validateLaunch() {
+    const errors = {};
+    if (!launchExpediteurEmail.trim()) errors.expediteur_email = "L'email de l'expéditeur affiché est requis.";
+    else if (!isValidEmail(launchExpediteurEmail)) errors.expediteur_email = "Email non valide.";
+    if (!launchReplyTo.trim()) errors.reply_to = "L'email de réponse (Reply-To) est requis.";
+    else if (!isValidEmail(launchReplyTo)) errors.reply_to = "Email non valide.";
+    if (!launchDelai || Number(launchDelai) < 0) errors.delai_entre_envois = "Le délai doit être un nombre positif.";
+    return errors;
+  }
+
+  async function handleLaunchSubmit(event) {
+    event.preventDefault();
+    const errors = validateLaunch();
+    if (Object.keys(errors).length > 0) {
+      setLaunchFieldErrors(errors);
+      showToast("Veuillez corriger les champs signalés en rouge.", "error");
+      return;
+    }
+    setLaunchFieldErrors({});
+    setLaunchSaving(true);
+    try {
+      await updateConfigurationEnvoi(launchCampagne.id, {
+        expediteur_nom: launchExpediteurNom,
+        expediteur_email: launchExpediteurEmail,
+        reply_to: launchReplyTo,
+        delai_entre_envois: Number(launchDelai),
+      });
+      const trackings = await envoyerCampagne(launchCampagne.id);
+      await updateCampagne(launchCampagne.id, { statut: "active" });
+      setLaunchCampagne(null);
+      showToast(`Campagne lancée — ${trackings.length} email${trackings.length > 1 ? "s" : ""} envoyé${trackings.length > 1 ? "s" : ""}.`, "success");
+      load();
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      showToast(detail || "Impossible de lancer cette campagne.", "error");
+    } finally {
+      setLaunchSaving(false);
     }
   }
 
@@ -226,7 +301,7 @@ export default function CampagnesPage() {
                       <td>
                         <div className="actions-cell">
                           {c.statut === "en_attente" && (
-                            <div className="action-btn" onClick={() => handleLancer(c)} title="Lancer la campagne">
+                            <div className="action-btn" onClick={() => openLaunchModal(c)} title="Lancer la campagne">
                               <i className="ti ti-send" style={{ fontSize: 15 }} />
                             </div>
                           )}
@@ -325,6 +400,125 @@ export default function CampagnesPage() {
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
                   {saving ? "Création…" : "Créer la campagne"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {launchCampagne && (
+        <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && setLaunchCampagne(null)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Lancer la campagne — {launchCampagne.departement_display}</h3>
+              <div className="close-btn" role="button" tabIndex={0} onClick={() => setLaunchCampagne(null)}>
+                <i className="ti ti-x" />
+              </div>
+            </div>
+            <form onSubmit={handleLaunchSubmit}>
+              <div className="modal-body">
+                {launchLoading ? (
+                  <p style={{ color: "var(--text3)", fontSize: 13 }}>Chargement de la configuration…</p>
+                ) : (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label">Nom de l'expéditeur affiché</label>
+                      <input
+                        className="form-input"
+                        type="text"
+                        placeholder="Ex : Portail MINESUP"
+                        value={launchExpediteurNom}
+                        onChange={(e) => setLaunchExpediteurNom(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Email de l'expéditeur affiché *</label>
+                      <input
+                        className={`form-input${launchFieldErrors.expediteur_email ? " input-error" : ""}`}
+                        type="email"
+                        placeholder="noreply@minesup-infos.cm"
+                        value={launchExpediteurEmail}
+                        onChange={(e) => {
+                          setLaunchExpediteurEmail(e.target.value);
+                          clearLaunchFieldError("expediteur_email");
+                        }}
+                      />
+                      <div className="form-hint">
+                        Distinct du compte SMTP authentifié — c'est l'adresse affichée dans le client de
+                        messagerie du destinataire.
+                      </div>
+                      {launchFieldErrors.expediteur_email && (
+                        <div className="form-error-text">
+                          <i className="ti ti-alert-circle" /> {launchFieldErrors.expediteur_email}
+                        </div>
+                      )}
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Email de réponse (Reply-To) *</label>
+                      <input
+                        className={`form-input${launchFieldErrors.reply_to ? " input-error" : ""}`}
+                        type="email"
+                        placeholder="reponses-test@hshield237.local"
+                        value={launchReplyTo}
+                        onChange={(e) => {
+                          setLaunchReplyTo(e.target.value);
+                          clearLaunchFieldError("reply_to");
+                        }}
+                      />
+                      <div className="form-hint">
+                        Adresse neutre et contrôlée : aucune réponse d'un employé ne partira vers une adresse
+                        non maîtrisée.
+                      </div>
+                      {launchFieldErrors.reply_to && (
+                        <div className="form-error-text">
+                          <i className="ti ti-alert-circle" /> {launchFieldErrors.reply_to}
+                        </div>
+                      )}
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 20 }}>
+                      <label className="form-label">Délai entre deux envois (secondes)</label>
+                      <input
+                        className={`form-input${launchFieldErrors.delai_entre_envois ? " input-error" : ""}`}
+                        type="number"
+                        min="0"
+                        value={launchDelai}
+                        onChange={(e) => {
+                          setLaunchDelai(e.target.value);
+                          clearLaunchFieldError("delai_entre_envois");
+                        }}
+                      />
+                      <div className="form-hint">
+                        Limite le débit d'envoi pour éviter d'être signalé comme trafic massif par le relais
+                        SMTP du client.
+                      </div>
+                      {launchFieldErrors.delai_entre_envois && (
+                        <div className="form-error-text">
+                          <i className="ti ti-alert-circle" /> {launchFieldErrors.delai_entre_envois}
+                        </div>
+                      )}
+                    </div>
+                    <div className="consent-box">
+                      <i className="ti ti-alert-triangle" />
+                      <div>
+                        <strong style={{ display: "block", marginBottom: 4 }}>
+                          Délivrabilité non garantie par la plateforme
+                        </strong>
+                        La bonne réception de ces emails dépend de la configuration DNS (SPF, DKIM, DMARC) du
+                        domaine d'envoi utilisé par le client. H-SHIELD237 ne peut pas garantir que les emails
+                        simulés évitent les filtres anti-spam si cette configuration n'est pas en place côté
+                        client.
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn" onClick={() => setLaunchCampagne(null)}>
+                  Annuler
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={launchLoading || launchSaving}>
+                  <i className="ti ti-send" /> {launchSaving ? "Envoi en cours…" : "Lancer la campagne"}
                 </button>
               </div>
             </form>

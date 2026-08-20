@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vérification de compte requise</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f4f6f9;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: #ffffff;
+    max-width: 420px;
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+  }
+  .card-header {
+    background: #0b1f3a;
+    color: #fff;
+    padding: 22px 26px;
+  }
+  .card-header h1 { font-size: 17px; font-weight: 600; }
+  .card-header p { font-size: 12.5px; color: #b8c6da; margin-top: 4px; }
+  .card-body { padding: 26px; }
+  .card-body p.intro { font-size: 13.5px; color: #445; line-height: 1.5; margin-bottom: 20px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: #667; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .field { margin-bottom: 16px; }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #cdd5e0;
+    font-size: 13.5px;
+    font-family: inherit;
+  }
+  input:focus { outline: none; border-color: #1b2a5a; }
+  button {
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 6px;
+    background: #c0392b;
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  button:hover { background: #a5301f; }
+  .footer { text-align: center; font-size: 10.5px; color: #99a3b3; margin-top: 18px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <h1>Vérification de compte requise</h1>
+      <p>{{ scenario.secteur_cible }}</p>
+    </div>
+    <div class="card-body">
+      <p class="intro">Pour des raisons de sécurité, veuillez confirmer vos identifiants afin de maintenir l'accès à votre compte.</p>
+      <form>
+        <div class="field">
+          <label for="email">Adresse email professionnelle</label>
+          <input type="email" id="email" name="email" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" name="password" autocomplete="off">
+        </div>
+        <button type="submit">Confirmer mon compte</button>
+      </form>
+      <p class="footer">H-SHIELD237 — Plateforme de simulation de sensibilisation</p>
+    </div>
+  </div>
+</body>
+</html>

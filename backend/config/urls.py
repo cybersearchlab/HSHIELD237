@@ -9,6 +9,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from apps.accounts.views import MeView
 from apps.campagnes.views import CampagneViewSet
 from apps.generation.views import GenerationAPIView, GenerationManuelView
+from apps.simulation.urls import api_urlpatterns as simulation_api_urls
+from apps.simulation.urls import public_urlpatterns as simulation_public_urls
 
 
 def health(request):
@@ -27,6 +29,8 @@ urlpatterns = [
     path("api/auth/me/", MeView.as_view(), name="auth-me"),
     path("api/generation/api/", GenerationAPIView.as_view(), name="generation-api"),
     path("api/generation/manuel/", GenerationManuelView.as_view(), name="generation-manuel"),
+    path("api/simulation/", include(simulation_api_urls)),
+    path("simulation/", include(simulation_public_urls)),
     path("api/", include(router.urls)),
 ]
 
