@@ -6,21 +6,23 @@
 
 ## État d'avancement
 
-- **Dernier jour entièrement terminé et vérifié en conditions réelles : Jour 8**
-  (envoi SMTP, expéditeur configurable, anti-spam, fausse page de capture
-  avec tracking) — voir « Journal du 2026-08-20 » ci-dessous.
-  - ✅ Backend fait (`apps/simulation/`), vérifié en conditions réelles
-    (envoi SMTP réel confirmé via Mailtrap + capture par le consultant).
-  - ✅ Frontend fait (modale de lancement de campagne, champs expéditeur/
-    Reply-To/débit, avertissement DNS).
+- **Dernier jour entièrement terminé et vérifié en conditions réelles : Jour 9**
+  (modèle `Interaction`, pixel de suivi, tracking clic/soumission) — voir
+  « Journal du 2026-08-20 » ci-dessous.
+  - ✅ Backend fait, vérifié en conditions réelles (pixel, clic, soumission
+    tous confirmés via curl + interactions visibles en base).
   - ⚠️ **PAS ENCORE committé ni poussé sur GitHub** — c'est la toute
     prochaine action (voir dernière section).
+- Jour 8 (envoi SMTP, expéditeur configurable, fausse page de capture) reste
+  entièrement terminé, vérifié, **committé et poussé** (commits `0630615`,
+  `7d7d8d0`).
 - Jour 7 (génération de scénario) reste entièrement terminé, vérifié et
   poussé (commits `f1f8ad2`, `42fc3bb`, `3b33198`).
 - Jalon 1 (jour 5, connexion + interface visible en Docker complet) : **atteint**.
 - Jalon 2 (jour 10, scénario généré + envoyé par département + tracking) :
-  **pas encore atteint** — l'envoi est fait (jour 8) ; il manque le tracking
-  des interactions (jour 9) et la segmentation par département (jour 10).
+  **pas encore atteint** — l'envoi (jour 8) et le tracking des interactions
+  (jour 9) sont faits ; il manque uniquement la segmentation par département
+  (jour 10).
 
 ## Journal du 2026-08-19 (session de suivi post-Jour 7)
 
@@ -67,7 +69,9 @@ Aucune régression connue. Les 4 services Docker restent `healthy` après
 chaque rebuild. Migration `0003` appliquée manuellement (voir écart n°3
 plus bas — toujours pas de bind mount backend).
 
-## Journal du 2026-08-20 (Jour 8 — envoi SMTP, anti-spam, capture)
+## Journal du 2026-08-20 (Jours 8 et 9 — envoi SMTP, tracking des interactions)
+
+### Jour 8 — envoi SMTP, anti-spam, capture
 
 1. **Backend `apps/simulation/`** : modèles `ConfigurationEnvoi` (expéditeur
    affiché, Reply-To, délai entre envois — par campagne) et `EnvoiTracking`
@@ -103,9 +107,35 @@ plus bas — toujours pas de bind mount backend).
    liste d'exemples d'institutions dans le texte d'intro du mode API, sur
    demande explicite de l'utilisateur).
 
-Aucune régression connue. Les 4 services Docker sont `healthy` (actuellement
-**arrêtés** à la demande de l'utilisateur pour libérer des ressources
-machine — voir « Prochaine action précise »).
+Jour 8 committé et poussé sur GitHub le même jour (commits `0630615`, `7d7d8d0`).
+
+### Jour 9 — modèle `Interaction`, pixel de suivi, clic, soumission
+
+1. **Modèle `Interaction`** (migration `0002_interaction`) : `envoi` (FK vers
+   `EnvoiTracking`), `type` (ouverture/clic/soumission/signalement),
+   `horodatage`, `adresse_ip`. Voir écart n°13 pour le choix du FK.
+2. **Pixel de suivi** `GET /simulation/pixel/<uuid>/` : image GIF 1x1
+   transparente, enregistre un événement `ouverture` à chaque chargement.
+3. **`EnvoiCampagneService` modifié** pour joindre systématiquement une
+   alternative HTML (même quand le scénario est en mode texte) contenant le
+   pixel — voir écart n°14. Le corps texte visible par le destinataire reste
+   inchangé.
+4. **Fausse page de capture enrichie** : `GET` enregistre un `clic`, `POST`
+   du formulaire enregistre une `soumission` puis affiche un message neutre
+   de confirmation à la place du formulaire — sans jamais lire ni stocker
+   l'email/mot de passe saisis par la personne testée.
+5. **Vérification réelle complète** : `GET capture` → `200` + `clic` en
+   base ; `GET pixel` → `200`, `image/gif` + `ouverture` en base ; `POST
+   capture` → `200`, message neutre + `soumission` en base, avec adresse IP
+   capturée pour chacun. Test isolé (backend console) confirmant la balise
+   `<img>` du pixel correctement présente dans l'email réel envoyé.
+6. **Deux rebuilds backend ont échoué** à cause d'une erreur réseau
+   transitoire lors du téléchargement de l'image Docker de base
+   (`python:3.12-slim`, `unexpected EOF` depuis le registre Docker Hub) —
+   sans lien avec le code, résolu au 3ᵉ essai (voir « Bugs connus »).
+
+Aucune régression connue. Les 4 services Docker sont `healthy`. Jour 9 pas
+encore committé (voir « Prochaine action précise »).
 
 ## Modules implémentés
 
@@ -117,7 +147,7 @@ machine — voir « Prochaine action précise »).
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
 | `campagnes` | ✅ Fait | Modèles `Campagne` (departement, statut, perimetre_valide) et `ScenarioPhishing` (+ `piece_jointe`), ViewSet CRUD, filtres statut/departement, pagination, fixture de test |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
-| `simulation` | 🟡 Partiellement fait | Jour 8 fait : `EnvoiCampagneService`, `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture. **Manque encore** (jour 9) : modèle `Interaction`, pixel de suivi, enregistrement clic/soumission/signalement |
+| `simulation` | ✅ Fait (jours 8-9) | `EnvoiCampagneService`, `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu au jour 9), segmentation par département (jour 10) |
 | `gouvernance` | ⬜ Pas commencé | Prévu jour 11 (Consentement, JournalAudit) |
 | `rapports` | ⬜ Pas commencé | Prévu jour 13 (PDF via WeasyPrint) |
 | `templates_sectoriels` | ⬜ Pas commencé | Prévu jour 14 |
@@ -150,6 +180,10 @@ machine — voir « Prochaine action précise »).
 10. **Le bouton « Lancer » d'une campagne ne se contente plus de changer son statut** : il ouvre désormais une modale de configuration d'envoi, déclenche un envoi SMTP réel via `EnvoiCampagneService`, et ne passe la campagne à `active` qu'en cas de succès de l'envoi. Écart par rapport au comportement simplifié du jour 6 (qui appelait directement `PATCH statut=active`).
 11. **Nginx ne proxyait pas `/simulation/` ni `/media/` vers le backend** (seuls `/api/`, `/admin/`, `/static/` l'étaient depuis le jour 1/5) — trou découvert en testant la fausse page de capture (qui renvoyait la page React). Corrigé dans `nginx/conf.d/default.conf` ; concerne aussi l'accès public aux pièces jointes de scénario (jour 7), qui était silencieusement cassé jusqu'ici.
 12. **Le plan gratuit Mailtrap limite le débit d'envoi** (« Too many emails per second ») plus strictement que le débit configuré côté application. Ce n'est pas un défaut du code — confirmé par un test isolé avec le backend console de Django, qui montre que `EnvoiCampagneService` compose correctement chaque email (From, Reply-To, corps, lien de capture) indépendamment de Mailtrap. À garder en tête pour les tests manuels : espacer les tentatives d'envoi de campagne.
+13. **Le « destinataire FK » du modèle `Interaction`, demandé littéralement par le plan (jour 9), pointe vers `EnvoiTracking`** (champ `envoi`) plutôt que vers un modèle `Destinataire` qui n'existe pas encore. `EnvoiTracking` identifie déjà de façon unique « ce scénario envoyé à ce destinataire » (voir écart n°8) — c'est le bon niveau de granularité pour rattacher un événement d'interaction. **Point de vigilance jour 10** : quand le modèle `Destinataire` sera créé, clarifier explicitement sa relation avec `EnvoiTracking.destinataire_email`.
+14. **Le pixel de suivi impose une alternative HTML systématique**, même pour les scénarios en mode texte (`est_html=False`) — un pixel invisible ne peut être chargé que par un client email capable d'afficher du HTML. Le corps texte visible reste inchangé ; seule une version HTML supplémentaire (contenant le même texte échappé + le pixel) est jointe en `text/html` via `EmailMultiAlternatives.attach_alternative`.
+15. **La vue de la fausse page de capture est marquée `csrf_exempt`** pour accepter la soumission du formulaire (POST) : c'est une page publique sans session ni compte, censée imiter un vrai site externe (un vrai attaquant n'utilise pas de jeton CSRF Django). Aucune valeur saisie (email, mot de passe) n'est lue ni stockée par la vue — seul l'événement `soumission` (horodatage + adresse IP) est enregistré.
+16. **Le type `signalement` existe dans l'énumération `Interaction.type`** (demandé littéralement par le plan) mais n'a aucun déclencheur automatique construit ce jour — le plan ne décrit pas de mécanisme pour cet événement au jour 9 (probablement à raccorder plus tard à l'adresse Reply-To de test définie au jour 8).
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -172,41 +206,31 @@ gratuit (voir écart n°12).
 
 ## Bugs connus ou points bloquants
 
-- **Aucun bug actif** au niveau applicatif. Le code du Jour 8 est vérifié
-  et fonctionnel de bout en bout (voir « Journal du 2026-08-20 »).
-- **Conteneurs actuellement arrêtés** (`docker compose stop`, demandé par
-  l'utilisateur pour libérer des ressources machine) — pas un bug, mais
-  la toute première étape pour reprendre est de les relancer.
+- **Aucun bug actif** au niveau applicatif. Le code des jours 8 et 9 est
+  vérifié et fonctionnel de bout en bout (voir « Journal du 2026-08-20 »).
 - **Contrainte externe à garder en tête** : le plan gratuit Mailtrap limite
   le débit d'envoi plus strictement que le débit configuré côté
   application — espacer les tentatives d'envoi de campagne pendant les
   tests manuels (voir écart n°12). N'affecte pas la correction du code.
 - **Point de vigilance permanent** : ne plus compter sur un bind mount pour le code backend (voir écart n°3) — toujours rebuild l'image après modification de code Python (**y compris nginx** si `nginx/conf.d/` change), et écrire les migrations à la main si `docker compose run --rm` est utilisé pour les générer.
-- **Docker Desktop reste occasionnellement instable** au redémarrage (déjà documenté) : après un restart de Docker Desktop, vérifier que l'image utilisée par un conteneur recréé est bien la plus récente (`docker images <nom> --format "{{.ID}} {{.CreatedAt}}"`) — un rebuild peut se perdre si le moteur redémarre pendant ou juste après.
+- **Docker Desktop / Docker Hub restent occasionnellement instables** : après un restart de Docker Desktop, vérifier que l'image utilisée par un conteneur recréé est bien la plus récente (`docker images <nom> --format "{{.ID}} {{.CreatedAt}}"`) — un rebuild peut se perdre si le moteur redémarre pendant ou juste après. Un rebuild peut aussi échouer avec une erreur réseau (`unexpected EOF`) en tirant l'image de base depuis Docker Hub — relancer simplement `docker compose build` suffit en général.
 - Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe) et `consultant@hshield237.local` / `Consultant1234!` (rôle consultant, à utiliser pour tester campagnes/génération/envoi).
 
 ## Prochaine action précise
 
-1. **Relancer les conteneurs** (arrêtés en fin de session) :
+1. **Committer et pousser le Jour 9**, actuellement non commité :
    ```
-   docker compose up -d
-   ```
-2. **Committer et pousser le Jour 8**, actuellement non commité :
-   ```
-   git add backend/apps/simulation frontend/src/api/simulation.js \
-     backend/config/settings/base.py backend/config/urls.py \
-     frontend/src/pages/Campagnes/CampagnesPage.jsx \
-     frontend/src/pages/GenererScenario/GenererScenarioPage.jsx \
-     frontend/src/styles/components.css nginx/conf.d/default.conf \
-     .env.example
-   git commit -m "feat(simulation): envoi SMTP, expediteur configurable, fausse page de capture"
+   git add backend/apps/simulation
+   git commit -m "feat(simulation): modele Interaction, pixel de suivi, tracking clic/soumission"
    git push origin main
    ```
-3. Puis enchaîner sur le **Jour 9** du plan (`docs/rapport_planification.md`) :
-   modèle `Interaction` (destinataire, type [ouverture/clic/soumission/
-   signalement], horodatage, adresse_ip) dans `apps/simulation/`, pixel de
-   suivi 1x1 inséré automatiquement dans chaque email, enregistrement du
-   clic à l'accès de la fausse page de capture (déjà servie, jour 8) et de
-   la soumission au formulaire. À cette occasion, clarifier la relation
-   entre le `destinataire_email` de test sur `ScenarioPhishing` (écart n°7)
-   et le futur modèle `Destinataire`.
+2. Puis enchaîner sur le **Jour 10** du plan (`docs/rapport_planification.md`) :
+   segmentation par département. **Attention** : le prompt du jour 10
+   suppose l'existence d'un modèle `Destinataire` (« ajoute un champ
+   departement au modèle Destinataire ») — **ce modèle n'existe pas encore**
+   dans le code actuel (voir écarts n°7 et 13 : seuls
+   `ScenarioPhishing.destinataire_email` et `EnvoiTracking.destinataire_email`
+   existent comme champs email de test). Il faudra donc probablement créer
+   ce modèle à cette occasion plutôt que simplement lui ajouter un champ, et
+   clarifier sa relation avec l'existant avant d'adapter `EnvoiCampagneService`
+   pour sélectionner le bon scénario par département au moment de l'envoi.
