@@ -7,8 +7,14 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.accounts.views import MeView
-from apps.campagnes.views import CampagneViewSet, DestinataireDetailView, DestinataireListCreateView
+from apps.campagnes.views import (
+    CampagneViewSet,
+    DestinataireDetailView,
+    DestinataireListCreateView,
+    ScenarioListView,
+)
 from apps.generation.views import GenerationAPIView, GenerationManuelView
+from apps.gouvernance.urls import urlpatterns as gouvernance_urls
 from apps.simulation.urls import api_urlpatterns as simulation_api_urls
 from apps.simulation.urls import public_urlpatterns as simulation_public_urls
 
@@ -31,6 +37,12 @@ urlpatterns = [
     path("api/generation/manuel/", GenerationManuelView.as_view(), name="generation-manuel"),
     path("api/simulation/", include(simulation_api_urls)),
     path("simulation/", include(simulation_public_urls)),
+    path("api/gouvernance/", include(gouvernance_urls)),
+    path(
+        "api/campagnes/<int:campagne_id>/scenarios/",
+        ScenarioListView.as_view(),
+        name="campagne-scenarios",
+    ),
     path(
         "api/campagnes/<int:campagne_id>/destinataires/",
         DestinataireListCreateView.as_view(),

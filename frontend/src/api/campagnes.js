@@ -22,6 +22,11 @@ export async function deleteCampagne(id) {
   await axiosClient.delete(`/campagnes/${id}/`);
 }
 
+export async function listScenarios(campagneId) {
+  const { data } = await axiosClient.get(`/campagnes/${campagneId}/scenarios/`);
+  return data;
+}
+
 export async function listDestinataires(campagneId) {
   const { data } = await axiosClient.get(`/campagnes/${campagneId}/destinataires/`);
   return data;

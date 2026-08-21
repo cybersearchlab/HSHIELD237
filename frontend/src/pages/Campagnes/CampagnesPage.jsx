@@ -7,6 +7,7 @@ import {
   deleteDestinataire,
   listCampagnes,
   listDestinataires,
+  listScenarios,
   updateCampagne,
 } from "../../api/campagnes";
 import { envoyerCampagne, getConfigurationEnvoi, updateConfigurationEnvoi } from "../../api/simulation";
@@ -52,8 +53,6 @@ export default function CampagnesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formDepartement, setFormDepartement] = useState("direction");
-  const [formStatut, setFormStatut] = useState("brouillon");
-  const [formPerimetreValide, setFormPerimetreValide] = useState(false);
 
   const [launchCampagne, setLaunchCampagne] = useState(null);
   const [launchLoading, setLaunchLoading] = useState(false);
@@ -127,15 +126,26 @@ export default function CampagnesPage() {
     setDestError("");
     setLaunchLoading(true);
     try {
-      const [config, destinataires] = await Promise.all([
+      const [config, destinataires, scenarios] = await Promise.all([
         getConfigurationEnvoi(campagne.id),
         listDestinataires(campagne.id),
+        listScenarios(campagne.id),
       ]);
-      setLaunchExpediteurNom(config.expediteur_nom || "");
-      setLaunchExpediteurEmail(config.expediteur_email || "");
+      // Le scénario le plus récent (partie « Expéditeur et destinataire » de
+      // la page Générer un scénario) préremplit la configuration d'envoi
+      // tant que celle-ci n'a pas déjà été renseignée explicitement.
+      const dernierScenario = scenarios[0];
+      setLaunchExpediteurNom(config.expediteur_nom || dernierScenario?.expediteur_nom || "");
+      setLaunchExpediteurEmail(config.expediteur_email || dernierScenario?.expediteur_email || "");
       setLaunchReplyTo(config.reply_to || "");
       setLaunchDelai(config.delai_entre_envois ?? 2);
       setLaunchDestinataires(destinataires);
+      if (destinataires.length === 0 && dernierScenario?.destinataire_email) {
+        setDestEmail(dernierScenario.destinataire_email);
+        if (dernierScenario.departements_cibles?.length > 0) {
+          setDestDepartement(dernierScenario.departements_cibles[0]);
+        }
+      }
     } catch {
       showToast("Impossible de charger la configuration d'envoi.", "error");
     } finally {
@@ -211,7 +221,7 @@ export default function CampagnesPage() {
         delai_entre_envois: Number(launchDelai),
       });
       const trackings = await envoyerCampagne(launchCampagne.id);
-      await updateCampagne(launchCampagne.id, { statut: "active" });
+      await updateCampagne(launchCampagne.id, { statut: "active", perimetre_valide: true });
       setLaunchCampagne(null);
       showToast(`Campagne lancée — ${trackings.length} email${trackings.length > 1 ? "s" : ""} envoyé${trackings.length > 1 ? "s" : ""}.`, "success");
       load();
@@ -240,8 +250,6 @@ export default function CampagnesPage() {
 
   function openModal() {
     setFormDepartement("direction");
-    setFormStatut("brouillon");
-    setFormPerimetreValide(false);
     setModalOpen(true);
   }
 
@@ -251,8 +259,8 @@ export default function CampagnesPage() {
     try {
       await createCampagne({
         departement: formDepartement,
-        statut: formStatut,
-        perimetre_valide: formPerimetreValide,
+        statut: "en_attente",
+        perimetre_valide: false,
       });
       setModalOpen(false);
       showToast("Campagne créée.", "success");
@@ -413,7 +421,7 @@ export default function CampagnesPage() {
             </div>
             <form onSubmit={handleCreate}>
               <div className="modal-body">
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Département ciblé *</label>
                   <select
                     className="form-select"
@@ -426,25 +434,12 @@ export default function CampagnesPage() {
                       </option>
                     ))}
                   </select>
+                  <div className="form-hint">
+                    La campagne est créée avec le statut « En attente » et un périmètre non validé — elle passera
+                    automatiquement à « validé » lorsque le responsable désigné approuvera le consentement, puis à
+                    « Active » au lancement.
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Statut initial</label>
-                  <select className="form-select" value={formStatut} onChange={(e) => setFormStatut(e.target.value)}>
-                    {Object.entries(STATUT_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <label className="form-check">
-                  <input
-                    type="checkbox"
-                    checked={formPerimetreValide}
-                    onChange={(e) => setFormPerimetreValide(e.target.checked)}
-                  />
-                  Le périmètre de la campagne a déjà été validé
-                </label>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn" onClick={() => setModalOpen(false)}>

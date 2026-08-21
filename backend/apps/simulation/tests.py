@@ -2,6 +2,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.campagnes.models import Campagne, Departement, Destinataire, ScenarioPhishing
+from apps.gouvernance.models import Consentement, StatutConsentement
 
 from .models import ConfigurationEnvoi, EnvoiTracking, TypeInteraction
 from .services import EnvoiCampagneError, EnvoiCampagneService
@@ -76,6 +77,12 @@ class SegmentationDepartementTests(TestCase):
 
     def setUp(self):
         self.campagne = Campagne.objects.create(departement=Departement.IT)
+        Consentement.objects.create(
+            campagne=self.campagne,
+            responsable_nom="Responsable Test",
+            responsable_email="responsable-test@entreprise.cm",
+            statut=StatutConsentement.VALIDE,
+        )
         ConfigurationEnvoi.objects.create(
             campagne=self.campagne,
             expediteur_nom="Portail Test",

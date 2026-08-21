@@ -47,6 +47,190 @@
   border: 1px solid var(--border);
 }
 
+.badge-warning {
+  background: var(--orange-light);
+  color: var(--orange);
+}
+
+.badge-danger {
+  background: var(--red-light);
+  color: var(--red);
+}
+
+/* ── Métriques (cartes chiffrées) ── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.metric::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.metric.m-navy::after {
+  background: var(--navy-mid);
+}
+.metric.m-red::after {
+  background: var(--red);
+}
+.metric.m-green::after {
+  background: var(--green);
+}
+.metric.m-orange::after {
+  background: var(--orange);
+}
+
+.metric-label {
+  font-size: 10px;
+  color: var(--text3);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metric-label i {
+  font-size: 13px;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.metric-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* ── Consentements ── */
+.consent-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.consent-row:last-child {
+  border-bottom: none;
+}
+
+.consent-row:hover {
+  background: var(--surface2);
+}
+
+.consent-status-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.consent-status-icon i {
+  font-size: 19px;
+}
+
+.consent-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.consent-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.consent-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.consent-sub {
+  font-size: 11.5px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.consent-meta {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.consent-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.consent-meta-item i {
+  font-size: 13px;
+}
+
+.consent-signature {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.consent-signature i {
+  color: var(--green);
+  font-size: 15px;
+}
+
+.consent-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;

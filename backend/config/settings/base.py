@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "apps.campagnes",
     "apps.generation",
     "apps.simulation",
+    "apps.gouvernance",
 ]
 
 MIDDLEWARE = [

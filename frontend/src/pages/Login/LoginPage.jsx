@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { login } from "../../api/auth";
+import { useAuth } from "../../context/AuthContext";
 
 const NAVY = "#0F1F3D";
 const RED = "#C0392B";
@@ -27,6 +28,7 @@ export default function LoginPage() {
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
   const navigate = useNavigate();
+  const { refresh } = useAuth();
 
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
@@ -50,6 +52,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
+      await refresh();
       navigate("/", { replace: true });
     } catch (error) {
       const status = error.response?.status;

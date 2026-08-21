@@ -5,6 +5,8 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
 
+from apps.gouvernance.models import StatutConsentement
+
 from .models import ConfigurationEnvoi, EnvoiTracking
 
 logger = logging.getLogger(__name__)
@@ -20,11 +22,22 @@ class EnvoiCampagneService:
     — jamais un serveur SMTP auto-hébergé). L'expéditeur affiché (From) et le
     Reply-To sont ceux configurés sur la campagne, distincts du compte SMTP
     authentifié. Le débit d'envoi est limité pour éviter d'être signalé comme
-    trafic massif par le relais SMTP du client.
+    trafic massif par le relais SMTP du client. Aucun envoi n'a lieu tant que
+    le responsable désigné n'a pas validé la campagne depuis l'application
+    (voir apps.gouvernance.Consentement).
     """
 
     def __init__(self, campagne, delai_entre_envois=None):
         self.campagne = campagne
+
+        consentement = getattr(campagne, "consentement", None)
+        if consentement is None or consentement.statut != StatutConsentement.VALIDE:
+            raise EnvoiCampagneError(
+                "Cette campagne ne peut pas être lancée : aucun consentement "
+                "validé n'existe. Le responsable désigné doit d'abord valider "
+                "la campagne depuis l'application."
+            )
+
         try:
             self.config = campagne.configuration_envoi
         except ConfigurationEnvoi.DoesNotExist as exc:

@@ -7,11 +7,12 @@ import { useAuth } from "../../context/AuthContext";
 // Contenu provisoire — les indicateurs réels (campagnes, score de vulnérabilité…)
 // seront branchés au fil du sprint (jours 6 à 12). Le layout, lui, est désormais définitif.
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const navigate = useNavigate();
 
   function handleLogout() {
     logout();
+    refresh();
     navigate("/login", { replace: true });
   }
 
