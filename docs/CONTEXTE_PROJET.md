@@ -15,12 +15,19 @@
   - ✅ Frontend fait : page Consentements connectée (métriques, filtres,
     Valider/Refuser réservés au responsable désigné authentifié, création
     de demande).
-  - ✅ Plus 4 ajustements demandés après coup (voir journal) : simplification
-    de la modale « Nouvelle campagne », transitions automatiques
-    statut/périmètre validé, correctif d'un bug d'affichage login/logout,
-    préremplissage expéditeur dans la modale de lancement.
-  - ⚠️ **PAS ENCORE committé ni poussé sur GitHub** — c'est la toute
-    prochaine action (voir dernière section).
+  - ✅ Plus 4 ajustements demandés après coup : simplification de la modale
+    « Nouvelle campagne », transitions automatiques statut/périmètre validé,
+    correctif d'un bug d'affichage login/logout, préremplissage expéditeur
+    dans la modale de lancement.
+  - ✅ **Committé et poussé** (commits `598bfeb`, `ccafa61`).
+- **Simplification supplémentaire demandée le même jour, après ce push** :
+  retrait du ciblage multi-département par scénario et de la gestion de
+  destinataires par département dans l'interface (une campagne cible déjà
+  un seul département ; l'envoi peut passer par une adresse de diffusion
+  représentant tout le groupe) ; ajout des champs expéditeur/destinataire au
+  mode « Génération par IA » (jusqu'ici réservés au mode manuel). Voir
+  « Journal du 2026-08-21 » ci-dessous. ⚠️ **PAS ENCORE committé** — c'est la
+  toute prochaine action (voir dernière section).
 - Jour 10 (segmentation par département) reste entièrement terminé, vérifié,
   **committé et poussé** (commit `8ffc128`).
 - Jour 9 (modèle `Interaction`, pixel, tracking clic/soumission) reste
@@ -245,13 +252,47 @@ poussé sur GitHub (commit `8ffc128`). Les 4 services Docker sont `healthy`.
     scénario généré (sans écraser une configuration déjà saisie), et
     suggère l'email de test comme premier destinataire si la liste est vide.
 
-Aucune régression connue. Les 4 services Docker sont `healthy`. Jour 11 et
-les 4 ajustements ne sont **pas encore committés** (voir « Prochaine action
-précise »). Note opérationnelle : `frontend`/`nginx` n'avaient pas redémarré
+Jour 11 committé et poussé sur GitHub le même jour (commits `598bfeb`,
+`ccafa61`). Note opérationnelle : `frontend`/`nginx` n'avaient pas redémarré
 depuis l'arrêt complet de la veille — redémarrés en début de session avec
 `docker compose up -d`. Un aléa réseau ponctuel (`401 Unauthorized` du
 registre Docker Hub sur `node:20-alpine`) a fait échouer un rebuild frontend
 sans lien avec le code — résolu par une simple relance.
+
+### Simplification demandée après le Jour 11 (même jour)
+
+Retour utilisateur après usage réel de la page Générer un scénario : les
+adresses de diffusion (listes de distribution) existent déjà pour joindre
+tout un groupe d'un coup, et une campagne cible déjà un seul département —
+le ciblage multi-département par scénario n'a donc pas d'utilité pratique.
+
+1. **Retiré de l'interface** : le sélecteur « Départements ciblés » (chips)
+   sur la page Générer un scénario, et la section « Destinataires par
+   département » (liste + ajout/suppression) dans la modale de lancement de
+   campagne. **Le backend n'a pas été modifié** : le modèle `Destinataire`,
+   ses endpoints, et `ScenarioPhishing.departements_cibles` existent
+   toujours (voir écart n°28) — simplement plus atteignables depuis
+   l'interface. `EnvoiCampagneService` retombe donc systématiquement sur
+   son chemin de repli (email de test/diffusion du scénario), déjà
+   rétrocompatible depuis le jour 10.
+2. **Champs Expéditeur et destinataire déplacés hors du mode manuel** :
+   affichés désormais pour les deux modes de génération (API et manuel) sur
+   la page Générer un scénario, avec validation de format identique dans
+   les deux cas. `GenerationAPIRequestSerializer` accepte maintenant
+   `expediteur_nom`/`expediteur_email`/`destinataire_email` à la place de
+   `departements_cibles`.
+3. **Vérification réelle** : 16/16 tests toujours au vert (aucun modèle
+   backend touché) ; `POST /api/generation/api/` testé avec les nouveaux
+   champs → `503` attendu (clé Anthropic invalide), sans aucune erreur de
+   validation sur les champs — confirme que le serializer les accepte
+   correctement ; `/generer-scenario` et `/campagnes` → `200`.
+4. **Aléa Docker Desktop** : un rebuild a échoué avec une erreur interne
+   (`NotFound: forwarding Ping: no such job`, probablement buildx) sans
+   rapport avec le code — résolu par une simple relance, comme les
+   précédents incidents de ce type.
+
+Les 4 services Docker sont `healthy`. Cette simplification n'est **pas
+encore committée** (voir « Prochaine action précise »).
 
 ## Modules implémentés
 
@@ -261,8 +302,8 @@ sans lien avec le code — résolu par une simple relance.
 |---|---|---|
 | `accounts` | ✅ Fait | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur` |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
-| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test |
-| `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` et `/api/generation/manuel/` (multipart, pièce jointe, `departements_cibles`) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
+| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API |
+| `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
 | `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `gouvernance` | ✅ Fait (jour 11) | Modèles `Consentement`, `JournalAudit` ; endpoints demande/liste/valider/refuser/journal-audit ; `tests.py` (10 tests) |
 | `rapports` | ⬜ Pas commencé | Prévu jour 13 (PDF via WeasyPrint) |
@@ -275,8 +316,8 @@ sans lien avec le code — résolu par une simple relance.
 | `Login/LoginPage.jsx` | ✅ Fait | Fidèle à `login.html`, connectée à l'API |
 | `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages |
 | `Dashboard/DashboardPage.jsx` | 🟡 Placeholder minimal | Affiche l'utilisateur connecté (rafraîchi correctement après connexion/déconnexion depuis le jour 11) ; le vrai contenu (métriques, tableau campagnes) arrive jour 12 |
-| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; **destinataires par département** jour 10 ; **préremplissage expéditeur depuis le dernier scénario** jour 11) |
-| `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7), sélecteur de départements ciblés (jour 10) |
+| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal) |
+| `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour |
 | `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de nouvelle demande |
 | Résultats, RapportsPDF, Historique, TemplatesSectoriels, Paramètres | ⬜ Pas commencé | Liens de nav déjà présents dans `navConfig.js`, pointent vers des routes non câblées (redirection vers `/`) |
 
@@ -310,6 +351,9 @@ sans lien avec le code — résolu par une simple relance.
 23. **`Campagne.perimetre_valide` est désormais piloté automatiquement**, sur demande explicite de l'utilisateur, plutôt que saisi manuellement à la création : `false` à la création, `true` dès la validation du consentement (`ConsentementValiderView`), reste `true` au lancement. La modale de création ne propose donc plus que le département ; les champs Statut initial et Périmètre validé ont été retirés de l'interface.
 24. **`AuthContext` doit être explicitement rafraîchi après login/logout** — ce n'est pas automatique en SPA React Router (le `AuthProvider` ne se remonte pas au changement de route). Bug réel corrigé le 2026-08-21 : `LoginPage` et la déconnexion appellent désormais `refresh()`. Point de vigilance pour toute future page qui changerait l'utilisateur authentifié.
 25. **Nouvel endpoint `GET /api/campagnes/{id}/scenarios/`** (non prévu par le plan) créé pour permettre au frontend de préremplir la modale de lancement à partir du dernier scénario généré — décision utilisateur du 2026-08-21 pour éviter de ressaisir deux fois les mêmes informations d'expéditeur (une fois pour l'aperçu du scénario, jour 7 ; une fois pour l'envoi réel, jour 8). Le préremplissage ne s'applique que si `ConfigurationEnvoi` n'a pas déjà de valeur — la configuration d'envoi explicitement enregistrée reste toujours prioritaire.
+26. **Retour en arrière partiel sur la segmentation multi-département de l'interface** (jour 10), décision utilisateur du 2026-08-21 : le sélecteur « Départements ciblés » et la gestion de destinataires par département ont été retirés de l'interface — une campagne cible déjà un seul département, et l'envoi à tout un groupe se fait via une adresse de diffusion (liste de distribution) existante côté client, pas via une liste de destinataires individuels gérée dans l'application.
+27. **Le backend n'a volontairement pas été modifié en profondeur** pour ce retrait : `Destinataire`, ses endpoints, et `ScenarioPhishing.departements_cibles` restent en base et fonctionnels via l'API — seule l'interface ne les expose plus. Choix assumé pour limiter le risque (pas de migration de suppression, pas de perte de données) et parce que rien n'empêche une réactivation future de ces UI si le besoin réapparaît.
+28. **`GenerationAPIRequestSerializer` remplace `departements_cibles` (écart n°21) par `expediteur_nom`/`expediteur_email`/`destinataire_email`**, désormais éditables en mode génération par IA comme en mode manuel (auparavant réservés au mode manuel). Champs optionnels, validation de format identique dans les deux modes.
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -332,9 +376,10 @@ gratuit (voir écart n°12).
 
 ## Bugs connus ou points bloquants
 
-- **Aucun bug actif** au niveau applicatif. Le code du Jour 11 et des 4
-  ajustements qui ont suivi est vérifié et fonctionnel de bout en bout
-  (voir « Journal du 2026-08-21 »), y compris via 16 tests automatisés.
+- **Aucun bug actif** au niveau applicatif. Le code du Jour 11, ses 4
+  ajustements, et la simplification qui a suivi sont vérifiés et
+  fonctionnels de bout en bout (voir « Journal du 2026-08-21 »), y compris
+  via 16 tests automatisés.
 - **Bug corrigé le 2026-08-21** (pour référence) : l'affichage de
   l'utilisateur connecté restait figé sur l'ancien compte après une
   reconnexion, faute d'appel à `AuthContext.refresh()` — voir écart n°24.
@@ -343,32 +388,30 @@ gratuit (voir écart n°12).
   application — espacer les tentatives d'envoi de campagne pendant les
   tests manuels (voir écart n°12). N'affecte pas la correction du code.
 - **Point de vigilance permanent** : ne plus compter sur un bind mount pour le code backend (voir écart n°3) — toujours rebuild l'image après modification de code Python (**y compris nginx** si `nginx/conf.d/` change), et écrire les migrations à la main si `docker compose run --rm` est utilisé pour les générer.
-- **Docker Desktop / Docker Hub restent occasionnellement instables** : après un restart de Docker Desktop, vérifier que l'image utilisée par un conteneur recréé est bien la plus récente (`docker images <nom> --format "{{.ID}} {{.CreatedAt}}"`) — un rebuild peut se perdre si le moteur redémarre pendant ou juste après. Un rebuild peut aussi échouer avec une erreur réseau (`401 Unauthorized` ou `unexpected EOF`) en tirant une image de base depuis Docker Hub — relancer simplement `docker compose build` suffit en général.
+- **Docker Desktop / Docker Hub restent occasionnellement instables** : après un restart de Docker Desktop, vérifier que l'image utilisée par un conteneur recréé est bien la plus récente (`docker images <nom> --format "{{.ID}} {{.CreatedAt}}"`) — un rebuild peut se perdre si le moteur redémarre pendant ou juste après. Un rebuild peut aussi échouer avec une erreur réseau (`401 Unauthorized`, `unexpected EOF`) ou une erreur interne buildx (`NotFound: forwarding Ping: no such job`) — relancer simplement `docker compose build` suffit en général.
 - **Anomalie observée, cause non confirmée** : plusieurs campagnes de test créées en cours de session (ids 17, 20) ont disparu de la base entre deux vérifications, alors que `db_data` est un volume Docker nommé censé persister. Sans certitude sur la cause exacte (possiblement lié aux redémarrages Docker Desktop de la session) — à surveiller ; aucune perte de données de production n'est en jeu (uniquement des campagnes de test).
 - Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe), `consultant@hshield237.local` / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` / `Responsable1234!` (rôle responsable, créé le 2026-08-21 pour tester la validation de consentement).
 
 ## Prochaine action précise
 
-1. **Committer et pousser le Jour 11 et les 4 ajustements**, actuellement
-   non commités :
+1. **Committer et pousser la simplification demandée après le Jour 11**,
+   actuellement non commitée :
    ```
-   git add backend/apps/gouvernance frontend/src/api/gouvernance.js \
-     frontend/src/pages/Consentements \
-     backend/apps/campagnes/views.py backend/apps/simulation/services.py \
-     backend/apps/simulation/tests.py backend/config/settings/base.py \
-     backend/config/urls.py frontend/src/App.jsx \
-     frontend/src/api/campagnes.js \
+   git add backend/apps/generation/serializers.py \
+     backend/apps/generation/views.py \
+     frontend/src/api/generation.js \
      frontend/src/pages/Campagnes/CampagnesPage.jsx \
-     frontend/src/pages/Dashboard/DashboardPage.jsx \
-     frontend/src/pages/Login/LoginPage.jsx \
-     frontend/src/styles/components.css
-   git commit -m "feat(gouvernance): consentement obligatoire et journal d'audit"
+     frontend/src/pages/GenererScenario/GenererScenarioPage.jsx
+   git commit -m "refactor(generation): expediteur/destinataire communs aux deux modes, retrait du ciblage par departement"
    git push origin main
    ```
 2. Puis enchaîner sur le **Jour 12** du plan (`docs/rapport_planification.md`) :
    endpoint `GET /api/campagnes/{id}/score/` (taux de clic/soumission/
-   signalement + score de vulnérabilité composite 0-100, agrégation
-   correcte même multi-départements depuis le jour 10) et un endpoint
-   d'agrégation par secteur/département pour le tableau de bord global.
-   Côté frontend, connecter `DashboardPage.jsx` (encore un placeholder) et
-   `Resultats/` (page pas encore créée) aux données réelles.
+   signalement + score de vulnérabilité composite 0-100 ; l'agrégation n'a
+   plus besoin de gérer plusieurs scénarios par département par campagne
+   depuis le retrait de ce jour, mais rester robuste si des `Destinataire`
+   /`departements_cibles` existent encore en base pour d'anciennes
+   campagnes) et un endpoint d'agrégation par secteur/département pour le
+   tableau de bord global. Côté frontend, connecter `DashboardPage.jsx`
+   (encore un placeholder) et `Resultats/` (page pas encore créée) aux
+   données réelles.
