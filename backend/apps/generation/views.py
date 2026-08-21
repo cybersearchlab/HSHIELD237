@@ -24,7 +24,6 @@ class GenerationAPIView(APIView):
         request_serializer.is_valid(raise_exception=True)
         campagne = request_serializer.validated_data["campagne"]
         contexte_additionnel = request_serializer.validated_data["contexte_additionnel"]
-        departements_cibles = request_serializer.validated_data["departements_cibles"]
 
         try:
             scenario_data = ClaudeGenerationService().generate(
@@ -35,7 +34,13 @@ class GenerationAPIView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         output_serializer = ScenarioPhishingSerializer(
-            data={"campagne": campagne.id, "departements_cibles": departements_cibles, **scenario_data}
+            data={
+                "campagne": campagne.id,
+                "expediteur_nom": request_serializer.validated_data["expediteur_nom"],
+                "expediteur_email": request_serializer.validated_data["expediteur_email"],
+                "destinataire_email": request_serializer.validated_data["destinataire_email"],
+                **scenario_data,
+            }
         )
         output_serializer.is_valid(raise_exception=True)
         output_serializer.save()

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { listCampagnes } from "../../api/campagnes";
 import { generateManuel, generateViaAPI } from "../../api/generation";
 import Layout from "../../components/Layout";
-import { DEPARTEMENT_LABELS, departementLabel } from "../../utils/departements";
+import { departementLabel } from "../../utils/departements";
 import { statutLabel } from "../../utils/statuts";
 
 const TOAST_ICONS = { success: "ti-check", info: "ti-info-circle", error: "ti-alert-circle" };
@@ -36,15 +36,12 @@ export default function GenererScenarioPage() {
   // Mode API
   const [contexteAdditionnel, setContexteAdditionnel] = useState("");
 
-  // Départements ciblés par ce scénario au sein de la campagne (jour 10) —
-  // commun aux deux modes. Vide = scénario générique de repli.
-  const [departementsCibles, setDepartementsCibles] = useState([]);
-
-  function toggleDepartementCible(code) {
-    setDepartementsCibles((prev) =>
-      prev.includes(code) ? prev.filter((d) => d !== code) : [...prev, code]
-    );
-  }
+  // Expéditeur et destinataire — communs aux deux modes. Le destinataire
+  // peut être une adresse de diffusion (liste de distribution) représentant
+  // tout le département déjà ciblé par la campagne.
+  const [expediteurNom, setExpediteurNom] = useState("");
+  const [expediteurEmail, setExpediteurEmail] = useState("");
+  const [destinataireEmail, setDestinataireEmail] = useState("");
 
   // Mode manuel — le consultant colle ici le texte déjà rédigé via claude.ai
   // (ou tout autre LLM) dans l'interface web, sans passer par l'API.
@@ -52,9 +49,6 @@ export default function GenererScenarioPage() {
   const [corpsEmail, setCorpsEmail] = useState("");
   const [urlFaussePage, setUrlFaussePage] = useState("");
   const [pieceJointe, setPieceJointe] = useState(null);
-  const [expediteurNom, setExpediteurNom] = useState("");
-  const [expediteurEmail, setExpediteurEmail] = useState("");
-  const [destinataireEmail, setDestinataireEmail] = useState("");
   const [estHtml, setEstHtml] = useState(false);
   const [previewTab, setPreviewTab] = useState("rendu"); // "rendu" | "code"
   const corpsEmailRef = useRef(null);
@@ -134,19 +128,24 @@ export default function GenererScenarioPage() {
     setFieldErrors({});
   }
 
-  function validateManuel() {
+  function validateExpediteurDestinataire() {
     const errors = {};
-    if (!campagneId) errors.campagne = "Sélectionnez une campagne.";
-    if (!objetEmail.trim()) errors.objet_email = "L'objet de l'email est requis.";
-    if (!corpsEmail.trim()) errors.corps_email = "Le corps de l'email est requis.";
-    if (!urlFaussePage.trim()) errors.url_fausse_page = "L'URL de la fausse page est requise.";
-    else if (!isValidUrl(urlFaussePage)) errors.url_fausse_page = "URL non valide.";
     if (expediteurEmail.trim() && !isValidEmail(expediteurEmail)) {
       errors.expediteur_email = "Email non valide.";
     }
     if (destinataireEmail.trim() && !isValidEmail(destinataireEmail)) {
       errors.destinataire_email = "Email non valide.";
     }
+    return errors;
+  }
+
+  function validateManuel() {
+    const errors = { ...validateExpediteurDestinataire() };
+    if (!campagneId) errors.campagne = "Sélectionnez une campagne.";
+    if (!objetEmail.trim()) errors.objet_email = "L'objet de l'email est requis.";
+    if (!corpsEmail.trim()) errors.corps_email = "Le corps de l'email est requis.";
+    if (!urlFaussePage.trim()) errors.url_fausse_page = "L'URL de la fausse page est requise.";
+    else if (!isValidUrl(urlFaussePage)) errors.url_fausse_page = "URL non valide.";
     return errors;
   }
 
@@ -170,17 +169,24 @@ export default function GenererScenarioPage() {
 
   async function handleGenerateAPI(event) {
     event.preventDefault();
-    if (!campagneId) {
-      showToast("Sélectionnez une campagne.", "error");
+    const errors = validateExpediteurDestinataire();
+    if (!campagneId) errors.campagne = "Sélectionnez une campagne.";
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      showToast("Veuillez corriger les champs signalés en rouge.", "error");
+      scrollToFirstError(errors);
       return;
     }
+    setFieldErrors({});
     setLoading(true);
     setResult(null);
     try {
       const scenario = await generateViaAPI({
         campagne: Number(campagneId),
         contexte_additionnel: contexteAdditionnel,
-        departements_cibles: departementsCibles,
+        expediteur_nom: expediteurNom,
+        expediteur_email: expediteurEmail,
+        destinataire_email: destinataireEmail,
       });
       setResult(scenario);
       showToast("Scénario généré avec succès.", "success");
@@ -215,7 +221,6 @@ export default function GenererScenarioPage() {
         expediteur_email: expediteurEmail,
         destinataire_email: destinataireEmail,
         est_html: estHtml,
-        departements_cibles: departementsCibles,
       });
       setResult(scenario);
       showToast("Scénario enregistré avec succès.", "success");
@@ -318,25 +323,61 @@ export default function GenererScenarioPage() {
               <div className="step-head">
                 <div className="step-num">2</div>
                 <div>
-                  <div className="step-title">Départements ciblés</div>
+                  <div className="step-title">Expéditeur et destinataire</div>
                   <div className="step-sub">
-                    Optionnel — une même campagne peut contenir un scénario distinct par
-                    département. Laissez vide pour un scénario générique, utilisé par défaut
-                    si aucun scénario ne cible le département du destinataire.
+                    Affichés dans l'aperçu de l'email simulé. Le destinataire peut être une
+                    adresse de diffusion représentant tout le département déjà ciblé par la
+                    campagne.
                   </div>
                 </div>
               </div>
-              <div className="chip-grid" role="group" aria-label="Départements ciblés par ce scénario">
-                {Object.entries(DEPARTEMENT_LABELS).map(([code, label]) => (
-                  <button
-                    type="button"
-                    key={code}
-                    className={`mini-toggle-btn${departementsCibles.includes(code) ? " selected" : ""}`}
-                    onClick={() => toggleDepartementCible(code)}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className="form-group">
+                <label className="form-label">Nom de l'expéditeur affiché</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="Ex : Portail MINESUP"
+                  value={expediteurNom}
+                  onChange={(e) => setExpediteurNom(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Email de l'expéditeur affiché</label>
+                <input
+                  ref={expediteurEmailRef}
+                  className={`form-input${fieldErrors.expediteur_email ? " input-error" : ""}`}
+                  type="email"
+                  placeholder="noreply@minesup-infos.cm"
+                  value={expediteurEmail}
+                  onChange={(e) => {
+                    setExpediteurEmail(e.target.value);
+                    clearFieldError("expediteur_email");
+                  }}
+                />
+                {fieldErrors.expediteur_email && (
+                  <div className="form-error-text">
+                    <i className="ti ti-alert-circle" /> {fieldErrors.expediteur_email}
+                  </div>
+                )}
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Email du destinataire</label>
+                <input
+                  ref={destinataireEmailRef}
+                  className={`form-input${fieldErrors.destinataire_email ? " input-error" : ""}`}
+                  type="email"
+                  placeholder="departement@votre-entreprise.cm"
+                  value={destinataireEmail}
+                  onChange={(e) => {
+                    setDestinataireEmail(e.target.value);
+                    clearFieldError("destinataire_email");
+                  }}
+                />
+                {fieldErrors.destinataire_email && (
+                  <div className="form-error-text">
+                    <i className="ti ti-alert-circle" /> {fieldErrors.destinataire_email}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -344,66 +385,6 @@ export default function GenererScenarioPage() {
               <div className="step-card" style={{ marginBottom: 16 }}>
                 <div className="step-head">
                   <div className="step-num">3</div>
-                  <div>
-                    <div className="step-title">Expéditeur et destinataire</div>
-                    <div className="step-sub">Affichés dans l'aperçu de l'email simulé</div>
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Nom de l'expéditeur affiché</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    placeholder="Ex : Portail MINESUP"
-                    value={expediteurNom}
-                    onChange={(e) => setExpediteurNom(e.target.value)}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Email de l'expéditeur affiché</label>
-                  <input
-                    ref={expediteurEmailRef}
-                    className={`form-input${fieldErrors.expediteur_email ? " input-error" : ""}`}
-                    type="email"
-                    placeholder="noreply@minesup-infos.cm"
-                    value={expediteurEmail}
-                    onChange={(e) => {
-                      setExpediteurEmail(e.target.value);
-                      clearFieldError("expediteur_email");
-                    }}
-                  />
-                  {fieldErrors.expediteur_email && (
-                    <div className="form-error-text">
-                      <i className="ti ti-alert-circle" /> {fieldErrors.expediteur_email}
-                    </div>
-                  )}
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Email du destinataire (test)</label>
-                  <input
-                    ref={destinataireEmailRef}
-                    className={`form-input${fieldErrors.destinataire_email ? " input-error" : ""}`}
-                    type="email"
-                    placeholder="personnel@votre-entreprisecm.cm"
-                    value={destinataireEmail}
-                    onChange={(e) => {
-                      setDestinataireEmail(e.target.value);
-                      clearFieldError("destinataire_email");
-                    }}
-                  />
-                  {fieldErrors.destinataire_email && (
-                    <div className="form-error-text">
-                      <i className="ti ti-alert-circle" /> {fieldErrors.destinataire_email}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {mode === "manuel" && (
-              <div className="step-card" style={{ marginBottom: 16 }}>
-                <div className="step-head">
-                  <div className="step-num">4</div>
                   <div>
                     <div className="step-title">Contenu du scénario</div>
                     <div className="step-sub">Collez ici le texte déjà rédigé via claude.ai</div>
@@ -582,14 +563,6 @@ export default function GenererScenarioPage() {
                         <span className="em-val">{result.piece_jointe.split("/").pop()}</span>
                       </div>
                     )}
-                    <div className="email-meta-row">
-                      <span className="em-key">Cible :</span>
-                      <span className="em-val">
-                        {result.departements_cibles && result.departements_cibles.length > 0
-                          ? result.departements_cibles.map((d) => departementLabel(d)).join(", ")
-                          : "Générique (tous départements sans scénario dédié)"}
-                      </span>
-                    </div>
                   </div>
                   <div className="email-subject-line">{result.objet_email}</div>
 

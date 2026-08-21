@@ -1,10 +1,12 @@
 import axiosClient from "./axiosClient";
 
-export async function generateViaAPI({ campagne, contexte_additionnel, departements_cibles }) {
+export async function generateViaAPI({ campagne, contexte_additionnel, expediteur_nom, expediteur_email, destinataire_email }) {
   const { data } = await axiosClient.post("/generation/api/", {
     campagne,
     contexte_additionnel: contexte_additionnel || "",
-    departements_cibles: departements_cibles || [],
+    expediteur_nom: expediteur_nom || "",
+    expediteur_email: expediteur_email || "",
+    destinataire_email: destinataire_email || "",
   });
   return data;
 }
