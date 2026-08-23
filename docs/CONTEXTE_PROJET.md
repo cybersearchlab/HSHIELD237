@@ -6,28 +6,24 @@
 
 ## État d'avancement
 
-- **Dernier jour entièrement terminé et vérifié en conditions réelles : Jour 11**
-  (consentement obligatoire + journal d'audit, première étape de la Phase 3)
-  — voir « Journal du 2026-08-21 » ci-dessous.
-  - ✅ Backend fait : `apps/gouvernance/` (`Consentement`, `JournalAudit`),
-    blocage du lancement sans consentement validé, 10 tests (16/16 au total
-    avec les jours précédents).
-  - ✅ Frontend fait : page Consentements connectée (métriques, filtres,
-    Valider/Refuser réservés au responsable désigné authentifié, création
-    de demande).
-  - ✅ Plus 4 ajustements demandés après coup : simplification de la modale
-    « Nouvelle campagne », transitions automatiques statut/périmètre validé,
-    correctif d'un bug d'affichage login/logout, préremplissage expéditeur
-    dans la modale de lancement.
-  - ✅ **Committé et poussé** (commits `598bfeb`, `ccafa61`).
-- **Simplification supplémentaire demandée le même jour, après ce push** :
-  retrait du ciblage multi-département par scénario et de la gestion de
-  destinataires par département dans l'interface (une campagne cible déjà
-  un seul département ; l'envoi peut passer par une adresse de diffusion
-  représentant tout le groupe) ; ajout des champs expéditeur/destinataire au
-  mode « Génération par IA » (jusqu'ici réservés au mode manuel). Voir
-  « Journal du 2026-08-21 » ci-dessous. ⚠️ **PAS ENCORE committé** — c'est la
-  toute prochaine action (voir dernière section).
+- **Dernier jour entièrement terminé et vérifié en conditions réelles : Jour 12**
+  (score de vulnérabilité + Tableau de bord/Résultats connectés aux données
+  réelles) — voir « Journal du 2026-08-22 » ci-dessous.
+  - ✅ Backend fait : `GET /api/campagnes/{id}/score/` et
+    `GET /api/campagnes/departements/score/` (taux ouverture/clic/soumission/
+    signalement + score composite 0-100), 5 tests (21/21 au total).
+  - ✅ Frontend fait : `DashboardPage.jsx` reconstruite avec les vraies
+    données (métriques, comparatif par département, jauge de score,
+    campagnes récentes) ; nouvelle page `Resultats/ResultatsPage.jsx`
+    (classement des départements, tableau détaillé, filtre par campagne
+    individuelle) ; route `/resultats` câblée.
+  - ✅ **Committé et poussé** (commit `6a16889`).
+- Jour 11 (consentement obligatoire + journal d'audit, première étape de la
+  Phase 3) reste entièrement terminé, vérifié, **committé et poussé**
+  (commits `598bfeb`, `ccafa61`, `59bc4e2`, `e871419`) — la simplification
+  post-Jour-11 (retrait du ciblage multi-département de l'interface, champs
+  expéditeur/destinataire communs aux deux modes de génération) a été
+  committée le même jour que sa demande.
 - Jour 10 (segmentation par département) reste entièrement terminé, vérifié,
   **committé et poussé** (commit `8ffc128`).
 - Jour 9 (modèle `Interaction`, pixel, tracking clic/soumission) reste
@@ -37,8 +33,8 @@
   entièrement terminé, vérifié, **committé et poussé** (commits `0630615`,
   `7d7d8d0`).
 - Jalon 1 (jour 5) et **Jalon 2 (jour 10) : atteints.**
-- Phase 3 du sprint (« Gouvernance & résultats », jours 11-15) : **démarrée**
-  avec le Jour 11.
+- Phase 3 du sprint (« Gouvernance & résultats », jours 11-15) : **en cours**
+  — Jours 11 et 12 terminés, jour 13 (rapport PDF) à venir.
 
 ## Journal du 2026-08-19 (session de suivi post-Jour 7)
 
@@ -291,8 +287,92 @@ le ciblage multi-département par scénario n'a donc pas d'utilité pratique.
    rapport avec le code — résolu par une simple relance, comme les
    précédents incidents de ce type.
 
-Les 4 services Docker sont `healthy`. Cette simplification n'est **pas
-encore committée** (voir « Prochaine action précise »).
+Les 4 services Docker sont `healthy`. Cette simplification a été committée
+et poussée le jour même (commits `59bc4e2`, `e871419`).
+
+## Journal du 2026-08-22 (Jour 12 — score de vulnérabilité, tableau de bord, résultats)
+
+### Jour 12 — backend
+
+1. **Service de calcul** (`backend/apps/campagnes/services.py`, nouveau) :
+   `calculer_score(envois_qs)` calcule, à partir d'un queryset
+   `EnvoiTracking`, les taux d'ouverture/clic/soumission/signalement (comptés
+   par envoi distinct, pas par événement brut — un pixel rechargé plusieurs
+   fois ne fait pas dépasser 100 %) et un score composite pondéré :
+   `0.5×soumission + 0.3×clic + 0.2×ouverture − 0.3×signalement`, borné à
+   [0, 100]. Le signalement fait donc **baisser** le score plutôt que
+   l'augmenter — décision explicite pour refléter la vigilance réelle de
+   l'employé.
+2. **`score_campagne(campagne)`** agrège sur `campagne.scenarios.all()` —
+   fonctionne correctement même si la campagne possède plusieurs scénarios
+   par département (jour 10), sans avoir besoin de connaître le détail de
+   cette segmentation.
+3. **`score_par_departement()`** agrège, pour chacun des 10 départements
+   possibles, toutes les campagnes et tous les scénarios de ce département —
+   utilisé par le tableau de bord global. Retourne toujours les 10
+   départements (même sans aucune campagne), avec `total_envois: 0` et
+   `score_vulnerabilite: 0.0` pour ceux qui n'ont encore rien reçu.
+4. **Endpoints** `GET /api/campagnes/{id}/score/` (`CampagneScoreView`) et
+   `GET /api/campagnes/departements/score/` (`ScoreParDepartementView`),
+   réservés aux rôles consultant/administrateur (`CAN_MANAGE_CAMPAGNE`,
+   cohérent avec le reste de `apps.campagnes`).
+5. **5 nouveaux tests** (`backend/apps/campagnes/tests.py`, nouveau fichier) :
+   score à zéro sans aucun envoi, agrégation correcte sur plusieurs
+   scénarios/départements avec des combinaisons d'interactions variées,
+   bornage du score à 100 même si tous les destinataires soumettent, une
+   entrée par département avec agrégation multi-campagnes, complétude des
+   10 départements dans la réponse. Total : **21/21 tests OK**.
+6. **Vérification réelle complète** : `GET .../departements/score/` → `200`
+   avec les 10 départements (dont un montrant 2 campagnes réelles créées
+   plus tôt dans le sprint) ; `POST /api/campagnes/` puis
+   `GET .../score/` sur la campagne créée → `200`, `score_vulnerabilite: 0.0`
+   comme attendu (aucun envoi).
+
+### Jour 12 — frontend
+
+7. **`DashboardPage.jsx` reconstruite** (elle n'était qu'un texte provisoire
+   depuis le jour 3) : 4 cartes de métriques (campagnes actives, emails
+   envoyés, taux de clic moyen, score de vulnérabilité — colorées selon le
+   seuil de risque), comparatif « Vulnérabilité par département » (barres
+   horizontales), jauge SVG du score global (`ScoreRing`, nouveau composant
+   réutilisable), tableau des 5 campagnes les plus récentes. Bandeau
+   d'alerte automatique si un département testé atteint un score ≥ 50.
+8. **Nouvelle page `Resultats/ResultatsPage.jsx`** (route `/resultats`,
+   jusqu'ici sans page réelle) : sélecteur « Toutes les campagnes / une
+   campagne précise » ; en vue globale, deux onglets — « Vue globale »
+   (jauge de score, comportements observés en barres indépendantes,
+   classement des départements) et « Par département » (tableau détaillé
+   avec puce de niveau de risque) ; en vue campagne précise, une carte de
+   détail isolée pour cette seule campagne.
+9. **Nouveaux fichiers** : `frontend/src/api/scores.js` (`getScoreCampagne`,
+   `getScoreParDepartement`), `frontend/src/utils/score.js` (seuils de
+   risque, agrégation pondérée par département — voir écart n°29),
+   `frontend/src/components/ScoreRing.jsx` (jauge SVG réutilisable).
+10. **Écart n°30 — adaptation explicite du contenu de la maquette** : les
+    maquettes `app.html`/`resultats.html` d'origine comparaient plusieurs
+    entreprises clientes par secteur d'activité (héritage du modèle
+    multi-tenant abandonné au jour 6, voir écart n°1). Sur consigne
+    explicite de l'utilisateur pour ce jour, tout le vocabulaire et la
+    logique de comparaison ont été adaptés à la structure réelle — une
+    seule entreprise, plusieurs départements internes — sans réintroduire
+    de notion de secteur ou d'entreprise cliente.
+11. **Vérification réelle complète** : build Vite réussi (114 modules, aucune
+    erreur), les 4 services Docker `healthy`, `GET /` et `GET /resultats` →
+    `200` avec le bundle JS fraîchement construit, `GET .../score/` et
+    `GET .../departements/score/` → `200` via nginx avec un jeton
+    authentifié.
+12. **Aléa Docker Desktop marqué de cette session** : plusieurs commandes
+    (`docker compose build`, `docker compose up -d`, `docker ps`) ont
+    ponctuellement mis plusieurs minutes à produire la moindre sortie,
+    sans erreur explicite — plus lent que les incidents `401`/`buildx`
+    déjà documentés les jours précédents. Un redémarrage du conteneur `db`
+    a même déclenché une récupération WAL après arrêt non propre
+    (`database system was not properly shut down`), résolue automatiquement
+    par PostgreSQL en quelques minutes, sans aucune perte de données — le
+    ralentissement semble lié à l'environnement Docker Desktop / disque de
+    la machine, pas au code du projet.
+
+Jour 12 committé et poussé sur GitHub le même jour (commit `6a16889`).
 
 ## Modules implémentés
 
@@ -302,7 +382,7 @@ encore committée** (voir « Prochaine action précise »).
 |---|---|---|
 | `accounts` | ✅ Fait | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur` |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
-| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API |
+| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests) |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
 | `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `gouvernance` | ✅ Fait (jour 11) | Modèles `Consentement`, `JournalAudit` ; endpoints demande/liste/valider/refuser/journal-audit ; `tests.py` (10 tests) |
@@ -315,11 +395,12 @@ encore committée** (voir « Prochaine action précise »).
 |---|---|---|
 | `Login/LoginPage.jsx` | ✅ Fait | Fidèle à `login.html`, connectée à l'API |
 | `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages |
-| `Dashboard/DashboardPage.jsx` | 🟡 Placeholder minimal | Affiche l'utilisateur connecté (rafraîchi correctement après connexion/déconnexion depuis le jour 11) ; le vrai contenu (métriques, tableau campagnes) arrive jour 12 |
+| `Dashboard/DashboardPage.jsx` | ✅ Fait (jour 12) | Métriques réelles (campagnes actives, emails envoyés, taux de clic moyen, score de vulnérabilité), comparatif par département, jauge de score (`ScoreRing`), campagnes récentes, alerte automatique si risque élevé |
 | `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal) |
 | `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour |
 | `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de nouvelle demande |
-| Résultats, RapportsPDF, Historique, TemplatesSectoriels, Paramètres | ⬜ Pas commencé | Liens de nav déjà présents dans `navConfig.js`, pointent vers des routes non câblées (redirection vers `/`) |
+| `Resultats/ResultatsPage.jsx` | ✅ Fait (jour 12) | Vue globale (jauge, comportements observés, classement des départements) et vue « Par département » (tableau détaillé), filtre par campagne individuelle. Route `/resultats` câblée dans `App.jsx` |
+| RapportsPDF, Historique, TemplatesSectoriels, Paramètres | ⬜ Pas commencé | Liens de nav déjà présents dans `navConfig.js`, pointent vers des routes non câblées (redirection vers `/`) |
 
 ## Décisions ou écarts par rapport au plan
 
@@ -354,6 +435,8 @@ encore committée** (voir « Prochaine action précise »).
 26. **Retour en arrière partiel sur la segmentation multi-département de l'interface** (jour 10), décision utilisateur du 2026-08-21 : le sélecteur « Départements ciblés » et la gestion de destinataires par département ont été retirés de l'interface — une campagne cible déjà un seul département, et l'envoi à tout un groupe se fait via une adresse de diffusion (liste de distribution) existante côté client, pas via une liste de destinataires individuels gérée dans l'application.
 27. **Le backend n'a volontairement pas été modifié en profondeur** pour ce retrait : `Destinataire`, ses endpoints, et `ScenarioPhishing.departements_cibles` restent en base et fonctionnels via l'API — seule l'interface ne les expose plus. Choix assumé pour limiter le risque (pas de migration de suppression, pas de perte de données) et parce que rien n'empêche une réactivation future de ces UI si le besoin réapparaît.
 28. **`GenerationAPIRequestSerializer` remplace `departements_cibles` (écart n°21) par `expediteur_nom`/`expediteur_email`/`destinataire_email`**, désormais éditables en mode génération par IA comme en mode manuel (auparavant réservés au mode manuel). Champs optionnels, validation de format identique dans les deux modes.
+29. **L'agrégation globale du tableau de bord/résultats est pondérée par le nombre réel d'emails envoyés**, pas une simple moyenne des pourcentages par département (`frontend/src/utils/score.js`, `computeGlobalStats`). Une moyenne arithmétique simple aurait surreprésenté un département peu testé (ex. 1 seul email envoyé) par rapport à un département massivement testé — le calcul pondéré donne un taux global fidèle au volume réel d'interactions.
+30. **Les pages Tableau de bord et Résultats (jour 12) ont été délibérément réécrites pour ne comparer que des départements entre eux**, jamais des entreprises ou des secteurs, alors que les maquettes `app.html`/`resultats.html` d'origine comparaient plusieurs entreprises clientes par secteur — cohérent avec la suppression du modèle `Entreprise` au jour 6 (écart n°1). Consigne explicite de l'utilisateur pour ce jour précis. Aucune donnée fictive n'a été introduite pour compenser l'absence de graphiques d'évolution temporelle ou de détail par employé (ces vues du plan initial n'ont pas d'équivalent réel dans les endpoints du jour 12 et ont donc été omises plutôt que fabriquées).
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -376,10 +459,9 @@ gratuit (voir écart n°12).
 
 ## Bugs connus ou points bloquants
 
-- **Aucun bug actif** au niveau applicatif. Le code du Jour 11, ses 4
-  ajustements, et la simplification qui a suivi sont vérifiés et
-  fonctionnels de bout en bout (voir « Journal du 2026-08-21 »), y compris
-  via 16 tests automatisés.
+- **Aucun bug actif** au niveau applicatif. Le code des Jours 11 et 12 est
+  vérifié et fonctionnel de bout en bout (voir journaux ci-dessus), y
+  compris via 21 tests automatisés.
 - **Bug corrigé le 2026-08-21** (pour référence) : l'affichage de
   l'utilisateur connecté restait figé sur l'ancien compte après une
   reconnexion, faute d'appel à `AuthContext.refresh()` — voir écart n°24.
@@ -389,29 +471,27 @@ gratuit (voir écart n°12).
   tests manuels (voir écart n°12). N'affecte pas la correction du code.
 - **Point de vigilance permanent** : ne plus compter sur un bind mount pour le code backend (voir écart n°3) — toujours rebuild l'image après modification de code Python (**y compris nginx** si `nginx/conf.d/` change), et écrire les migrations à la main si `docker compose run --rm` est utilisé pour les générer.
 - **Docker Desktop / Docker Hub restent occasionnellement instables** : après un restart de Docker Desktop, vérifier que l'image utilisée par un conteneur recréé est bien la plus récente (`docker images <nom> --format "{{.ID}} {{.CreatedAt}}"`) — un rebuild peut se perdre si le moteur redémarre pendant ou juste après. Un rebuild peut aussi échouer avec une erreur réseau (`401 Unauthorized`, `unexpected EOF`) ou une erreur interne buildx (`NotFound: forwarding Ping: no such job`) — relancer simplement `docker compose build` suffit en général.
+- **Ralentissement Docker Desktop marqué le 2026-08-22** (voir « Journal du
+  2026-08-22 », point 12) : `docker compose build`/`up -d`/`docker ps` ont
+  pris plusieurs minutes sans sortie, et le conteneur `db` a dû effectuer
+  une récupération WAL après arrêt non propre — résolu automatiquement,
+  sans perte de données, mais nettement plus lent que d'habitude. Si ce
+  comportement se reproduit et persiste, envisager un redémarrage manuel de
+  Docker Desktop en tout début de session.
 - **Anomalie observée, cause non confirmée** : plusieurs campagnes de test créées en cours de session (ids 17, 20) ont disparu de la base entre deux vérifications, alors que `db_data` est un volume Docker nommé censé persister. Sans certitude sur la cause exacte (possiblement lié aux redémarrages Docker Desktop de la session) — à surveiller ; aucune perte de données de production n'est en jeu (uniquement des campagnes de test).
 - Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe), `consultant@hshield237.local` / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` / `Responsable1234!` (rôle responsable, créé le 2026-08-21 pour tester la validation de consentement).
 
 ## Prochaine action précise
 
-1. **Committer et pousser la simplification demandée après le Jour 11**,
-   actuellement non commitée :
-   ```
-   git add backend/apps/generation/serializers.py \
-     backend/apps/generation/views.py \
-     frontend/src/api/generation.js \
-     frontend/src/pages/Campagnes/CampagnesPage.jsx \
-     frontend/src/pages/GenererScenario/GenererScenarioPage.jsx
-   git commit -m "refactor(generation): expediteur/destinataire communs aux deux modes, retrait du ciblage par departement"
-   git push origin main
-   ```
-2. Puis enchaîner sur le **Jour 12** du plan (`docs/rapport_planification.md`) :
-   endpoint `GET /api/campagnes/{id}/score/` (taux de clic/soumission/
-   signalement + score de vulnérabilité composite 0-100 ; l'agrégation n'a
-   plus besoin de gérer plusieurs scénarios par département par campagne
-   depuis le retrait de ce jour, mais rester robuste si des `Destinataire`
-   /`departements_cibles` existent encore en base pour d'anciennes
-   campagnes) et un endpoint d'agrégation par secteur/département pour le
-   tableau de bord global. Côté frontend, connecter `DashboardPage.jsx`
-   (encore un placeholder) et `Resultats/` (page pas encore créée) aux
-   données réelles.
+Enchaîner sur le **Jour 13** du plan (`docs/rapport_planification.md`) :
+génération de rapport PDF. Créer `apps/rapports/` avec un service
+`GenerationRapportService` utilisant WeasyPrint pour produire un PDF
+reprenant le score de vulnérabilité (endpoints du jour 12, déjà
+disponibles), les graphiques clés et des recommandations d'une campagne
+clôturée ; exposer `GET /api/campagnes/{id}/rapport/`. Côté frontend,
+connecter la page Rapports PDF (`docs/maquettes/rapports.html`, page pas
+encore créée) à cet endpoint — génération à la demande et téléchargement.
+Objectif fixé au cahier des charges : moins de 10 secondes de génération.
+Point de vigilance : WeasyPrint n'est pas encore dans
+`backend/requirements.txt` — l'ajouter, puis rebuild l'image backend avant
+tout test (voir écart n°3, pas de bind mount).
