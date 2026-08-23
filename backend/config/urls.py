@@ -8,10 +8,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.accounts.views import MeView
 from apps.campagnes.views import (
+    CampagneScoreView,
     CampagneViewSet,
     DestinataireDetailView,
     DestinataireListCreateView,
     ScenarioListView,
+    ScoreParDepartementView,
 )
 from apps.generation.views import GenerationAPIView, GenerationManuelView
 from apps.gouvernance.urls import urlpatterns as gouvernance_urls
@@ -52,6 +54,16 @@ urlpatterns = [
         "api/campagnes/<int:campagne_id>/destinataires/<int:destinataire_id>/",
         DestinataireDetailView.as_view(),
         name="campagne-destinataire-detail",
+    ),
+    path(
+        "api/campagnes/departements/score/",
+        ScoreParDepartementView.as_view(),
+        name="campagnes-score-departements",
+    ),
+    path(
+        "api/campagnes/<int:campagne_id>/score/",
+        CampagneScoreView.as_view(),
+        name="campagne-score",
     ),
     path("api/", include(router.urls)),
 ]

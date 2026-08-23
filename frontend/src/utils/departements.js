@@ -14,3 +14,16 @@ export const DEPARTEMENT_LABELS = {
 export function departementLabel(value) {
   return DEPARTEMENT_LABELS[value] || value;
 }
+
+export const DEPARTEMENT_ICONS = {
+  direction: "ti-building-skyscraper",
+  rh: "ti-users",
+  comptabilite: "ti-calculator",
+  it: "ti-device-desktop",
+  commercial: "ti-briefcase",
+  juridique: "ti-scale",
+  marketing: "ti-speakerphone",
+  production: "ti-settings",
+  achats: "ti-shopping-cart",
+  autre: "ti-dots",
+};

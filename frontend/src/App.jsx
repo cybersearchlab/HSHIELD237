@@ -6,6 +6,7 @@ import ConsentementsPage from "./pages/Consentements/ConsentementsPage";
 import DashboardPage from "./pages/Dashboard/DashboardPage";
 import GenererScenarioPage from "./pages/GenererScenario/GenererScenarioPage";
 import LoginPage from "./pages/Login/LoginPage";
+import ResultatsPage from "./pages/Resultats/ResultatsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -35,6 +36,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <GenererScenarioPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/resultats"
+            element={
+              <ProtectedRoute>
+                <ResultatsPage />
               </ProtectedRoute>
             }
           />
