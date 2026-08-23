@@ -34,7 +34,12 @@
   `7d7d8d0`).
 - Jalon 1 (jour 5) et **Jalon 2 (jour 10) : atteints.**
 - Phase 3 du sprint (« Gouvernance & résultats », jours 11-15) : **en cours**
-  — Jours 11 et 12 terminés, jour 13 (rapport PDF) à venir.
+  — Jours 11 et 12 terminés, jour 13 (rapport PDF) démarré mais **non
+  vérifié** (voir ci-dessous).
+- **Jour 13 (rapport PDF) : code backend écrit, ⚠️ PAS VÉRIFIÉ ni committé.**
+  Session interrompue par une panne réseau persistante sur la machine de
+  développement (voir « Journal du 2026-08-23 »). Reprendre par un rebuild
+  backend dès que le réseau est stable — voir « Prochaine action précise ».
 
 ## Journal du 2026-08-19 (session de suivi post-Jour 7)
 
@@ -374,6 +379,74 @@ et poussée le jour même (commits `59bc4e2`, `e871419`).
 
 Jour 12 committé et poussé sur GitHub le même jour (commit `6a16889`).
 
+## Journal du 2026-08-23 (Jour 13 — rapport PDF, session interrompue par le réseau)
+
+### Jour 13 — backend (écrit, non vérifié)
+
+1. **Nouvelle app `backend/apps/rapports/`** : `GenerationRapportService`
+   (utilise WeasyPrint) génère un PDF à la demande — aucun fichier n'est
+   stocké, tout est recalculé à chaque appel à partir de
+   `apps.campagnes.services.score_campagne` (Jour 12).
+2. **Recommandations générées par règles simples** (pas d'appel LLM) : le
+   texte varie selon le taux de soumission, le taux de clic et le score
+   composite — ex. « formation urgente » si `taux_soumission >= 25`,
+   message positif si `score_vulnerabilite < 25`, etc. Voir
+   `generer_recommandations()` dans `services.py`.
+3. **Endpoint** `GET /api/campagnes/{id}/rapport/` (`RapportCampagneView`),
+   réservé aux rôles consultant/administrateur, retourne le PDF en
+   `application/pdf` avec `Content-Disposition: attachment`.
+4. **Template** `apps/rapports/templates/rapports/rapport.html` : reprend
+   la charte graphique du projet (navy `#0F1F3D`, rouge `#C0392B`, etc.),
+   score composite en gros caractères, barres de progression CSS pour
+   chaque taux, liste de recommandations.
+5. **4 tests écrits** (`apps/rapports/tests.py`) : accès refusé sans
+   authentification/avec un rôle non autorisé, PDF généré même sans aucune
+   donnée (`%PDF` en tête de réponse), PDF reflétant des interactions
+   réelles. **Non exécutés** — voir point 7.
+6. **`requirements.txt`** : ajout de `weasyprint>=61`. **`Dockerfile`** :
+   ajout des bibliothèques système requises par WeasyPrint
+   (`libpango-1.0-0`, `libpangoft2-1.0-0`, `libharfbuzz0b`, `libfribidi0`,
+   `fonts-liberation`).
+7. **Écart n°31 — `build-essential` retiré du `Dockerfile` backend**,
+   décision utilisateur explicite après diagnostic : aucune dépendance du
+   projet n'a besoin de compiler quoi que ce soit sur Linux/amd64
+   (`psycopg[binary]` utilise déjà des wheels précompilées ; Django, DRF,
+   gunicorn, anthropic, et les dépendances de WeasyPrint fournissent toutes
+   des wheels). `build-essential` tirait ~40 Mo de chaîne de compilation
+   C/C++ (gcc-14, g++-14…) qui échouait systématiquement au téléchargement
+   pendant cette session (voir point 8). **Non encore vérifié que le build
+   réussit sans lui** — c'est la toute première chose à confirmer à la
+   reprise (si `pip install` échoue avec une erreur de compilation, il
+   faudra le réintroduire).
+
+### Aléa réseau bloquant (raison de l'interruption de session)
+
+8. **Panne réseau persistante, distincte des aléas Docker Desktop déjà
+   documentés les jours précédents.** Plusieurs dizaines de tentatives de
+   `docker compose build backend` ont échoué : les téléchargements de
+   paquets `apt` (y compris le simple index de paquets Debian, 9,6 Mo)
+   restaient bloqués à 0 octet/s pendant 15 à 30 minutes, confirmé à
+   plusieurs reprises par `docker stats` (aucune activité réseau/CPU sur le
+   conteneur buildkit). Diagnostic mené étape par étape :
+   - redémarrage du conteneur `buildx_buildkit_default` seul → débloque
+     temporairement puis se reproduit ;
+   - test de connectivité brut (`docker pull python:3.12-slim` sans
+     buildkit) → a fini par réussir, écartant un blocage réseau total ;
+   - retrait de `build-essential` (voir point 7) → réduit le volume à
+     télécharger mais le blocage se reproduit sur le tout premier fichier ;
+   - **redémarrage complet de Docker Desktop par l'utilisateur** → les 4
+     services applicatifs sont repartis sains, `docker info` répond de
+     nouveau, mais le rebuild backend s'est **rebloqué** sur le même point
+     (confirmé par `docker stats` à deux reprises, 15 secondes d'écart,
+     zéro octet transféré).
+   - Conclusion retenue : le problème se situe au niveau de la connexion
+     réseau de la machine elle-même (ou d'un pare-feu/proxy filtrant les
+     transferts un peu volumineux), pas du moteur Docker Desktop — un
+     redémarrage complet de Docker Desktop n'y change rien.
+9. **Décision utilisateur** : mettre la session en pause plutôt que de
+   continuer à relancer le build à l'aveugle. Le code du Jour 13 n'est
+   **ni vérifié, ni committé, ni poussé**.
+
 ## Modules implémentés
 
 ### Backend (`backend/apps/`)
@@ -386,7 +459,7 @@ Jour 12 committé et poussé sur GitHub le même jour (commit `6a16889`).
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
 | `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `gouvernance` | ✅ Fait (jour 11) | Modèles `Consentement`, `JournalAudit` ; endpoints demande/liste/valider/refuser/journal-audit ; `tests.py` (10 tests) |
-| `rapports` | ⬜ Pas commencé | Prévu jour 13 (PDF via WeasyPrint) |
+| `rapports` | 🟡 Écrit, non vérifié | `GenerationRapportService` (WeasyPrint), endpoint `.../rapport/`, `tests.py` (4 tests). Session interrompue par une panne réseau avant tout rebuild — voir « Journal du 2026-08-23 » |
 | `templates_sectoriels` | ⬜ Pas commencé | Prévu jour 14 |
 
 ### Frontend (`frontend/src/pages/`)
@@ -437,6 +510,7 @@ Jour 12 committé et poussé sur GitHub le même jour (commit `6a16889`).
 28. **`GenerationAPIRequestSerializer` remplace `departements_cibles` (écart n°21) par `expediteur_nom`/`expediteur_email`/`destinataire_email`**, désormais éditables en mode génération par IA comme en mode manuel (auparavant réservés au mode manuel). Champs optionnels, validation de format identique dans les deux modes.
 29. **L'agrégation globale du tableau de bord/résultats est pondérée par le nombre réel d'emails envoyés**, pas une simple moyenne des pourcentages par département (`frontend/src/utils/score.js`, `computeGlobalStats`). Une moyenne arithmétique simple aurait surreprésenté un département peu testé (ex. 1 seul email envoyé) par rapport à un département massivement testé — le calcul pondéré donne un taux global fidèle au volume réel d'interactions.
 30. **Les pages Tableau de bord et Résultats (jour 12) ont été délibérément réécrites pour ne comparer que des départements entre eux**, jamais des entreprises ou des secteurs, alors que les maquettes `app.html`/`resultats.html` d'origine comparaient plusieurs entreprises clientes par secteur — cohérent avec la suppression du modèle `Entreprise` au jour 6 (écart n°1). Consigne explicite de l'utilisateur pour ce jour précis. Aucune donnée fictive n'a été introduite pour compenser l'absence de graphiques d'évolution temporelle ou de détail par employé (ces vues du plan initial n'ont pas d'équivalent réel dans les endpoints du jour 12 et ont donc été omises plutôt que fabriquées).
+31. **`build-essential` retiré du `Dockerfile` backend** (jour 13, décision utilisateur explicite après diagnostic) : aucune dépendance du projet n'a besoin de compiler quoi que ce soit sur Linux/amd64 (`psycopg[binary]` utilise des wheels précompilées, comme le reste des dépendances). Ce paquet tirait ~40 Mo de chaîne de compilation C/C++ qui échouait systématiquement à télécharger pendant la session du 2026-08-23. **Non encore vérifié que le build réussit sans lui** — première chose à confirmer à la reprise ; si `pip install` échoue avec une erreur de compilation, le réintroduire.
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -475,23 +549,42 @@ gratuit (voir écart n°12).
   2026-08-22 », point 12) : `docker compose build`/`up -d`/`docker ps` ont
   pris plusieurs minutes sans sortie, et le conteneur `db` a dû effectuer
   une récupération WAL après arrêt non propre — résolu automatiquement,
-  sans perte de données, mais nettement plus lent que d'habitude. Si ce
-  comportement se reproduit et persiste, envisager un redémarrage manuel de
-  Docker Desktop en tout début de session.
+  sans perte de données, mais nettement plus lent que d'habitude.
+- **⚠️ Panne réseau bloquante active au 2026-08-23** (voir « Journal du
+  2026-08-23 ») : les téléchargements `apt`/Docker restent bloqués à 0
+  octet/s pendant de longues minutes, y compris après redémarrage complet
+  de Docker Desktop — le problème semble venir de la connexion réseau de
+  la machine elle-même (ou d'un pare-feu/proxy), pas de Docker. **À
+  vérifier en tout début de la prochaine session** avant de relancer le
+  moindre `docker compose build` : tester `docker pull hello-world` ou
+  équivalent ; si le blocage persiste, ne pas insister avec des
+  redémarrages Docker — le problème est probablement hors de portée de
+  Claude Code (connexion internet, VPN, pare-feu Windows/antivirus).
 - **Anomalie observée, cause non confirmée** : plusieurs campagnes de test créées en cours de session (ids 17, 20) ont disparu de la base entre deux vérifications, alors que `db_data` est un volume Docker nommé censé persister. Sans certitude sur la cause exacte (possiblement lié aux redémarrages Docker Desktop de la session) — à surveiller ; aucune perte de données de production n'est en jeu (uniquement des campagnes de test).
 - Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe), `consultant@hshield237.local` / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` / `Responsable1234!` (rôle responsable, créé le 2026-08-21 pour tester la validation de consentement).
 
 ## Prochaine action précise
 
-Enchaîner sur le **Jour 13** du plan (`docs/rapport_planification.md`) :
-génération de rapport PDF. Créer `apps/rapports/` avec un service
-`GenerationRapportService` utilisant WeasyPrint pour produire un PDF
-reprenant le score de vulnérabilité (endpoints du jour 12, déjà
-disponibles), les graphiques clés et des recommandations d'une campagne
-clôturée ; exposer `GET /api/campagnes/{id}/rapport/`. Côté frontend,
-connecter la page Rapports PDF (`docs/maquettes/rapports.html`, page pas
-encore créée) à cet endpoint — génération à la demande et téléchargement.
-Objectif fixé au cahier des charges : moins de 10 secondes de génération.
-Point de vigilance : WeasyPrint n'est pas encore dans
-`backend/requirements.txt` — l'ajouter, puis rebuild l'image backend avant
-tout test (voir écart n°3, pas de bind mount).
+1. **Vérifier que le réseau de la machine est stable** avant toute chose
+   (voir « Bugs connus » — panne bloquante non résolue au 2026-08-23) :
+   `docker pull hello-world` ou équivalent doit réussir rapidement.
+2. **Reconstruire et vérifier le Jour 13**, déjà entièrement écrit mais pas
+   testé :
+   ```
+   docker compose build backend
+   docker compose up -d
+   docker compose exec backend python manage.py test
+   ```
+   Vérifier en particulier que `pip install` ne réclame pas de compilateur
+   C (le `Dockerfile` n'a plus `build-essential`, voir écart n°31) — si une
+   erreur de compilation apparaît, réintroduire `build-essential` dans
+   `backend/Dockerfile`. Vérifier ensuite les 4 tests de
+   `apps/rapports/tests.py`, puis tester `GET /api/campagnes/{id}/rapport/`
+   en conditions réelles (le PDF doit commencer par `%PDF`).
+3. **Committer et pousser le Jour 13** une fois vérifié : `backend/apps/rapports/`,
+   `backend/Dockerfile`, `backend/requirements.txt`,
+   `backend/config/settings/base.py`, `backend/config/urls.py`.
+4. Puis enchaîner sur le **FRONTEND du Jour 13** (pas encore commencé) :
+   connecter la page Rapports PDF (`docs/maquettes/rapports.html`, page pas
+   encore créée) à cet endpoint — génération à la demande et téléchargement.
+   Objectif fixé au cahier des charges : moins de 10 secondes de génération.
