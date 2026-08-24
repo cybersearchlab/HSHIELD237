@@ -37,9 +37,11 @@
   — Jours 11 et 12 terminés, jour 13 (rapport PDF) démarré mais **non
   vérifié** (voir ci-dessous).
 - **Jour 13 (rapport PDF) : code backend écrit, ⚠️ PAS VÉRIFIÉ ni committé.**
-  Session interrompue par une panne réseau persistante sur la machine de
-  développement (voir « Journal du 2026-08-23 »). Reprendre par un rebuild
-  backend dès que le réseau est stable — voir « Prochaine action précise ».
+  Deux sessions interrompues par une panne réseau persistante sur la
+  machine de développement — voir « Journal du 2026-08-23 » et surtout
+  « Journal du 2026-08-24 » (diagnostic précis : **corruption de données en
+  transit**, pas un simple ralentissement). Reprendre sur un réseau
+  différent — voir « Prochaine action précise ».
 
 ## Journal du 2026-08-19 (session de suivi post-Jour 7)
 
@@ -447,6 +449,58 @@ Jour 12 committé et poussé sur GitHub le même jour (commit `6a16889`).
    continuer à relancer le build à l'aveugle. Le code du Jour 13 n'est
    **ni vérifié, ni committé, ni poussé**.
 
+## Journal du 2026-08-24 (Jour 13, suite — diagnostic réseau précis)
+
+Reprise de session directement sur la « Prochaine action précise » laissée
+la veille. Nouvelle tentative de rebuild backend, avec le même blocage que
+la veille sur `docker compose build` (téléchargements `apt` bloqués). Le
+diagnostic a cette fois été poussé plus loin, avec une découverte
+déterminante.
+
+1. **`docker info` a fini par répondre** après plusieurs minutes de blocage
+   en tout début de session (contrairement à la veille, pas besoin de
+   redémarrer Docker Desktop) — le rebuild a donc pu être relancé.
+2. **`pip install -r requirements.txt` a échoué avec une vraie erreur**,
+   distincte des blocages `apt` : un conflit de dépendances impossible à
+   résoudre (`ResolutionImpossible`), signalant tour à tour `asgiref` puis,
+   à la tentative suivante, `Pillow` comme cause — deux diagnostics
+   incohérents entre eux pour la même commande.
+3. **Isolé le problème avec `pip install --dry-run`** en dehors du build
+   Docker complet (plus rapide à itérer). Le passage de `weasyprint>=61` à
+   une version épinglée précise (`weasyprint==62.3`) a fait disparaître les
+   deux conflits « fantômes » — confirmant qu'ils n'étaient pas de vrais
+   conflits de version, mais des artefacts d'une résolution instable.
+4. **Cause racine identifiée** : à l'étape suivante, `pip` a rejeté un
+   paquet déjà téléchargé avec une erreur explicite de hash :
+   ```
+   ERROR: THESE PACKAGES DO NOT MATCH THE HASHES FROM THE REQUIREMENTS FILE.
+   djangorestframework-simplejwt ... :
+       Expected sha256 63e7ee25ae29fa6ebdcc4502f351d1541f3e1b67bddd63a94f397627738d8408
+            Got        c642709cff6fca4187458fbbbbce639cd7a783e0c3680a7cbc9a2c35f0bb73d7
+   ```
+   **Ce n'est donc pas un problème de dépendances ni de code** : les
+   fichiers téléchargés arrivent corrompus (octets altérés en transit).
+   Cela explique rétroactivement l'ensemble des incidents réseau des
+   sessions précédentes (échecs `apt` avec re-téléchargements en boucle,
+   `Ign:` répétés sur les mêmes paquets, conflits pip incohérents d'un essai
+   à l'autre) : tous portent la signature d'une corruption de données, pas
+   d'une simple lenteur ou d'un serveur distant capricieux.
+5. **Hypothèse retenue** : corruption liée à un défaut de déchargement de
+   somme de contrôle réseau côté machine (TCP Checksum Offload / Large Send
+   Offload), un bug matériel/pilote connu qui touche parfois les adaptateurs
+   Wi-Fi/Ethernet combinés à WSL2 — silencieux la plupart du temps, mais
+   détecté ici uniquement parce que `pip` et `apt` vérifient activement les
+   sommes de contrôle des fichiers téléchargés.
+6. **`weasyprint==62.3`** (épinglage précis) conservé dans
+   `requirements.txt` même après ce diagnostic — un épinglage exact reste
+   une bonne pratique indépendamment du problème réseau (résolution plus
+   rapide et reproductible).
+7. **Décision utilisateur** : tester sur un réseau différent (partage de
+   connexion mobile ou autre Wi-Fi) avant de relancer le prochain build,
+   pour confirmer que le problème vient bien de l'adaptateur réseau actuel
+   plutôt que d'insister sur le même réseau. Session mise en pause dans
+   l'attente.
+
 ## Modules implémentés
 
 ### Backend (`backend/apps/`)
@@ -511,6 +565,7 @@ Jour 12 committé et poussé sur GitHub le même jour (commit `6a16889`).
 29. **L'agrégation globale du tableau de bord/résultats est pondérée par le nombre réel d'emails envoyés**, pas une simple moyenne des pourcentages par département (`frontend/src/utils/score.js`, `computeGlobalStats`). Une moyenne arithmétique simple aurait surreprésenté un département peu testé (ex. 1 seul email envoyé) par rapport à un département massivement testé — le calcul pondéré donne un taux global fidèle au volume réel d'interactions.
 30. **Les pages Tableau de bord et Résultats (jour 12) ont été délibérément réécrites pour ne comparer que des départements entre eux**, jamais des entreprises ou des secteurs, alors que les maquettes `app.html`/`resultats.html` d'origine comparaient plusieurs entreprises clientes par secteur — cohérent avec la suppression du modèle `Entreprise` au jour 6 (écart n°1). Consigne explicite de l'utilisateur pour ce jour précis. Aucune donnée fictive n'a été introduite pour compenser l'absence de graphiques d'évolution temporelle ou de détail par employé (ces vues du plan initial n'ont pas d'équivalent réel dans les endpoints du jour 12 et ont donc été omises plutôt que fabriquées).
 31. **`build-essential` retiré du `Dockerfile` backend** (jour 13, décision utilisateur explicite après diagnostic) : aucune dépendance du projet n'a besoin de compiler quoi que ce soit sur Linux/amd64 (`psycopg[binary]` utilise des wheels précompilées, comme le reste des dépendances). Ce paquet tirait ~40 Mo de chaîne de compilation C/C++ qui échouait systématiquement à télécharger pendant la session du 2026-08-23. **Non encore vérifié que le build réussit sans lui** — première chose à confirmer à la reprise ; si `pip install` échoue avec une erreur de compilation, le réintroduire.
+32. **`weasyprint>=61` remplacé par `weasyprint==62.3`** (épinglage exact) dans `requirements.txt`, suite au diagnostic du 2026-08-24 : une plage de version ouverte forçait `pip` à retélécharger et comparer 18 versions différentes, ce qui multipliait les occasions pour la corruption réseau active ce jour-là de produire des messages de conflit incohérents (`asgiref` puis `Pillow` selon l'essai). L'épinglage exact reste une bonne pratique au-delà du contexte réseau (résolution plus rapide et reproductible).
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -550,24 +605,34 @@ gratuit (voir écart n°12).
   pris plusieurs minutes sans sortie, et le conteneur `db` a dû effectuer
   une récupération WAL après arrêt non propre — résolu automatiquement,
   sans perte de données, mais nettement plus lent que d'habitude.
-- **⚠️ Panne réseau bloquante active au 2026-08-23** (voir « Journal du
-  2026-08-23 ») : les téléchargements `apt`/Docker restent bloqués à 0
-  octet/s pendant de longues minutes, y compris après redémarrage complet
-  de Docker Desktop — le problème semble venir de la connexion réseau de
-  la machine elle-même (ou d'un pare-feu/proxy), pas de Docker. **À
-  vérifier en tout début de la prochaine session** avant de relancer le
-  moindre `docker compose build` : tester `docker pull hello-world` ou
-  équivalent ; si le blocage persiste, ne pas insister avec des
-  redémarrages Docker — le problème est probablement hors de portée de
-  Claude Code (connexion internet, VPN, pare-feu Windows/antivirus).
+- **⚠️ Panne réseau bloquante active, diagnostic précis établi le
+  2026-08-24** (voir « Journal du 2026-08-23 » et surtout « Journal du
+  2026-08-24 ») : ce n'est **pas** un simple ralentissement ni un problème
+  Docker — les fichiers téléchargés (paquets `apt`, wheels `pip`) arrivent
+  **corrompus** (échec de vérification de hash confirmé sur un wheel pip).
+  Hypothèse retenue : défaut de déchargement de somme de contrôle réseau
+  (TCP Checksum/Large Send Offload) au niveau de la carte réseau ou du
+  pilote de la machine, aggravé par WSL2. **À faire en tout début de la
+  prochaine session** : tester sur un réseau différent (partage de
+  connexion mobile, autre Wi-Fi) avant de relancer `docker compose build` —
+  si le build passe sur cet autre réseau, cela confirme le diagnostic et il
+  faudra soit rester sur ce réseau, soit désactiver le déchargement de
+  somme de contrôle sur l'adaptateur réseau habituel (Windows : Panneau de
+  configuration > Adaptateurs réseau > Propriétés > Avancé > désactiver
+  « Checksum Offload » / « Large Send Offload » IPv4 et IPv6). Ne pas
+  insister avec des redémarrages Docker seuls — confirmé inefficaces sur ce
+  problème précis.
 - **Anomalie observée, cause non confirmée** : plusieurs campagnes de test créées en cours de session (ids 17, 20) ont disparu de la base entre deux vérifications, alors que `db_data` est un volume Docker nommé censé persister. Sans certitude sur la cause exacte (possiblement lié aux redémarrages Docker Desktop de la session) — à surveiller ; aucune perte de données de production n'est en jeu (uniquement des campagnes de test).
 - Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe), `consultant@hshield237.local` / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` / `Responsable1234!` (rôle responsable, créé le 2026-08-21 pour tester la validation de consentement).
 
 ## Prochaine action précise
 
-1. **Vérifier que le réseau de la machine est stable** avant toute chose
-   (voir « Bugs connus » — panne bloquante non résolue au 2026-08-23) :
-   `docker pull hello-world` ou équivalent doit réussir rapidement.
+1. **Changer de réseau avant toute chose** (voir « Bugs connus » — panne de
+   corruption réseau diagnostiquée le 2026-08-24, pas un simple
+   ralentissement) : basculer sur un partage de connexion mobile ou un
+   autre Wi-Fi, puis vérifier avec un test simple (`docker pull
+   hello-world`, ou directement l'étape 2 ci-dessous) que les
+   téléchargements aboutissent sans erreur de hash.
 2. **Reconstruire et vérifier le Jour 13**, déjà entièrement écrit mais pas
    testé :
    ```
