@@ -716,6 +716,74 @@ visuellement impossible tant que le consentement n'est pas validé.
     atterrit brièvement après connexion avant toute redirection
     manuelle — hors périmètre de cette session).
 
+## Journal du 2026-08-25 (suite 2) — Jour 14 backend (templates par département)
+
+Prompt du plan suivi presque littéralement, avec l'adaptation demandée
+explicitement par l'utilisateur : remplacer « secteur » par
+« département » partout, y compris dans le nom.
+
+1. **Écart n°38 — renommage `templates_sectoriels` → `templates_departement`,
+   `TemplateSectoriel` → `TemplateDepartement`**, décision utilisateur
+   explicite (« si tu vois qu'il faut changer de nom tu le fais »). Le
+   plan d'origine imaginait plusieurs entreprises clientes de secteurs
+   différents (modèle abandonné au jour 6, écart n°1) ; le champ
+   `secteur` du modèle prévu par le plan n'avait donc plus de sens dans
+   la structure réelle (une entreprise, plusieurs départements). Nommage
+   cohérent avec le reste du projet (`ResponsableDepartement`,
+   `score_par_departement`).
+2. **Nouvelle app `apps/templates_departement/`** : modèle
+   `TemplateDepartement` (`nom`, `departement`, `prompt_structure`,
+   `nombre_utilisations`, `date_creation`). CRUD via `ModelViewSet`
+   (`/api/templates-departement/`), permissions `IsConsultant\|IsAdministrateur`
+   (identique à `CampagneViewSet`), filtrable par `departement`
+   (`DjangoFilterBackend`). `nombre_utilisations` en lecture seule côté
+   API — incrémenté uniquement par le service de génération, jamais
+   modifiable directement par le client (testé explicitement).
+3. **`ClaudeGenerationService` modifié** pour accepter un `template`
+   optionnel : `_build_prompt()` insère la `prompt_structure` du template
+   dans le prompt envoyé à Claude avec l'instruction explicite de
+   l'adapter (pas de la reprendre telle quelle — un template n'est
+   qu'une base, pas un email prêt à l'emploi). `GenerationAPIView`
+   accepte un `template_id` optionnel (`GenerationAPIRequestSerializer`)
+   et incrémente `nombre_utilisations` après une génération réussie.
+   Mode manuel (`GenerationManuelView`) non concerné — le plan ne
+   mentionne que « le service de génération », entendu comme le service
+   Claude spécifiquement.
+4. **Endpoint d'historique par département** — écart n°39, adaptation du
+   plan (formulation d'origine : « historique par entreprise ») à la
+   structure réelle, comme déjà fait aux jours 6/12. `GET
+   /api/campagnes/departements/historique/` (nouvelle fonction
+   `historique_par_departement()` dans `apps.campagnes.services`) :
+   contrairement à `score_par_departement()` (jour 12, un seul chiffre
+   agrégé), retourne pour chaque département la liste chronologique de
+   ses campagnes avec le score de chacune — permet d'afficher une
+   évolution dans le temps, pas juste un instantané. Réutilise
+   entièrement `calculer_score()` existant, aucune nouvelle logique de
+   calcul.
+5. **Vérification réelle complète** : 51/51 tests passent (12 nouveaux :
+   5 CRUD `templates_departement` incluant permissions et filtre par
+   département, 4 génération-avec-template dans un nouveau
+   `apps/generation/tests.py` — API Claude simulée avec `unittest.mock`,
+   `ANTHROPIC_API_KEY` restant un placeholder invalide en dev — 3
+   historique-par-département). Migration écrite à la main puis validée
+   par `makemigrations --check --dry-run` → « No changes detected ».
+   Endpoints testés en direct via `curl` : création d'un template,
+   listing, et `.../departements/historique/` retournant les 10
+   départements avec la bonne structure chronologique.
+6. **Aléa Docker rencontré et résolu seul** : après le rebuild, le
+   conteneur backend est resté quelques minutes en `health: starting`
+   avec des `WORKER TIMEOUT`/`SIGKILL` dans les logs gunicorn — ralentissement
+   Docker Desktop déjà documenté à plusieurs reprises (jours 9, 12, 13),
+   pas un problème de code : résolu de lui-même sans intervention,
+   confirmé par un `GET /api/health/` direct réussi juste après.
+7. **Backend uniquement** — le prompt de ce tour ne contenait pas de
+   section FRONTEND (contrairement aux jours précédents où les deux
+   étaient données ensemble). **La page Templates départements/l'historique
+   ne sont pas encore câblés côté React** — le lien de nav « Templates
+   sectoriels » (à renommer aussi) pointe toujours vers une route non
+   câblée. Prochaine étape logique mais pas encore demandée
+   explicitement.
+
 ## Modules implémentés
 
 ### Backend (`backend/apps/`)
@@ -724,12 +792,12 @@ visuellement impossible tant que le consentement n'est pas validé.
 |---|---|---|
 | `accounts` | ✅ Fait | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur` |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
-| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests) |
+| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
 | `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `gouvernance` | ✅ Fait (jour 11, étendu le 2026-08-25) | Modèles `Consentement` (+ `motifs_refus`, `motif_refus_details`), `JournalAudit`, `ResponsableDepartement` (registre admin-only) ; endpoints demande (admin-only)/liste/valider/refuser (motifs obligatoires)/journal-audit/responsables (CRUD admin-only) ; `services.creer_consentement_auto` ; `tests.py` (23 tests) |
 | `rapports` | ✅ Fait (jour 13 backend) | `GenerationRapportService` (WeasyPrint 69.0), endpoint `.../rapport/`, `tests.py` (4 tests). Vérifié en direct (PDF réel via curl) et committé — voir « Journal du 2026-08-25 » |
-| `templates_sectoriels` | ⬜ Pas commencé | Prévu jour 14 |
+| `templates_departement` | 🟡 Backend fait (2026-08-25) | Renommé depuis `templates_sectoriels` du plan (voir écart n°38). Modèle `TemplateDepartement` (nom, departement, prompt_structure, nombre_utilisations), CRUD `IsConsultant\|IsAdministrateur` (`/api/templates-departement/`, filtrable par département). `ClaudeGenerationService` accepte un `template` optionnel, incrémente `nombre_utilisations` à l'usage. `tests.py` (5 tests) + `apps/generation/tests.py` (4 tests, nouveau fichier). **Frontend pas encore câblé.** |
 
 ### Frontend (`frontend/src/pages/`)
 
@@ -868,20 +936,17 @@ gratuit (voir écart n°12).
 ## Prochaine action précise
 
 Le **Jour 13 est entièrement terminé** (backend commit `c88aa61`, frontend
-commit `43ffcb4`), et la **refonte de la gouvernance du consentement**
+commit `43ffcb4`), la **refonte de la gouvernance du consentement**
 (registre des responsables, refus justifié, blocage du bouton Lancer) est
-également terminée et vérifiée — voir « Journal du 2026-08-25 (suite) ».
-Passer au **Jour 14** (templates sectoriels + historique des campagnes,
-voir `docs/rapport_planification.md`) :
+également terminée et vérifiée, et le **Jour 14 backend** (templates par
+département, historique) est fait et vérifié — voir « Journal du
+2026-08-25 (suite 2) ». **Reste le Jour 14 frontend :**
 
-1. **BACKEND** : `apps/templates_sectoriels/` — modèle `TemplateSectoriel`
-   (nom, secteur, prompt_structure, nombre_utilisations) et son CRUD ;
-   adapter le service de génération pour permettre de partir d'un template
-   existant ; endpoint d'historique par département (adapter la formulation
-   du plan — « par entreprise » — à la structure réelle, comme fait aux
-   jours 6/12) agrégeant les campagnes passées et l'évolution du score.
-2. **FRONTEND** : connecter `TemplatesSectoriels` et `Historique`
-   (`docs/maquettes/templates.html`, `docs/maquettes/historique.html`) aux
+1. **FRONTEND** : connecter les pages Templates (renommer en
+   `TemplatesDepartement` ou similaire — le lien de nav « Templates
+   sectoriels » et sa route doivent aussi être renommés, cohérence avec
+   l'écart n°38) et Historique (`docs/maquettes/templates.html`,
+   `docs/maquettes/historique.html`) aux
    nouveaux endpoints — même adaptation multi-entreprise → département
    probablement nécessaire que pour les jours 12 et 13.
 3. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`

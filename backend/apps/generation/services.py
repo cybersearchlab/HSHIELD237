@@ -44,21 +44,35 @@ class ClaudeGenerationService:
 
         return anthropic.Anthropic(api_key=self.api_key)
 
-    def _build_prompt(self, departement, contexte_additionnel=""):
+    def _build_prompt(self, departement, contexte_additionnel="", template=None):
         departement_label = dict(Departement.choices).get(departement, departement)
         prompt = f"Génère un scénario de phishing ciblant le département : {departement_label}."
+        if template is not None:
+            # Le template ne fournit qu'une structure de base à adapter — pas
+            # un email déjà rédigé — d'où l'instruction explicite « adapte »
+            # plutôt qu'une simple reprise telle quelle.
+            prompt += (
+                f"\nPars de la structure de scénario suivante et adapte-la au département ciblé "
+                f"et au contexte additionnel éventuel, plutôt que d'en inventer une nouvelle : "
+                f"{template.prompt_structure}"
+            )
         if contexte_additionnel:
             prompt += f"\nContexte additionnel fourni par le consultant : {contexte_additionnel}"
         return prompt
 
-    def generate(self, departement, contexte_additionnel=""):
+    def generate(self, departement, contexte_additionnel="", template=None):
         client = self._client()
         try:
             response = client.messages.create(
                 model=self.model,
                 max_tokens=1024,
                 system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": self._build_prompt(departement, contexte_additionnel)}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": self._build_prompt(departement, contexte_additionnel, template),
+                    }
+                ],
             )
         except Exception as exc:  # erreurs réseau/API Anthropic
             raise ClaudeGenerationError(f"Appel à l'API Claude impossible : {exc}") from exc

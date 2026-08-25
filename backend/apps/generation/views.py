@@ -24,11 +24,13 @@ class GenerationAPIView(APIView):
         request_serializer.is_valid(raise_exception=True)
         campagne = request_serializer.validated_data["campagne"]
         contexte_additionnel = request_serializer.validated_data["contexte_additionnel"]
+        template = request_serializer.validated_data.get("template")
 
         try:
             scenario_data = ClaudeGenerationService().generate(
                 departement=campagne.departement,
                 contexte_additionnel=contexte_additionnel,
+                template=template,
             )
         except ClaudeGenerationError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -44,6 +46,11 @@ class GenerationAPIView(APIView):
         )
         output_serializer.is_valid(raise_exception=True)
         output_serializer.save()
+
+        if template is not None:
+            template.nombre_utilisations += 1
+            template.save(update_fields=["nombre_utilisations"])
+
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
 

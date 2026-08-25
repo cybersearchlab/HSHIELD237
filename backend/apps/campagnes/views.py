@@ -10,7 +10,7 @@ from apps.accounts.permissions import IsAdministrateur, IsConsultant
 
 from .models import Campagne, Destinataire
 from .serializers import CampagneSerializer, DestinataireSerializer, ScenarioPhishingSerializer
-from .services import score_campagne, score_par_departement
+from .services import historique_par_departement, score_campagne, score_par_departement
 
 CAN_MANAGE_CAMPAGNE = [IsAuthenticated & (IsConsultant | IsAdministrateur)]
 
@@ -90,6 +90,19 @@ class ScoreParDepartementView(APIView):
 
     def get(self, request):
         return Response(score_par_departement())
+
+
+class HistoriqueParDepartementView(APIView):
+    """GET /api/campagnes/departements/historique/ — historique campagne
+    par campagne pour chaque département, avec le score de vulnérabilité
+    de chacune, pour visualiser son évolution dans le temps (jour 14).
+    Contrairement à ScoreParDepartementView, qui condense tout en un seul
+    chiffre global, chaque campagne garde ici son propre point."""
+
+    permission_classes = CAN_MANAGE_CAMPAGNE
+
+    def get(self, request):
+        return Response(historique_par_departement())
 
 
 class DestinataireDetailView(APIView):

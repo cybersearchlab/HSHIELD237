@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "apps.simulation",
     "apps.gouvernance",
     "apps.rapports",
+    "apps.templates_departement",
 ]
 
 MIDDLEWARE = [

@@ -75,3 +75,38 @@ def score_par_departement():
         resultat["nombre_campagnes"] = campagnes.count()
         resultats.append(resultat)
     return resultats
+
+
+def historique_par_departement():
+    """Historique détaillé, campagne par campagne, pour chaque département —
+    contrairement à score_par_departement() qui agrège tout en un seul
+    chiffre, ici chaque campagne garde sa propre entrée chronologique pour
+    permettre d'afficher l'évolution du score dans le temps (jour 14)."""
+    resultats = []
+    for valeur, libelle in Departement.choices:
+        campagnes = Campagne.objects.filter(departement=valeur).order_by("date_creation")
+        historique = []
+        for campagne in campagnes:
+            score = score_campagne(campagne)
+            historique.append(
+                {
+                    "campagne_id": campagne.id,
+                    "date_creation": campagne.date_creation,
+                    "statut": campagne.statut,
+                    "total_envois": score["total_envois"],
+                    "taux_ouverture": score["taux_ouverture"],
+                    "taux_clic": score["taux_clic"],
+                    "taux_soumission": score["taux_soumission"],
+                    "taux_signalement": score["taux_signalement"],
+                    "score_vulnerabilite": score["score_vulnerabilite"],
+                }
+            )
+        resultats.append(
+            {
+                "departement": valeur,
+                "departement_libelle": libelle,
+                "nombre_campagnes": campagnes.count(),
+                "campagnes": historique,
+            }
+        )
+    return resultats

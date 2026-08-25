@@ -149,3 +149,61 @@ class ScoreParDepartementTests(TestCase):
         url = reverse("campagnes-score-departements")
         response = self.client.get(url)
         self.assertEqual(len(response.data), len(Departement.choices))
+
+
+class HistoriqueParDepartementTests(TestCase):
+    """Contrairement à ScoreParDepartementView (un seul chiffre agrégé),
+    HistoriqueParDepartementView doit garder une entrée distincte par
+    campagne pour permettre d'afficher l'évolution du score dans le temps
+    (jour 14)."""
+
+    def setUp(self):
+        self.consultant = Utilisateur.objects.create_user(
+            username="consultant-historique",
+            email="consultant-historique@hshield237.local",
+            password="Test1234!",
+            role=Role.CONSULTANT,
+        )
+        self.client.force_login(self.consultant)
+        self.url = reverse("campagnes-historique-departements")
+
+    def test_toutes_les_valeurs_de_departement_sont_representees(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(Departement.choices))
+
+    def test_departement_sans_campagne_a_une_liste_vide(self):
+        response = self.client.get(self.url)
+        entree = next(d for d in response.data if d["departement"] == Departement.JURIDIQUE)
+        self.assertEqual(entree["nombre_campagnes"], 0)
+        self.assertEqual(entree["campagnes"], [])
+
+    def test_chaque_campagne_garde_son_propre_score_chronologique(self):
+        campagne_1 = Campagne.objects.create(departement=Departement.IT)
+        campagne_2 = Campagne.objects.create(departement=Departement.IT)
+        scenario_1 = ScenarioPhishing.objects.create(
+            campagne=campagne_1,
+            objet_email="Test 1",
+            corps_email="Contenu.",
+            url_fausse_page="https://exemple.cm/1/",
+            secteur_cible="Test",
+        )
+        scenario_2 = ScenarioPhishing.objects.create(
+            campagne=campagne_2,
+            objet_email="Test 2",
+            corps_email="Contenu.",
+            url_fausse_page="https://exemple.cm/2/",
+            secteur_cible="Test",
+        )
+        _envoyer_et_interagir(scenario_1, "a@entreprise.cm", [TypeInteraction.CLIC])
+        _envoyer_et_interagir(scenario_2, "b@entreprise.cm", [])
+
+        response = self.client.get(self.url)
+        entree = next(d for d in response.data if d["departement"] == Departement.IT)
+        self.assertEqual(entree["nombre_campagnes"], 2)
+        self.assertEqual(len(entree["campagnes"]), 2)
+        # Ordonné chronologiquement (date_creation croissante)
+        self.assertEqual(entree["campagnes"][0]["campagne_id"], campagne_1.id)
+        self.assertEqual(entree["campagnes"][0]["taux_clic"], 100.0)
+        self.assertEqual(entree["campagnes"][1]["campagne_id"], campagne_2.id)
+        self.assertEqual(entree["campagnes"][1]["taux_clic"], 0.0)

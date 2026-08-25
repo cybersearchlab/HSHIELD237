@@ -12,6 +12,7 @@ from apps.campagnes.views import (
     CampagneViewSet,
     DestinataireDetailView,
     DestinataireListCreateView,
+    HistoriqueParDepartementView,
     ScenarioListView,
     ScoreParDepartementView,
 )
@@ -20,6 +21,7 @@ from apps.gouvernance.urls import urlpatterns as gouvernance_urls
 from apps.rapports.views import RapportCampagneView
 from apps.simulation.urls import api_urlpatterns as simulation_api_urls
 from apps.simulation.urls import public_urlpatterns as simulation_public_urls
+from apps.templates_departement.views import TemplateDepartementViewSet
 
 
 def health(request):
@@ -28,6 +30,7 @@ def health(request):
 
 router = DefaultRouter()
 router.register("campagnes", CampagneViewSet, basename="campagne")
+router.register("templates-departement", TemplateDepartementViewSet, basename="templatedepartement")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -60,6 +63,11 @@ urlpatterns = [
         "api/campagnes/departements/score/",
         ScoreParDepartementView.as_view(),
         name="campagnes-score-departements",
+    ),
+    path(
+        "api/campagnes/departements/historique/",
+        HistoriqueParDepartementView.as_view(),
+        name="campagnes-historique-departements",
     ),
     path(
         "api/campagnes/<int:campagne_id>/score/",
