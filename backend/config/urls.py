@@ -17,6 +17,7 @@ from apps.campagnes.views import (
 )
 from apps.generation.views import GenerationAPIView, GenerationManuelView
 from apps.gouvernance.urls import urlpatterns as gouvernance_urls
+from apps.rapports.views import RapportCampagneView
 from apps.simulation.urls import api_urlpatterns as simulation_api_urls
 from apps.simulation.urls import public_urlpatterns as simulation_public_urls
 
@@ -64,6 +65,11 @@ urlpatterns = [
         "api/campagnes/<int:campagne_id>/score/",
         CampagneScoreView.as_view(),
         name="campagne-score",
+    ),
+    path(
+        "api/campagnes/<int:campagne_id>/rapport/",
+        RapportCampagneView.as_view(),
+        name="campagne-rapport",
     ),
     path("api/", include(router.urls)),
 ]

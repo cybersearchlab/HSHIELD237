@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 2cm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Liberation Sans", "Helvetica", "Arial", sans-serif; color: #0F1F3D; font-size: 11pt; }
+
+  .header { border-bottom: 3px solid #C0392B; padding-bottom: 12px; margin-bottom: 20px; }
+  .header h1 { font-size: 20pt; margin: 0 0 4px; }
+  .header .sub { color: #4A5568; font-size: 10pt; }
+
+  .meta { display: flex; justify-content: space-between; margin-bottom: 24px; font-size: 10pt; color: #4A5568; }
+
+  .score-box { text-align: center; background: #F7F8FC; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+  .score-box .value { font-size: 40pt; font-weight: bold; margin: 0; }
+  .score-box .label { font-size: 10pt; color: #4A5568; text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
+  .risk-eleve { color: #C0392B; }
+  .risk-modere { color: #E67E22; }
+  .risk-faible { color: #1A7F4A; }
+
+  h2 { font-size: 13pt; margin: 24px 0 10px; color: #0F1F3D; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #E2E8F0; font-size: 10pt; vertical-align: middle; }
+  th { color: #4A5568; text-transform: uppercase; font-size: 9pt; letter-spacing: 0.5px; }
+  td.valeur { width: 60px; font-weight: 600; }
+  td.barre { width: 200px; }
+  .bar-track { background: #EDF2F7; border-radius: 6px; height: 8px; width: 100%; }
+  .bar-fill { height: 8px; border-radius: 6px; }
+
+  .sous-note { font-size: 9.5pt; color: #4A5568; margin: 0 0 24px; }
+
+  ul.recos { padding-left: 18px; margin: 0; }
+  ul.recos li { margin-bottom: 8px; line-height: 1.5; }
+
+  .footer { margin-top: 32px; padding-top: 10px; border-top: 1px solid #E2E8F0; font-size: 8.5pt; color: #A0AEC0; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Rapport de simulation de phishing</h1>
+    <div class="sub">H-SHIELD237 — Simulateur de phishing éducatif</div>
+  </div>
+
+  <div class="meta">
+    <div>Département : <strong>{{ campagne.get_departement_display }}</strong></div>
+    <div>Statut : <strong>{{ campagne.get_statut_display }}</strong></div>
+    <div>Créée le : <strong>{{ campagne.date_creation|date:"d/m/Y" }}</strong></div>
+  </div>
+
+  <div class="score-box">
+    <p class="value {{ classe_risque }}">{{ score.score_vulnerabilite }} / 100</p>
+    <p class="label">Score de vulnérabilité — Niveau {{ libelle_risque }}</p>
+  </div>
+
+  <h2>Détail des interactions</h2>
+  <table>
+    <thead>
+      <tr><th>Indicateur</th><th>Taux</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Ouverture de l'email</td>
+        <td class="valeur">{{ score.taux_ouverture }} %</td>
+        <td class="barre"><div class="bar-track"><div class="bar-fill" style="width:{{ score.taux_ouverture }}%; background:#1A5FA0;"></div></div></td>
+      </tr>
+      <tr>
+        <td>Clic sur le lien</td>
+        <td class="valeur">{{ score.taux_clic }} %</td>
+        <td class="barre"><div class="bar-track"><div class="bar-fill" style="width:{{ score.taux_clic }}%; background:#C0392B;"></div></div></td>
+      </tr>
+      <tr>
+        <td>Soumission de données</td>
+        <td class="valeur">{{ score.taux_soumission }} %</td>
+        <td class="barre"><div class="bar-track"><div class="bar-fill" style="width:{{ score.taux_soumission }}%; background:#E67E22;"></div></div></td>
+      </tr>
+      <tr>
+        <td>Signalement</td>
+        <td class="valeur">{{ score.taux_signalement }} %</td>
+        <td class="barre"><div class="bar-track"><div class="bar-fill" style="width:{{ score.taux_signalement }}%; background:#1A7F4A;"></div></div></td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="sous-note">
+    {{ score.total_envois }} email{{ score.total_envois|pluralize }} envoyé{{ score.total_envois|pluralize }}
+    sur {{ score.nombre_scenarios }} scénario{{ score.nombre_scenarios|pluralize }} de cette campagne.
+  </p>
+
+  <h2>Recommandations</h2>
+  <ul class="recos">
+    {% for reco in recommandations %}
+    <li>{{ reco }}</li>
+    {% endfor %}
+  </ul>
+
+  <div class="footer">
+    Rapport généré le {{ date_generation|date:"d/m/Y à H:i" }} — H-SHIELD237, IUSJC Eyang · CyberSecurity
+    Research Laboratory (CSRL). Document de simulation éducative, à usage interne.
+  </div>
+</body>
+</html>
