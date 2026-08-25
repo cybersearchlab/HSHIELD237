@@ -8,7 +8,21 @@
 
 - **Dernier jour du plan entièrement terminé et vérifié en conditions
   réelles : Jour 14** (templates par département + historique, backend et
-  frontend) — voir « Journal du 2026-08-25 (suite 3) » ci-dessous.
+  frontend) — voir « Journal du 2026-08-25 (suite 3) » ci-dessous. Complété
+  le même jour par le **sélecteur de template dans « Générer un
+  scénario »** (« Journal du 2026-08-25 (suite 4) ») — la boucle
+  création → réutilisation d'un modèle est désormais bouclée de bout en
+  bout.
+- **Session du 2026-08-25 mise en pause ici**, à la demande de
+  l'utilisateur. Tout le travail listé ci-dessus est committé et poussé
+  (dernier commit `cf1796e`), arbre de travail propre. Deux présentations
+  PowerPoint ont aussi été produites ce jour-là dans
+  `docs/presentations/` (gitignorées, non commitées) :
+  `H-SHIELD237_avancement_jour13.pptx` (rapport PDF + gouvernance
+  renforcée) et `H-SHIELD237_avancement_jour14.pptx` (templates +
+  historique + sélecteur). **Prochaine étape à la reprise : Jour 15**
+  (vérification de fidélité visuelle) — voir « Prochaine action
+  précise » tout en bas de ce document.
 - Entre les jours 13 et 14, une **refonte de la gouvernance du
   consentement** a aussi été faite et vérifiée (2026-08-25, hors plan des
   20 jours, demande directe de l'utilisateur) — voir « Journal du
