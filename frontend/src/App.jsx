@@ -6,6 +6,7 @@ import ConsentementsPage from "./pages/Consentements/ConsentementsPage";
 import DashboardPage from "./pages/Dashboard/DashboardPage";
 import GenererScenarioPage from "./pages/GenererScenario/GenererScenarioPage";
 import LoginPage from "./pages/Login/LoginPage";
+import RapportsPDFPage from "./pages/RapportsPDF/RapportsPDFPage";
 import ResultatsPage from "./pages/Resultats/ResultatsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
@@ -44,6 +45,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ResultatsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rapports"
+            element={
+              <ProtectedRoute>
+                <RapportsPDFPage />
               </ProtectedRoute>
             }
           />

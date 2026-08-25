@@ -1319,3 +1319,102 @@ tr:hover td {
   background: var(--green-light);
   color: var(--green);
 }
+
+/* ════════════════════════════════════════
+   RAPPORTS PDF
+════════════════════════════════════════ */
+.reports-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  align-items: start;
+}
+
+.rapport-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.rapport-row:last-child {
+  border-bottom: none;
+}
+
+.rapport-row:hover {
+  background: var(--surface2);
+}
+
+.rapport-row.selected {
+  background: #ebf0f9;
+  border-left: 3px solid var(--navy-mid);
+  padding-left: 15px;
+}
+
+.rapport-icon {
+  width: 40px;
+  height: 48px;
+  border-radius: 6px;
+  background: var(--red-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.rapport-icon i {
+  font-size: 19px;
+  color: var(--red);
+}
+
+.pdf-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: var(--red);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1.5px solid var(--surface);
+}
+
+.rapport-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rapport-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.rapport-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  color: var(--text3);
+  flex-wrap: wrap;
+}
+
+.rapport-actions {
+  flex-shrink: 0;
+}
+
+.preview-sticky {
+  position: sticky;
+  top: 78px;
+}
+
+.ti-loader-2 {
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
