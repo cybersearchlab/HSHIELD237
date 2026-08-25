@@ -33,22 +33,24 @@
   entièrement terminé, vérifié, **committé et poussé** (commits `0630615`,
   `7d7d8d0`).
 - Jalon 1 (jour 5) et **Jalon 2 (jour 10) : atteints.**
-- Phase 3 du sprint (« Gouvernance & résultats », jours 11-15) : **en cours**
-  — Jours 11 et 12 terminés, jour 13 backend (rapport PDF) terminé et
-  vérifié (voir « Journal du 2026-08-25 »), frontend jour 13 pas encore
-  démarré.
-- **Jour 13 (rapport PDF) — backend : ✅ terminé, vérifié en conditions
-  réelles, committé et poussé (commit `c88aa61`).**
-  `apps/rapports/` (`GenerationRapportService` + WeasyPrint) expose
-  `GET /api/campagnes/{id}/rapport/` ; 25/25 tests passent ; endpoint testé
-  en direct via curl (PDF réel de 13 Ko, `Content-Type: application/pdf`).
-  Deux sessions précédentes avaient été bloquées par une panne réseau
-  (voir « Journal du 2026-08-23 » et « Journal du 2026-08-24 ») — résolue
-  d'elle-même à la reprise. Un bug distinct (incompatibilité
-  weasyprint/pydyf) a aussi été trouvé et corrigé ce jour-là — voir
-  « Journal du 2026-08-25 ».
-  **Frontend jour 13 (page « Rapports PDF », téléchargement à la demande) :
-  pas encore démarré** — prochaine étape.
+- **Jour 13 (rapport PDF) : ✅ entièrement terminé (backend + frontend),
+  vérifié en conditions réelles (navigateur), committé et poussé.**
+  Phase 3 du sprint (« Gouvernance & résultats », jours 11-15) : **en
+  cours** — jours 11, 12 et 13 terminés ; jour 14 (templates sectoriels,
+  historique) pas encore démarré.
+  - Backend (commit `c88aa61`) : `apps/rapports/` (`GenerationRapportService`
+    + WeasyPrint) expose `GET /api/campagnes/{id}/rapport/` ; 25/25 tests
+    passent ; endpoint testé en direct via curl (PDF réel de 13 Ko,
+    `Content-Type: application/pdf`).
+  - Frontend (commit `43ffcb4`) : `RapportsPDFPage.jsx` — liste des
+    campagnes (adaptée au modèle réel : une campagne par département,
+    pas d'entreprises multiples), aperçu du score au clic (jauge +
+    barres de taux), téléchargement du PDF à la demande via blob.
+    Vérifié avec un navigateur réel (Puppeteer piloté sur Chrome
+    installé localement) : aucune erreur console, rendu fidèle à la
+    charte, flux complet connexion → sélection → téléchargement
+    fonctionnel de bout en bout (toast de succès affiché). Voir
+    « Journal du 2026-08-25 ».
 
 ## Journal du 2026-08-19 (session de suivi post-Jour 7)
 
@@ -550,9 +552,42 @@ d'elle-même.
    `git push` a de nouveau connu un ralentissement ponctuel (timeout à
    60 s) mais a abouti en relançant la commande — cohérent avec un réseau
    redevenu globalement fiable mais pas parfaitement stable.
-6. **Jour 13 frontend (page « Rapports PDF », téléchargement à la
-   demande, <10 s) : non démarré** — prochaine étape de la session
-   suivante.
+6. **Jour 13 frontend** : `frontend/src/pages/RapportsPDF/RapportsPDFPage.jsx`
+   (nouveau), `frontend/src/api/rapports.js` (nouveau,
+   `downloadRapportCampagne`, `responseType: "blob"`), route `/rapports`
+   câblée dans `App.jsx`, classes CSS ajoutées à `components.css`
+   (`.reports-layout`, `.rapport-row`, etc.).
+   - **Adaptation délibérée par rapport à `docs/maquettes/rapports.html`** :
+     la maquette d'origine liste des rapports par entreprise cliente et par
+     secteur (héritage du modèle multi-tenant abandonné au jour 6, voir
+     écart n°1 et n°30) — remplacé par une liste de campagnes (une par
+     département), cohérent avec l'adaptation déjà faite au jour 12 pour
+     Tableau de bord/Résultats.
+   - Sélectionner une campagne affiche un aperçu (jauge `ScoreRing` +
+     barres de taux, réutilisant `getScoreCampagne` du jour 12) avant
+     téléchargement — pas d'aperçu des recommandations texte (générées
+     uniquement côté backend, dans le PDF lui-même).
+   - Le bouton Télécharger déclenche `GET .../rapport/` en `blob`, crée un
+     lien `<a download>` temporaire côté client, sans fichier stocké côté
+     serveur (cohérent avec le backend, qui régénère tout à chaque appel).
+   - **Vérification en navigateur réel** (pas seulement via curl, comme
+     demandé) : script Puppeteer piloté sur le Chrome déjà installé sur la
+     machine (installation temporaire de `puppeteer-core` dans le
+     répertoire scratchpad, hors du dépôt) — connexion réelle, capture
+     d'écran de la liste et de l'aperçu, clic sur « Télécharger le PDF » :
+     aucune erreur console, toast de succès affiché, confirmant que
+     l'appel API et le flux de téléchargement fonctionnent bout en bout.
+   - **Aléa Docker Desktop rencontré** : le premier `docker compose build
+     frontend` a échoué avec `DeadlineExceeded` en résolvant les métadonnées
+     des images de base, et le conteneur `buildx_buildkit_default` s'est
+     retrouvé `Exited` — résolu par une simple relance de `docker compose
+     build`, cohérent avec les aléas buildx déjà documentés (écart
+     « Bugs connus »).
+   - **Committé et poussé** (commit `43ffcb4`).
+
+**Jour 13 est donc entièrement terminé (backend + frontend), vérifié en
+conditions réelles, committé et poussé.** Prochaine étape : **Jour 14**
+(templates sectoriels + historique des campagnes).
 
 ## Modules implémentés
 
@@ -580,7 +615,8 @@ d'elle-même.
 | `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour |
 | `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de nouvelle demande |
 | `Resultats/ResultatsPage.jsx` | ✅ Fait (jour 12) | Vue globale (jauge, comportements observés, classement des départements) et vue « Par département » (tableau détaillé), filtre par campagne individuelle. Route `/resultats` câblée dans `App.jsx` |
-| RapportsPDF, Historique, TemplatesSectoriels, Paramètres | ⬜ Pas commencé | Liens de nav déjà présents dans `navConfig.js`, pointent vers des routes non câblées (redirection vers `/`) |
+| `RapportsPDF/RapportsPDFPage.jsx` | ✅ Fait (jour 13) | Liste des campagnes (une par département), aperçu du score au clic (jauge + barres), téléchargement du PDF à la demande via blob. Route `/rapports` câblée dans `App.jsx` |
+| Historique, TemplatesSectoriels, Paramètres | ⬜ Pas commencé | Liens de nav déjà présents dans `navConfig.js`, pointent vers des routes non câblées (redirection vers `/`) |
 
 ## Décisions ou écarts par rapport au plan
 
@@ -673,18 +709,20 @@ gratuit (voir écart n°12).
 
 ## Prochaine action précise
 
-Le **backend du Jour 13 est terminé, vérifié et poussé** (commit
-`c88aa61`) — voir « Journal du 2026-08-25 ». Reste à faire :
+Le **Jour 13 est entièrement terminé** (backend commit `c88aa61`, frontend
+commit `43ffcb4`) — voir « Journal du 2026-08-25 ». Passer au **Jour 14**
+(templates sectoriels + historique des campagnes, voir
+`docs/rapport_planification.md`) :
 
-1. **FRONTEND du Jour 13** (pas encore commencé) : créer la page
-   « Rapports PDF » (s'inspirer de `docs/maquettes/rapports.html` si elle
-   existe, sinon suivre la charte des autres pages), câbler la route dans
-   `navConfig.js`/`App.jsx` (actuellement redirigée vers `/`), bouton de
-   génération à la demande qui appelle `GET /api/campagnes/{id}/rapport/`
-   et déclenche le téléchargement du PDF. Objectif cahier des charges :
-   moins de 10 secondes de génération perçue côté utilisateur.
-2. Vérifier en conditions réelles dans le navigateur (pas seulement via
-   curl) avant de committer/pousser le frontend.
-3. Comptes de test : le mot de passe de `consultant@hshield237.local` a
-   été temporairement changé puis restauré à `Consultant1234!` pendant la
-   vérification du 2026-08-25 — reste valide tel que documenté ci-dessus.
+1. **BACKEND** : `apps/templates_sectoriels/` — modèle `TemplateSectoriel`
+   (nom, secteur, prompt_structure, nombre_utilisations) et son CRUD ;
+   adapter le service de génération pour permettre de partir d'un template
+   existant ; endpoint d'historique par département (adapter la formulation
+   du plan — « par entreprise » — à la structure réelle, comme fait aux
+   jours 6/12) agrégeant les campagnes passées et l'évolution du score.
+2. **FRONTEND** : connecter `TemplatesSectoriels` et `Historique`
+   (`docs/maquettes/templates.html`, `docs/maquettes/historique.html`) aux
+   nouveaux endpoints — même adaptation multi-entreprise → département
+   probablement nécessaire que pour les jours 12 et 13.
+3. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`
+   toujours valide (voir « Bugs connus »).
