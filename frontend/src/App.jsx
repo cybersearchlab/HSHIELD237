@@ -5,10 +5,12 @@ import CampagnesPage from "./pages/Campagnes/CampagnesPage";
 import ConsentementsPage from "./pages/Consentements/ConsentementsPage";
 import DashboardPage from "./pages/Dashboard/DashboardPage";
 import GenererScenarioPage from "./pages/GenererScenario/GenererScenarioPage";
+import HistoriquePage from "./pages/Historique/HistoriquePage";
 import LoginPage from "./pages/Login/LoginPage";
 import RapportsPDFPage from "./pages/RapportsPDF/RapportsPDFPage";
 import ResponsablesPage from "./pages/Responsables/ResponsablesPage";
 import ResultatsPage from "./pages/Resultats/ResultatsPage";
+import TemplatesDepartementPage from "./pages/TemplatesDepartement/TemplatesDepartementPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -70,6 +72,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ResponsablesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/templates"
+            element={
+              <ProtectedRoute>
+                <TemplatesDepartementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/historique"
+            element={
+              <ProtectedRoute>
+                <HistoriquePage />
               </ProtectedRoute>
             }
           />

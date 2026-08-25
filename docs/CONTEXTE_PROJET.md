@@ -6,13 +6,17 @@
 
 ## État d'avancement
 
-- **Dernier travail entièrement terminé et vérifié en conditions réelles :
-  refonte de la gouvernance du consentement** (2026-08-25, hors plan des 20
-  jours, demande directe de l'utilisateur) — voir « Journal du 2026-08-25
-  (suite) » ci-dessous. Registre des responsables par département géré par
-  l'administrateur, génération automatique de la demande de consentement,
-  refus justifié par motifs, bouton « Lancer » désactivé sans validation.
-- **Dernier jour du plan entièrement terminé et vérifié en conditions réelles : Jour 12**
+- **Dernier jour du plan entièrement terminé et vérifié en conditions
+  réelles : Jour 14** (templates par département + historique, backend et
+  frontend) — voir « Journal du 2026-08-25 (suite 3) » ci-dessous.
+- Entre les jours 13 et 14, une **refonte de la gouvernance du
+  consentement** a aussi été faite et vérifiée (2026-08-25, hors plan des
+  20 jours, demande directe de l'utilisateur) — voir « Journal du
+  2026-08-25 (suite) ». Registre des responsables par département géré
+  par l'administrateur, génération automatique de la demande de
+  consentement, refus justifié par motifs, bouton « Lancer » désactivé
+  sans validation.
+- **Dernier jour du plan avant cela, également terminé et vérifié : Jour 12**
   (score de vulnérabilité + Tableau de bord/Résultats connectés aux données
   réelles) — voir « Journal du 2026-08-22 » ci-dessous.
   - ✅ Backend fait : `GET /api/campagnes/{id}/score/` et
@@ -784,6 +788,70 @@ explicitement par l'utilisateur : remplacer « secteur » par
    câblée. Prochaine étape logique mais pas encore demandée
    explicitement.
 
+## Journal du 2026-08-25 (suite 3) — Jour 14 frontend (Templates + Historique)
+
+Demande explicite : connecter les deux pages du plan aux endpoints du
+Jour 14 backend. Adaptation des deux maquettes d'origine (`templates.html`,
+`historique.html`), qui imaginaient plusieurs entreprises clientes de
+secteurs différents avec des données très riches (variables `{{}}`
+substituées, aperçu d'email simulé, statistiques par template, top
+scénarios, recommandations IA) — cohérent avec les adaptations déjà faites
+aux jours 12/13, tout ce qui n'a pas d'équivalent réel dans les endpoints
+du Jour 14 backend a été omis plutôt que fabriqué (voir écart n°30).
+
+1. **Page `TemplatesDepartement/TemplatesDepartementPage.jsx`** (route
+   `/templates`, lien de nav renommé « Templates par département ») :
+   navigation par département (10 + « Tous », avec compteur par
+   département), grille de cartes (nom, département, aperçu de la
+   structure de prompt, nombre d'utilisations, date), modale unique de
+   création/édition (nom, département, structure de prompt), suppression
+   avec confirmation. **Retiré par rapport à la maquette** (fonctionnalités
+   fictives sans équivalent backend) : variables `{{}}` substituées,
+   onglets Prévisualisation/Statistiques/Variables disponibles, taux de
+   clic par template, dupliquer/archiver.
+2. **Page `Historique/HistoriquePage.jsx`** (route `/historique`, lien de
+   nav déjà présent, maintenant câblé) : timeline chronologique de toutes
+   les campagnes (regroupées par mois, comme la maquette), calculée en
+   aplatissant la réponse de `.../departements/historique/` ; panneau de
+   détail (score, barres ouverture/clic/soumission/signalement) avec un
+   vrai bouton « Rapport PDF » qui **réutilise directement
+   `downloadRapportCampagne` du Jour 13** (`api/rapports.js`) — intégration
+   concrète entre deux jours du plan, pas juste un bouton décoratif.
+   Graphique « Évolution mensuelle » calculé à partir du score de
+   vulnérabilité moyen réel des campagnes testées, regroupées par mois de
+   création. **Retiré par rapport à la maquette** : filtre par entreprise
+   (n'existe plus), section « Scénarios les plus efficaces » et
+   encadré « Recommandation IA » (aucune donnée de ce type renvoyée par
+   l'endpoint — aurait fallu inventer des chiffres).
+3. **Nouveaux fichiers** : `api/templatesDepartement.js`, `api/historique.js`
+   ; classes CSS ajoutées à `components.css` (`.tpl-layout`, `.tpl-grid`,
+   `.tpl-card*`, `.dept-nav-item`, `.hist-layout`, `.timeline-month`,
+   `.tl-*`, `.evo-card`, `.mini-bar-chart`, `.mbc-*`, `.detail-panel`,
+   `.detail-*`, `.d-*`, `.badge-accent`).
+4. **Aléa Docker rencontré et résolu par un redémarrage ciblé** : pendant
+   la vérification en navigateur réel, le backend est resté bloqué en
+   boucle `WORKER TIMEOUT`/`SIGKILL` (la connexion restait indéfiniment sur
+   « Connexion en cours… ») — même symptôme déjà documenté plusieurs fois
+   ce sprint (jours 9, 12, 13, Jour 14 backend). Contrairement aux fois
+   précédentes où le problème s'est résolu tout seul en patientant, cette
+   fois un simple `docker compose restart backend` a suffi à débloquer
+   immédiatement les workers (connexion revenue à 0,8 s) — sans perte de
+   données, alternative plus rapide à retenir si le symptôme se reproduit.
+5. **Vérification réelle complète en navigateur** (Puppeteer/Chrome,
+   comme les jours précédents) : création d'un template depuis la page
+   Templates → apparaît immédiatement dans la bonne colonne département ;
+   page Historique → campagnes réelles affichées group par mois avec les
+   bons taux ; clic sur une campagne → panneau de détail correct ; clic
+   sur « Rapport PDF » → confirmé par requête réseau directe
+   `GET /api/campagnes/27/rapport/` → `200`. Aucune erreur console sur
+   les deux pages.
+6. **Non fait dans ce tour, hors périmètre de la demande explicite** :
+   la page Générer un scénario ne propose pas encore de sélectionner un
+   template existant au moment de la génération par IA — le backend le
+   permet déjà (Jour 14 backend, champ `template` optionnel), mais
+   `GenererScenarioPage.jsx` n'a pas été touché. Prochaine étape
+   logique si demandée.
+
 ## Modules implémentés
 
 ### Backend (`backend/apps/`)
@@ -797,7 +865,7 @@ explicitement par l'utilisateur : remplacer « secteur » par
 | `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `gouvernance` | ✅ Fait (jour 11, étendu le 2026-08-25) | Modèles `Consentement` (+ `motifs_refus`, `motif_refus_details`), `JournalAudit`, `ResponsableDepartement` (registre admin-only) ; endpoints demande (admin-only)/liste/valider/refuser (motifs obligatoires)/journal-audit/responsables (CRUD admin-only) ; `services.creer_consentement_auto` ; `tests.py` (23 tests) |
 | `rapports` | ✅ Fait (jour 13 backend) | `GenerationRapportService` (WeasyPrint 69.0), endpoint `.../rapport/`, `tests.py` (4 tests). Vérifié en direct (PDF réel via curl) et committé — voir « Journal du 2026-08-25 » |
-| `templates_departement` | 🟡 Backend fait (2026-08-25) | Renommé depuis `templates_sectoriels` du plan (voir écart n°38). Modèle `TemplateDepartement` (nom, departement, prompt_structure, nombre_utilisations), CRUD `IsConsultant\|IsAdministrateur` (`/api/templates-departement/`, filtrable par département). `ClaudeGenerationService` accepte un `template` optionnel, incrémente `nombre_utilisations` à l'usage. `tests.py` (5 tests) + `apps/generation/tests.py` (4 tests, nouveau fichier). **Frontend pas encore câblé.** |
+| `templates_departement` | ✅ Fait (backend + frontend, 2026-08-25) | Renommé depuis `templates_sectoriels` du plan (voir écart n°38). Modèle `TemplateDepartement` (nom, departement, prompt_structure, nombre_utilisations), CRUD `IsConsultant\|IsAdministrateur` (`/api/templates-departement/`, filtrable par département). `ClaudeGenerationService` accepte un `template` optionnel, incrémente `nombre_utilisations` à l'usage. `tests.py` (5 tests) + `apps/generation/tests.py` (4 tests, nouveau fichier). Frontend : `TemplatesDepartementPage.jsx`, route `/templates` |
 
 ### Frontend (`frontend/src/pages/`)
 
@@ -812,7 +880,8 @@ explicitement par l'utilisateur : remplacer « secteur » par
 | `Responsables/ResponsablesPage.jsx` | ✅ Fait (2026-08-25) | Registre des responsables par département, réservé à l'administrateur (page et lien de nav). Route `/responsables` |
 | `Resultats/ResultatsPage.jsx` | ✅ Fait (jour 12) | Vue globale (jauge, comportements observés, classement des départements) et vue « Par département » (tableau détaillé), filtre par campagne individuelle. Route `/resultats` câblée dans `App.jsx` |
 | `RapportsPDF/RapportsPDFPage.jsx` | ✅ Fait (jour 13, affiné le 2026-08-25) | Liste des campagnes (une par département), filtres par statut avec compteurs, badge de statut coloré, suppression, aperçu du score au clic (jauge + barres), téléchargement du PDF à la demande via blob. Route `/rapports` câblée dans `App.jsx` |
-| Historique, TemplatesSectoriels, Paramètres | ⬜ Pas commencé | Liens de nav déjà présents dans `navConfig.js`, pointent vers des routes non câblées (redirection vers `/`) |
+| `Historique/HistoriquePage.jsx` | ✅ Fait (2026-08-25) | Timeline chronologique de toutes les campagnes groupées par mois, panneau de détail (score + barres) avec téléchargement du rapport PDF (réutilise le Jour 13), graphique d'évolution mensuelle réel. Route `/historique` |
+| Paramètres | ⬜ Pas commencé | Lien de nav déjà présent dans `navConfig.js`, pointe vers une route non câblée (redirection vers `/`) |
 
 ## Décisions ou écarts par rapport au plan
 
@@ -935,19 +1004,25 @@ gratuit (voir écart n°12).
 
 ## Prochaine action précise
 
-Le **Jour 13 est entièrement terminé** (backend commit `c88aa61`, frontend
-commit `43ffcb4`), la **refonte de la gouvernance du consentement**
-(registre des responsables, refus justifié, blocage du bouton Lancer) est
-également terminée et vérifiée, et le **Jour 14 backend** (templates par
-département, historique) est fait et vérifié — voir « Journal du
-2026-08-25 (suite 2) ». **Reste le Jour 14 frontend :**
+**Le Jour 14 est maintenant entièrement terminé** (backend + frontend),
+vérifié en conditions réelles — voir « Journal du 2026-08-25 (suite 3) ».
+Avec lui, tout le contenu explicitement demandé jusqu'ici est fait :
+Jour 13 (rapport PDF), refonte de la gouvernance du consentement, et
+Jour 14 (templates par département + historique). Pistes pour la suite,
+aucune n'a encore été demandée explicitement :
 
-1. **FRONTEND** : connecter les pages Templates (renommer en
-   `TemplatesDepartement` ou similaire — le lien de nav « Templates
-   sectoriels » et sa route doivent aussi être renommés, cohérence avec
-   l'écart n°38) et Historique (`docs/maquettes/templates.html`,
-   `docs/maquettes/historique.html`) aux
-   nouveaux endpoints — même adaptation multi-entreprise → département
-   probablement nécessaire que pour les jours 12 et 13.
-3. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`
-   toujours valide (voir « Bugs connus »).
+1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
+   chaque page développée à sa maquette de référence — pertinent
+   maintenant que Templates et Historique viennent d'être ajoutés avec
+   des adaptations significatives par rapport aux maquettes d'origine.
+2. **Sélection d'un template existant dans « Générer un scénario »** :
+   le backend le permet déjà (Jour 14, champ `template` optionnel sur
+   `GenerationAPIView`) mais `GenererScenarioPage.jsx` n'a pas encore de
+   sélecteur pour en choisir un — actuellement seule la génération libre
+   ou l'API directe (via Thunder Client/curl) peuvent utiliser cette
+   fonctionnalité.
+3. **Jour 16** (page Paramètres) : reste le seul lien de nav encore non
+   câblé.
+4. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
+   `administrateur@hshield237.local` / `Administrateur1234!` toujours
+   valides (voir « Bugs connus »).
