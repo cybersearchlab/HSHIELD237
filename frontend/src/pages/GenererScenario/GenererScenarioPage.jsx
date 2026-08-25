@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { listCampagnes } from "../../api/campagnes";
 import { generateManuel, generateViaAPI } from "../../api/generation";
+import { listTemplates } from "../../api/templatesDepartement";
 import Layout from "../../components/Layout";
 import { departementLabel } from "../../utils/departements";
 import { statutLabel } from "../../utils/statuts";
@@ -35,6 +36,9 @@ export default function GenererScenarioPage() {
 
   // Mode API
   const [contexteAdditionnel, setContexteAdditionnel] = useState("");
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templateId, setTemplateId] = useState("");
 
   // Expéditeur et destinataire — communs aux deux modes. Le destinataire
   // peut être une adresse de diffusion (liste de distribution) représentant
@@ -121,6 +125,29 @@ export default function GenererScenarioPage() {
 
   const selectedCampagne = campagnes.find((c) => String(c.id) === String(campagneId));
 
+  // Un template n'est pertinent qu'en mode API, et seulement pour le
+  // département de la campagne sélectionnée — recharger la liste et
+  // réinitialiser le choix à chaque changement de campagne évite de
+  // proposer un template d'un autre département.
+  useEffect(() => {
+    setTemplateId("");
+    if (mode !== "api" || !selectedCampagne) {
+      setTemplates([]);
+      return;
+    }
+    let cancelled = false;
+    setTemplatesLoading(true);
+    listTemplates(selectedCampagne.departement)
+      .then((data) => !cancelled && setTemplates(data))
+      .catch(() => !cancelled && setTemplates([]))
+      .finally(() => !cancelled && setTemplatesLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, selectedCampagne?.departement, selectedCampagne?.id]);
+
+  const selectedTemplate = templates.find((t) => String(t.id) === String(templateId));
+
   function switchMode(nextMode) {
     setMode(nextMode);
     setResult(null);
@@ -187,6 +214,7 @@ export default function GenererScenarioPage() {
         expediteur_nom: expediteurNom,
         expediteur_email: expediteurEmail,
         destinataire_email: destinataireEmail,
+        template: templateId ? Number(templateId) : null,
       });
       setResult(scenario);
       showToast("Scénario généré avec succès.", "success");
@@ -307,15 +335,45 @@ export default function GenererScenarioPage() {
               </div>
 
               {mode === "api" && (
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Contexte additionnel (optionnel)</label>
-                  <textarea
-                    className="form-textarea"
-                    placeholder="Ex : Ce département utilise une messagerie Gmail, travaille avec des fournisseurs chinois, reçoit des notifications de la BEAC…"
-                    value={contexteAdditionnel}
-                    onChange={(e) => setContexteAdditionnel(e.target.value)}
-                  />
-                </div>
+                <>
+                  <div className="form-group">
+                    <label className="form-label">Template de départ (optionnel)</label>
+                    <select
+                      className="form-select"
+                      value={templateId}
+                      onChange={(e) => setTemplateId(e.target.value)}
+                      disabled={templatesLoading || templates.length === 0}
+                    >
+                      <option value="">
+                        {templatesLoading
+                          ? "Chargement…"
+                          : templates.length === 0
+                            ? "Aucun template pour ce département — scénario libre"
+                            : "Aucun — scénario libre"}
+                      </option>
+                      {templates.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.nom} ({t.nombre_utilisations}× utilisé)
+                        </option>
+                      ))}
+                    </select>
+                    {selectedTemplate && (
+                      <div className="form-hint">
+                        <i className="ti ti-info-circle" /> L'IA partira de cette structure et l'adaptera, plutôt
+                        que d'en inventer une nouvelle.
+                      </div>
+                    )}
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Contexte additionnel (optionnel)</label>
+                    <textarea
+                      className="form-textarea"
+                      placeholder="Ex : Ce département utilise une messagerie Gmail, travaille avec des fournisseurs chinois, reçoit des notifications de la BEAC…"
+                      value={contexteAdditionnel}
+                      onChange={(e) => setContexteAdditionnel(e.target.value)}
+                    />
+                  </div>
+                </>
               )}
             </div>
 

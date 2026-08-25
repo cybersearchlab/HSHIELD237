@@ -852,6 +852,42 @@ du Jour 14 backend a été omis plutôt que fabriqué (voir écart n°30).
    `GenererScenarioPage.jsx` n'a pas été touché. Prochaine étape
    logique si demandée.
 
+## Journal du 2026-08-25 (suite 4) — sélecteur de template dans « Générer un scénario »
+
+Demande explicite de suite directe au Jour 14 : combler le point 6
+ci-dessus.
+
+1. **`GenererScenarioPage.jsx`** : nouveau champ « Template de départ
+   (optionnel) » dans l'étape 1 du formulaire, visible uniquement en mode
+   API (le mode manuel ne passe jamais par `ClaudeGenerationService`,
+   donc un template n'a pas de sens pour lui). La liste se recharge
+   automatiquement (`listTemplates(departement)`) à chaque changement de
+   campagne sélectionnée, filtrée sur le département de cette campagne —
+   et le choix de template est réinitialisé à chaque fois pour ne
+   jamais proposer un template d'un autre département. Option par défaut
+   « Aucun — scénario libre » ; texte adapté si aucun template n'existe
+   encore pour ce département. Un indice s'affiche sous le menu une fois
+   un template choisi, pour rappeler qu'il sera adapté, pas repris tel
+   quel (cohérent avec le prompt réel côté backend).
+2. **`api/generation.js`** : `generateViaAPI` transmet désormais
+   `template` (id ou `null`) au backend, qui l'utilise déjà depuis le
+   Jour 14 (`GenerationAPIView` incrémente `nombre_utilisations` du
+   template après une génération réussie).
+3. **Aucun changement backend nécessaire** — le champ `template` de
+   `GenerationAPIRequestSerializer` existait déjà et n'était simplement
+   pas exploité côté frontend.
+4. **Vérification réelle en navigateur** (Puppeteer/Chrome) : campagne
+   de test créée pour le département Comptabilité (aucune campagne de ce
+   département n'existait encore) → sélecteur affiche bien les deux
+   templates déjà configurés pour Comptabilité (« Facture fournisseur »,
+   « Facture fournisseur en retard », 0× utilisé chacun) → sélection
+   d'un template affiche l'indice attendu. Aucune erreur console. La
+   génération réelle via l'API Claude n'a pas pu être testée de bout en
+   bout (clé `ANTHROPIC_API_KEY` toujours un placeholder invalide en
+   dev, voir « Variables d'environnement ») — l'incrémentation de
+   `nombre_utilisations` reste couverte par les tests automatisés
+   backend du Jour 14 (`apps/generation/tests.py`, appel Claude simulé).
+
 ## Modules implémentés
 
 ### Backend (`backend/apps/`)
@@ -875,7 +911,7 @@ du Jour 14 backend a été omis plutôt que fabriqué (voir écart n°30).
 | `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages |
 | `Dashboard/DashboardPage.jsx` | ✅ Fait (jour 12) | Métriques réelles (campagnes actives, emails envoyés, taux de clic moyen, score de vulnérabilité), comparatif par département, jauge de score (`ScoreRing`), campagnes récentes, alerte automatique si risque élevé |
 | `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal) |
-| `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour |
+| `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour. **Sélecteur de template de départ** (mode API uniquement, filtré par département de la campagne) ajouté le 2026-08-25 |
 | `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11, refondu le 2026-08-25) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de refus avec motifs à cocher + texte libre. Plus de saisie manuelle du responsable (retirée) ; section admin-only « Campagnes sans consentement » avec génération manuelle |
 | `Responsables/ResponsablesPage.jsx` | ✅ Fait (2026-08-25) | Registre des responsables par département, réservé à l'administrateur (page et lien de nav). Route `/responsables` |
 | `Resultats/ResultatsPage.jsx` | ✅ Fait (jour 12) | Vue globale (jauge, comportements observés, classement des départements) et vue « Par département » (tableau détaillé), filtre par campagne individuelle. Route `/resultats` câblée dans `App.jsx` |
@@ -1004,25 +1040,21 @@ gratuit (voir écart n°12).
 
 ## Prochaine action précise
 
-**Le Jour 14 est maintenant entièrement terminé** (backend + frontend),
-vérifié en conditions réelles — voir « Journal du 2026-08-25 (suite 3) ».
-Avec lui, tout le contenu explicitement demandé jusqu'ici est fait :
-Jour 13 (rapport PDF), refonte de la gouvernance du consentement, et
-Jour 14 (templates par département + historique). Pistes pour la suite,
+**Le Jour 14 (backend + frontend) et son complément — le sélecteur de
+template dans « Générer un scénario » — sont maintenant entièrement
+terminés**, vérifiés en conditions réelles — voir « Journal du
+2026-08-25 (suite 3) » et « (suite 4) ». Tout le contenu explicitement
+demandé jusqu'ici est fait : Jour 13 (rapport PDF), refonte de la
+gouvernance du consentement, Jour 14 (templates + historique), et son
+intégration dans la génération de scénario. Pistes pour la suite,
 aucune n'a encore été demandée explicitement :
 
 1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
    chaque page développée à sa maquette de référence — pertinent
    maintenant que Templates et Historique viennent d'être ajoutés avec
    des adaptations significatives par rapport aux maquettes d'origine.
-2. **Sélection d'un template existant dans « Générer un scénario »** :
-   le backend le permet déjà (Jour 14, champ `template` optionnel sur
-   `GenerationAPIView`) mais `GenererScenarioPage.jsx` n'a pas encore de
-   sélecteur pour en choisir un — actuellement seule la génération libre
-   ou l'API directe (via Thunder Client/curl) peuvent utiliser cette
-   fonctionnalité.
-3. **Jour 16** (page Paramètres) : reste le seul lien de nav encore non
+2. **Jour 16** (page Paramètres) : reste le seul lien de nav encore non
    câblé.
-4. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
+3. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
    `administrateur@hshield237.local` / `Administrateur1234!` toujours
    valides (voir « Bugs connus »).
