@@ -20,6 +20,9 @@ export const NAV_SECTIONS = [
     items: [
       { to: "/templates-sectoriels", label: "Templates sectoriels", icon: "ti-template" },
       { to: "/consentements", label: "Consentements", icon: "ti-shield-check" },
+      // Réservé à l'administrateur : c'est lui qui désigne le responsable
+      // habilité à valider les campagnes de chaque département.
+      { to: "/responsables", label: "Responsables", icon: "ti-users-group", roles: ["administrateur"] },
       { to: "/parametres", label: "Paramètres", icon: "ti-settings" },
     ],
   },

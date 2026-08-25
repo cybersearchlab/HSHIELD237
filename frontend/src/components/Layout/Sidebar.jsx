@@ -37,21 +37,25 @@ export default function Sidebar() {
       </div>
 
       <nav className="nav" role="navigation">
-        {NAV_SECTIONS.map((section) => (
-          <div key={section.label}>
-            <div className="nav-section">{section.label}</div>
-            {section.items.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === "/"}
-                className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}
-              >
-                <i className={`ti ${item.icon}`} aria-hidden="true" /> {item.label}
-              </NavLink>
-            ))}
-          </div>
-        ))}
+        {NAV_SECTIONS.map((section) => {
+          const items = section.items.filter((item) => !item.roles || item.roles.includes(user?.role));
+          if (items.length === 0) return null;
+          return (
+            <div key={section.label}>
+              <div className="nav-section">{section.label}</div>
+              {items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === "/"}
+                  className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}
+                >
+                  <i className={`ti ${item.icon}`} aria-hidden="true" /> {item.label}
+                </NavLink>
+              ))}
+            </div>
+          );
+        })}
       </nav>
 
       {user && (

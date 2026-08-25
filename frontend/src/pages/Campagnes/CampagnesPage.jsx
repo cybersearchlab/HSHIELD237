@@ -304,7 +304,15 @@ export default function CampagnesPage() {
                       <td>
                         <div className="actions-cell">
                           {c.statut === "en_attente" && (
-                            <div className="action-btn" onClick={() => openLaunchModal(c)} title="Lancer la campagne">
+                            <div
+                              className={`action-btn${c.perimetre_valide ? "" : " disabled"}`}
+                              onClick={() => c.perimetre_valide && openLaunchModal(c)}
+                              title={
+                                c.perimetre_valide
+                                  ? "Lancer la campagne"
+                                  : "En attente de validation du responsable désigné — voir Consentements"
+                              }
+                            >
                               <i className="ti ti-send" style={{ fontSize: 15 }} />
                             </div>
                           )}
@@ -378,9 +386,9 @@ export default function CampagnesPage() {
                     ))}
                   </select>
                   <div className="form-hint">
-                    La campagne est créée avec le statut « En attente » et un périmètre non validé — elle passera
-                    automatiquement à « validé » lorsque le responsable désigné approuvera le consentement, puis à
-                    « Active » au lancement.
+                    La demande de consentement est générée automatiquement pour le responsable configuré pour ce
+                    département (voir Responsables) — le bouton « Lancer » restera désactivé tant qu'il n'aura
+                    pas validé la campagne depuis son propre compte.
                   </div>
                 </div>
               </div>

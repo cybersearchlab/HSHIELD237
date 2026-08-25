@@ -7,6 +7,7 @@ import DashboardPage from "./pages/Dashboard/DashboardPage";
 import GenererScenarioPage from "./pages/GenererScenario/GenererScenarioPage";
 import LoginPage from "./pages/Login/LoginPage";
 import RapportsPDFPage from "./pages/RapportsPDF/RapportsPDFPage";
+import ResponsablesPage from "./pages/Responsables/ResponsablesPage";
 import ResultatsPage from "./pages/Resultats/ResultatsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
@@ -61,6 +62,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ConsentementsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/responsables"
+            element={
+              <ProtectedRoute>
+                <ResponsablesPage />
               </ProtectedRoute>
             }
           />

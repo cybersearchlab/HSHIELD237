@@ -22,6 +22,17 @@ class CampagneViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["statut", "departement"]
 
+    def perform_create(self, serializer):
+        campagne = serializer.save()
+        # Génère automatiquement la demande de consentement à partir du
+        # registre des responsables tenu par l'administrateur — ce n'est
+        # plus la personne qui crée la campagne qui saisit elle-même le
+        # nom/email du responsable habilité à la valider (voir
+        # apps.gouvernance.services.creer_consentement_auto).
+        from apps.gouvernance.services import creer_consentement_auto
+
+        creer_consentement_auto(campagne)
+
 
 class DestinataireListCreateView(APIView):
     """GET/POST /api/campagnes/<id>/destinataires/ — liste des destinataires

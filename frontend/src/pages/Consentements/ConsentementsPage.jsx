@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { listCampagnes } from "../../api/campagnes";
-import { createConsentement, listConsentements, refuserConsentement, validerConsentement } from "../../api/gouvernance";
+import { genererConsentement, listConsentements, refuserConsentement, validerConsentement } from "../../api/gouvernance";
 import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-function isValidEmail(value) {
-  return EMAIL_RE.test(value.trim());
-}
+import { MOTIFS_REFUS } from "../../utils/motifsRefus";
 
 const STATUT_FILTERS = [
   { key: "all", label: "Tous" },
@@ -39,22 +35,22 @@ function formatDateTime(iso) {
 
 export default function ConsentementsPage() {
   const { user } = useAuth();
+  const estAdministrateur = user?.role === "administrateur";
 
   const [statutFilter, setStatutFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [consentements, setConsentements] = useState([]);
+  const [campagnesSansConsentement, setCampagnesSansConsentement] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionId, setActionId] = useState(null);
+  const [genId, setGenId] = useState(null);
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [campagnes, setCampagnes] = useState([]);
-  const [campagnesLoading, setCampagnesLoading] = useState(false);
-  const [formCampagneId, setFormCampagneId] = useState("");
-  const [formResponsableNom, setFormResponsableNom] = useState("");
-  const [formResponsableEmail, setFormResponsableEmail] = useState("");
-  const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [refuserCible, setRefuserCible] = useState(null);
+  const [refuserMotifs, setRefuserMotifs] = useState([]);
+  const [refuserDetails, setRefuserDetails] = useState("");
+  const [refuserError, setRefuserError] = useState("");
+  const [refuserSaving, setRefuserSaving] = useState(false);
 
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -72,6 +68,11 @@ export default function ConsentementsPage() {
     try {
       const data = await listConsentements();
       setConsentements(data);
+      if (estAdministrateur) {
+        const campagnesData = await listCampagnes({});
+        const idsAvecConsentement = new Set(data.map((c) => c.campagne));
+        setCampagnesSansConsentement(campagnesData.results.filter((c) => !idsAvecConsentement.has(c.id)));
+      }
     } catch (err) {
       const status = err.response?.status;
       setError(
@@ -82,7 +83,8 @@ export default function ConsentementsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estAdministrateur]);
 
   useEffect(() => {
     load();
@@ -128,64 +130,54 @@ export default function ConsentementsPage() {
     }
   }
 
-  async function handleRefuser(c) {
-    if (!window.confirm(`Refuser le consentement pour la campagne ${c.campagne_departement_display} ?`)) return;
-    setActionId(c.id);
-    try {
-      await refuserConsentement(c.id);
-      showToast(`Consentement refusé pour ${c.campagne_departement_display}.`, "info");
-      load();
-    } catch (error) {
-      showToast(error.response?.data?.detail || "Impossible de refuser ce consentement.", "error");
-    } finally {
-      setActionId(null);
-    }
+  function openRefuserModal(c) {
+    setRefuserCible(c);
+    setRefuserMotifs([]);
+    setRefuserDetails("");
+    setRefuserError("");
   }
 
-  function openModal() {
-    setFormCampagneId("");
-    setFormResponsableNom("");
-    setFormResponsableEmail("");
-    setFormError("");
-    setModalOpen(true);
-    setCampagnesLoading(true);
-    listCampagnes({})
-      .then((data) => {
-        setCampagnes(data.results);
-        if (data.results.length > 0) setFormCampagneId(String(data.results[0].id));
-      })
-      .catch(() => showToast("Impossible de charger la liste des campagnes.", "error"))
-      .finally(() => setCampagnesLoading(false));
+  function toggleMotif(value) {
+    setRefuserMotifs((prev) => (prev.includes(value) ? prev.filter((m) => m !== value) : [...prev, value]));
   }
 
-  async function handleCreate(event) {
+  async function handleRefuserSubmit(event) {
     event.preventDefault();
-    setFormError("");
-    if (!formCampagneId) {
-      setFormError("Sélectionnez une campagne.");
+    setRefuserError("");
+    if (refuserMotifs.length === 0) {
+      setRefuserError("Sélectionnez au moins un motif de refus.");
       return;
     }
-    if (!formResponsableNom.trim()) {
-      setFormError("Le nom du responsable est requis.");
+    if (refuserMotifs.includes("autre") && !refuserDetails.trim()) {
+      setRefuserError("Précisez le motif dans le champ de texte pour « Autre ».");
       return;
     }
-    if (!isValidEmail(formResponsableEmail)) {
-      setFormError("Email du responsable non valide.");
-      return;
-    }
-    setSaving(true);
+    setRefuserSaving(true);
     try {
-      await createConsentement(formCampagneId, {
-        responsable_nom: formResponsableNom,
-        responsable_email: formResponsableEmail,
-      });
-      setModalOpen(false);
-      showToast("Demande de consentement envoyée.", "success");
+      await refuserConsentement(refuserCible.id, { motifs: refuserMotifs, details: refuserDetails.trim() });
+      showToast(`Consentement refusé pour ${refuserCible.campagne_departement_display}.`, "info");
+      setRefuserCible(null);
       load();
     } catch (error) {
-      setFormError(error.response?.data?.detail || "Impossible de créer cette demande.");
+      setRefuserError(error.response?.data?.detail || "Impossible de refuser ce consentement.");
     } finally {
-      setSaving(false);
+      setRefuserSaving(false);
+    }
+  }
+
+  async function handleGenerer(campagne) {
+    setGenId(campagne.id);
+    try {
+      await genererConsentement(campagne.id);
+      showToast(`Demande de consentement générée pour la campagne #${campagne.id}.`, "success");
+      load();
+    } catch (error) {
+      showToast(
+        error.response?.data?.detail || "Impossible de générer cette demande.",
+        "error"
+      );
+    } finally {
+      setGenId(null);
     }
   }
 
@@ -232,6 +224,65 @@ export default function ConsentementsPage() {
         </div>
       </div>
 
+      <div
+        style={{
+          marginBottom: 16,
+          padding: "14px 18px",
+          background: "var(--blue-light)",
+          border: "1px solid rgba(26,95,160,.2)",
+          borderRadius: "var(--radius)",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 10,
+          fontSize: 12.5,
+          color: "var(--text2)",
+        }}
+      >
+        <i className="ti ti-info-circle" style={{ color: "var(--blue)", fontSize: 16, flexShrink: 0, marginTop: 1 }} />
+        <span>
+          <strong>Cadre de gouvernance H-SHIELD237 :</strong> chaque demande de consentement est générée
+          automatiquement à partir du responsable configuré par l'administrateur pour le département de la
+          campagne (voir Responsables) — plus aucune saisie libre par la personne qui crée la campagne. Aucune
+          campagne ne peut être lancée sans validation explicite, authentifiée et horodatée du responsable
+          désigné, effectuée depuis son propre compte. Chaque décision est journalisée dans le registre d'audit.
+        </span>
+      </div>
+
+      {estAdministrateur && campagnesSansConsentement.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-header">
+            <div>
+              <div className="card-title">Campagnes sans demande de consentement</div>
+              <div className="card-sub">
+                Aucun responsable n'était configuré pour ce département au moment de la création — générez la
+                demande manuellement une fois le registre complété (voir Responsables).
+              </div>
+            </div>
+          </div>
+          <div className="consent-timeline">
+            {campagnesSansConsentement.map((c) => (
+              <div className="consent-row" key={c.id}>
+                <div className="consent-status-icon" style={{ background: "rgba(90,102,120,.15)" }}>
+                  <i className="ti ti-alert-triangle" style={{ color: "var(--text3)" }} />
+                </div>
+                <div className="consent-body">
+                  <div className="consent-title">Campagne #{c.id} — {c.departement_display}</div>
+                </div>
+                <div className="consent-actions">
+                  <button
+                    className="btn btn-sm btn-primary"
+                    disabled={genId === c.id}
+                    onClick={() => handleGenerer(c)}
+                  >
+                    {genId === c.id ? "…" : "Générer la demande"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="camp-toolbar">
         <div className="search-wrap">
           <i className="ti ti-search" />
@@ -253,9 +304,6 @@ export default function ConsentementsPage() {
             </button>
           ))}
         </div>
-        <button type="button" className="btn btn-primary" onClick={openModal}>
-          <i className="ti ti-plus" /> Nouvelle demande
-        </button>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -301,10 +349,27 @@ export default function ConsentementsPage() {
                         En attente de validation par {c.responsable_nom}.
                       </div>
                     )}
-                    {c.statut !== "en_attente" && (
+                    {c.statut === "valide" && (
                       <div className="consent-signature">
-                        <i className={`ti ${c.statut === "valide" ? "ti-signature" : "ti-x"}`} />
-                        {c.statut === "valide" ? "Validé" : "Refusé"} le {formatDateTime(c.date_validation)}
+                        <i className="ti ti-signature" />
+                        Validé le {formatDateTime(c.date_validation)}
+                      </div>
+                    )}
+                    {c.statut === "refuse" && (
+                      <div className="consent-signature" style={{ flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
+                        <div>
+                          <i className="ti ti-x" /> Refusé le {formatDateTime(c.date_validation)}
+                        </div>
+                        {c.motifs_refus_display?.length > 0 && (
+                          <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text2)" }}>
+                            {c.motifs_refus_display.map((m) => (
+                              <li key={m}>{m}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {c.motif_refus_details && (
+                          <div style={{ fontStyle: "italic", color: "var(--text2)" }}>« {c.motif_refus_details} »</div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -315,7 +380,7 @@ export default function ConsentementsPage() {
                           className="btn btn-sm"
                           style={{ color: "var(--red)", borderColor: "var(--red-border)" }}
                           disabled={actionId === c.id}
-                          onClick={() => handleRefuser(c)}
+                          onClick={() => openRefuserModal(c)}
                         >
                           Refuser
                         </button>
@@ -335,93 +400,61 @@ export default function ConsentementsPage() {
         </div>
       </div>
 
-      <div
-        style={{
-          marginTop: 16,
-          padding: "14px 18px",
-          background: "var(--blue-light)",
-          border: "1px solid rgba(26,95,160,.2)",
-          borderRadius: "var(--radius)",
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 10,
-          fontSize: 12.5,
-          color: "var(--text2)",
-        }}
-      >
-        <i className="ti ti-info-circle" style={{ color: "var(--blue)", fontSize: 16, flexShrink: 0, marginTop: 1 }} />
-        <span>
-          <strong>Cadre de gouvernance H-SHIELD237 :</strong> aucune campagne ne peut être lancée sans validation
-          explicite, authentifiée et horodatée du responsable habilité — effectuée depuis l'application, jamais
-          déclarée par le consultant. Chaque décision est journalisée dans le registre d'audit.
-        </span>
-      </div>
-
-      {modalOpen && (
-        <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && setModalOpen(false)}>
+      {refuserCible && (
+        <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && setRefuserCible(null)}>
           <div className="modal">
             <div className="modal-header">
-              <h3>Nouvelle demande de consentement</h3>
-              <div className="close-btn" role="button" tabIndex={0} onClick={() => setModalOpen(false)}>
+              <h3>Refuser — {refuserCible.campagne_departement_display}</h3>
+              <div className="close-btn" role="button" tabIndex={0} onClick={() => setRefuserCible(null)}>
                 <i className="ti ti-x" />
               </div>
             </div>
-            <form onSubmit={handleCreate}>
+            <form onSubmit={handleRefuserSubmit}>
               <div className="modal-body">
                 <div className="form-group">
-                  <label className="form-label">Campagne *</label>
-                  <select
-                    className="form-select"
-                    value={formCampagneId}
-                    onChange={(e) => setFormCampagneId(e.target.value)}
-                  >
-                    {campagnesLoading && <option value="">Chargement…</option>}
-                    {!campagnesLoading && campagnes.length === 0 && (
-                      <option value="">Aucune campagne disponible</option>
-                    )}
-                    {campagnes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.departement_display} (#{c.id})
-                      </option>
+                  <label className="form-label">Motif du refus * (une ou plusieurs raisons)</label>
+                  <div className="checkbox-group">
+                    {MOTIFS_REFUS.map((m) => (
+                      <label className="form-check" key={m.value}>
+                        <input
+                          type="checkbox"
+                          checked={refuserMotifs.includes(m.value)}
+                          onChange={() => toggleMotif(m.value)}
+                        />
+                        {m.label}
+                      </label>
                     ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Nom du responsable habilité *</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    placeholder="Ex : M. Jean-Pierre MBARGA, Directeur Général"
-                    value={formResponsableNom}
-                    onChange={(e) => setFormResponsableNom(e.target.value)}
-                  />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Email du responsable *</label>
-                  <input
-                    className="form-input"
-                    type="email"
-                    placeholder="responsable@entreprise.cm"
-                    value={formResponsableEmail}
-                    onChange={(e) => setFormResponsableEmail(e.target.value)}
-                  />
-                  <div className="form-hint">
-                    Le responsable devra se connecter à la plateforme avec un compte dont l'email correspond
-                    exactement à celui-ci pour pouvoir valider ou refuser cette demande.
                   </div>
                 </div>
-                {formError && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">
+                    Précisions{refuserMotifs.includes("autre") ? " *" : " (optionnel)"}
+                  </label>
+                  <textarea
+                    className="form-textarea"
+                    rows={3}
+                    placeholder="Détaillez le contexte de ce refus…"
+                    value={refuserDetails}
+                    onChange={(e) => setRefuserDetails(e.target.value)}
+                  />
+                </div>
+                {refuserError && (
                   <div className="form-error-text">
-                    <i className="ti ti-alert-circle" /> {formError}
+                    <i className="ti ti-alert-circle" /> {refuserError}
                   </div>
                 )}
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn" onClick={() => setModalOpen(false)}>
+                <button type="button" className="btn" onClick={() => setRefuserCible(null)}>
                   Annuler
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? "Envoi…" : "Envoyer la demande"}
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ background: "var(--red)", borderColor: "var(--red)" }}
+                  disabled={refuserSaving}
+                >
+                  {refuserSaving ? "Envoi…" : "Confirmer le refus"}
                 </button>
               </div>
             </form>

@@ -6,7 +6,8 @@ from apps.campagnes.models import Campagne, Departement, ScenarioPhishing
 from apps.simulation.models import ConfigurationEnvoi
 from apps.simulation.services import EnvoiCampagneError, EnvoiCampagneService
 
-from .models import Consentement, JournalAudit, StatutConsentement
+from .models import Consentement, JournalAudit, MotifRefus, ResponsableDepartement, StatutConsentement
+from .services import creer_consentement_auto
 
 
 def _creer_campagne_prete_a_envoyer():
@@ -111,7 +112,9 @@ class ValidationConsentementTests(TestCase):
 
     def test_refus_par_le_bon_responsable(self):
         self.client.force_login(self.responsable)
-        response = self.client.post(self.refuser_url)
+        response = self.client.post(
+            self.refuser_url, {"motifs": [MotifRefus.TIMING_INAPPROPRIE]}, content_type="application/json"
+        )
         self.assertEqual(response.status_code, 200)
         self.consentement.refresh_from_db()
         self.assertEqual(self.consentement.statut, StatutConsentement.REFUSE)
@@ -175,3 +178,185 @@ class ListeConsentementsTests(TestCase):
         data = response.json()
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["responsable_email"], "jeanne@entreprise.cm")
+
+
+class RegistreResponsablesTests(TestCase):
+    """Le registre des responsables par département n'est gérable que par
+    un administrateur — un seul responsable par département."""
+
+    def setUp(self):
+        self.admin = Utilisateur.objects.create_user(
+            username="admin1", email="admin1@entreprise.cm", password="Admin1234!", role=Role.ADMINISTRATEUR
+        )
+        self.consultant = Utilisateur.objects.create_user(
+            username="consultant3", email="consultant3@entreprise.cm", password="Consultant1234!", role=Role.CONSULTANT
+        )
+        self.list_url = reverse("gouvernance-responsables")
+
+    def test_admin_peut_creer_un_responsable(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            self.list_url,
+            {"departement": Departement.IT, "nom": "Awa NKOLO", "email": "awa.nkolo@entreprise.cm"},
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(ResponsableDepartement.objects.count(), 1)
+
+    def test_consultant_ne_peut_pas_creer_un_responsable(self):
+        self.client.force_login(self.consultant)
+        response = self.client.post(
+            self.list_url,
+            {"departement": Departement.IT, "nom": "Awa NKOLO", "email": "awa.nkolo@entreprise.cm"},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_un_seul_responsable_par_departement(self):
+        ResponsableDepartement.objects.create(departement=Departement.IT, nom="Awa", email="awa@entreprise.cm")
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            self.list_url,
+            {"departement": Departement.IT, "nom": "Autre", "email": "autre@entreprise.cm"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(ResponsableDepartement.objects.count(), 1)
+
+    def test_admin_peut_modifier_et_supprimer(self):
+        responsable = ResponsableDepartement.objects.create(
+            departement=Departement.IT, nom="Awa", email="awa@entreprise.cm"
+        )
+        self.client.force_login(self.admin)
+        detail_url = reverse("gouvernance-responsable-detail", kwargs={"responsable_id": responsable.id})
+        response = self.client.patch(
+            detail_url, {"nom": "Awa NKOLO"}, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        responsable.refresh_from_db()
+        self.assertEqual(responsable.nom, "Awa NKOLO")
+
+        response = self.client.delete(detail_url)
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(ResponsableDepartement.objects.count(), 0)
+
+
+class ConsentementAutomatiqueTests(TestCase):
+    """Une nouvelle campagne doit générer automatiquement sa demande de
+    consentement à partir du registre — plus de saisie libre du
+    responsable par la personne qui crée la campagne."""
+
+    def test_creation_automatique_si_responsable_configure(self):
+        ResponsableDepartement.objects.create(
+            departement=Departement.IT, nom="Awa NKOLO", email="awa.nkolo@entreprise.cm"
+        )
+        campagne = Campagne.objects.create(departement=Departement.IT)
+        consentement = creer_consentement_auto(campagne)
+        # deuxième appel (simulateur du hook perform_create) : idempotent
+        self.assertIsNone(creer_consentement_auto(campagne))
+        self.assertIsNotNone(consentement)
+        campagne.refresh_from_db()
+        self.assertEqual(campagne.consentement.responsable_nom, "Awa NKOLO")
+        self.assertEqual(campagne.consentement.responsable_email, "awa.nkolo@entreprise.cm")
+        self.assertEqual(campagne.consentement.statut, StatutConsentement.EN_ATTENTE)
+
+    def test_aucune_creation_si_responsable_non_configure(self):
+        campagne = Campagne.objects.create(departement=Departement.JURIDIQUE)
+        self.assertIsNone(creer_consentement_auto(campagne))
+        self.assertFalse(hasattr(campagne, "consentement"))
+
+    def test_creation_via_api_campagnes(self):
+        ResponsableDepartement.objects.create(
+            departement=Departement.RH, nom="Paul ETOUNDI", email="paul.etoundi@entreprise.cm"
+        )
+        admin = Utilisateur.objects.create_user(
+            username="admin2", email="admin2@entreprise.cm", password="Admin1234!", role=Role.ADMINISTRATEUR
+        )
+        self.client.force_login(admin)
+        response = self.client.post("/api/campagnes/", {"departement": Departement.RH})
+        self.assertEqual(response.status_code, 201)
+        campagne = Campagne.objects.get(pk=response.json()["id"])
+        self.assertTrue(hasattr(campagne, "consentement"))
+        self.assertEqual(campagne.consentement.responsable_email, "paul.etoundi@entreprise.cm")
+
+
+class GenerationManuelleConsentementTests(TestCase):
+    """POST /api/gouvernance/campagnes/<id>/consentement/ reste disponible
+    en secours (département sans responsable au moment de la création de
+    la campagne) mais réservé à l'administrateur, et dérive toujours le
+    nom/email depuis le registre — jamais depuis le corps de la requête."""
+
+    def setUp(self):
+        self.admin = Utilisateur.objects.create_user(
+            username="admin3", email="admin3@entreprise.cm", password="Admin1234!", role=Role.ADMINISTRATEUR
+        )
+        self.consultant = Utilisateur.objects.create_user(
+            username="consultant4", email="consultant4@entreprise.cm", password="Consultant1234!", role=Role.CONSULTANT
+        )
+        self.campagne = Campagne.objects.create(departement=Departement.MARKETING)
+        self.url = reverse("gouvernance-consentement-campagne", kwargs={"campagne_id": self.campagne.id})
+
+    def test_consultant_ne_peut_plus_generer_la_demande(self):
+        self.client.force_login(self.consultant)
+        response = self.client.post(self.url, {"responsable_nom": "X", "responsable_email": "x@entreprise.cm"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_400_sans_responsable_configure(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 400)
+
+    def test_ignore_les_valeurs_du_corps_de_la_requete(self):
+        ResponsableDepartement.objects.create(
+            departement=Departement.MARKETING, nom="Vraie Personne", email="vraie@entreprise.cm"
+        )
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            self.url, {"responsable_nom": "Faux nom injecté", "responsable_email": "faux@pirate.cm"}
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["responsable_nom"], "Vraie Personne")
+        self.assertEqual(response.json()["responsable_email"], "vraie@entreprise.cm")
+
+
+class RefusJustifieTests(TestCase):
+    """Un refus doit être justifié par au moins un motif, avec un texte
+    obligatoire si le motif « Autre » est sélectionné."""
+
+    def setUp(self):
+        self.campagne = Campagne.objects.create(departement=Departement.ACHATS)
+        self.consentement = Consentement.objects.create(
+            campagne=self.campagne, responsable_nom="Resp", responsable_email="resp@entreprise.cm"
+        )
+        self.responsable = Utilisateur.objects.create_user(
+            username="resp1", email="resp@entreprise.cm", password="Responsable1234!", role=Role.RESPONSABLE
+        )
+        self.refuser_url = reverse("gouvernance-consentement-refuser", kwargs={"consentement_id": self.consentement.id})
+        self.client.force_login(self.responsable)
+
+    def test_refus_sans_motif_rejete(self):
+        response = self.client.post(self.refuser_url, {}, content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_refus_avec_motif_predefini(self):
+        response = self.client.post(
+            self.refuser_url,
+            {"motifs": [MotifRefus.TIMING_INAPPROPRIE]},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.consentement.refresh_from_db()
+        self.assertEqual(self.consentement.motifs_refus, [MotifRefus.TIMING_INAPPROPRIE])
+
+    def test_refus_autre_sans_details_rejete(self):
+        response = self.client.post(
+            self.refuser_url, {"motifs": [MotifRefus.AUTRE]}, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_refus_autre_avec_details_accepte(self):
+        response = self.client.post(
+            self.refuser_url,
+            {"motifs": [MotifRefus.AUTRE], "details": "Contexte particulier à préciser."},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.consentement.refresh_from_db()
+        self.assertEqual(self.consentement.motif_refus_details, "Contexte particulier à préciser.")

@@ -6,7 +6,13 @@
 
 ## État d'avancement
 
-- **Dernier jour entièrement terminé et vérifié en conditions réelles : Jour 12**
+- **Dernier travail entièrement terminé et vérifié en conditions réelles :
+  refonte de la gouvernance du consentement** (2026-08-25, hors plan des 20
+  jours, demande directe de l'utilisateur) — voir « Journal du 2026-08-25
+  (suite) » ci-dessous. Registre des responsables par département géré par
+  l'administrateur, génération automatique de la demande de consentement,
+  refus justifié par motifs, bouton « Lancer » désactivé sans validation.
+- **Dernier jour du plan entièrement terminé et vérifié en conditions réelles : Jour 12**
   (score de vulnérabilité + Tableau de bord/Résultats connectés aux données
   réelles) — voir « Journal du 2026-08-22 » ci-dessous.
   - ✅ Backend fait : `GET /api/campagnes/{id}/score/` et
@@ -589,6 +595,127 @@ d'elle-même.
 conditions réelles, committé et poussé.** Prochaine étape : **Jour 14**
 (templates sectoriels + historique des campagnes).
 
+## Journal du 2026-08-25 (suite) — refonte de la gouvernance du consentement
+
+Demande directe de l'utilisateur, hors plan des 20 jours, après le Jour 13 :
+trois changements liés au cadre de gouvernance (module `apps.gouvernance`,
+Jour 11), fondés sur trois principes de sécurité — le responsable qui
+valide une campagne ne doit plus être désigné par la personne qui crée la
+campagne, un refus doit être justifié, et le lancement doit être
+visuellement impossible tant que le consentement n'est pas validé.
+
+### 1. Registre des responsables par département (nouveau)
+
+1. **Nouveau modèle `ResponsableDepartement`** (`apps/gouvernance/models.py`,
+   migration `0002`) : un seul responsable par département
+   (`departement` unique), `nom`, `email`. Géré exclusivement par
+   l'administrateur (`IsAdministrateur`) via `GET/POST
+   /api/gouvernance/responsables/` et `PATCH/DELETE
+   /api/gouvernance/responsables/<id>/`.
+2. **`Consentement.responsable_nom`/`responsable_email` ne sont plus
+   jamais saisis par le client** — passés en `read_only_fields` dans
+   `ConsentementSerializer`. Ils sont désormais toujours dérivés du
+   registre côté serveur (`apps/gouvernance/services.py`,
+   `creer_consentement_auto`).
+3. **Génération automatique à la création de la campagne** :
+   `CampagneViewSet.perform_create` (`apps/campagnes/views.py`) appelle
+   `creer_consentement_auto(campagne)` juste après la sauvegarde — si un
+   responsable est configuré pour le département de la campagne, la
+   demande de consentement est créée immédiatement, au statut « en
+   attente », sans aucune action supplémentaire du consultant.
+4. **Écart n°36 — la personne qui crée une campagne ne désigne plus le
+   responsable qui doit la valider**, changement de sécurité explicite
+   demandé par l'utilisateur : auparavant, `ConsentementsPage.jsx`
+   proposait un formulaire libre (nom + email) pour n'importe quel
+   consultant/administrateur à la création de la demande — un consultant
+   aurait pu, par erreur ou intentionnellement, désigner n'importe quelle
+   adresse email comme « responsable », contournant le contrôle. Ce
+   formulaire a été **entièrement retiré** de `ConsentementsPage.jsx`.
+5. **Filet de sécurité pour les départements sans responsable configuré
+   au moment de la création** : `POST
+   /api/gouvernance/campagnes/<id>/consentement/` reste disponible mais
+   **restreint à l'administrateur uniquement** (`get_permissions()` sur
+   `ConsentementCampagneView`, GET reste accessible à
+   consultant/administrateur) — il dérive toujours le nom/email depuis le
+   registre (jamais depuis le corps de la requête, testé explicitement,
+   voir `GenerationManuelleConsentementTests.test_ignore_les_valeurs_du_corps_de_la_requete`)
+   et renvoie `400` si le département n'a toujours aucun responsable
+   configuré. Section « Campagnes sans demande de consentement »
+   ajoutée à `ConsentementsPage.jsx` (visible administrateur uniquement),
+   listant les campagnes sans consentement (diff client-side entre
+   `listCampagnes` et `listConsentements`) avec un bouton « Générer la
+   demande ».
+6. **Nouvelle page frontend `Responsables/ResponsablesPage.jsx`**
+   (route `/responsables`, lien de nav réservé à l'administrateur — voir
+   point 8) : tableau des 10 départements, chacun affichant son
+   responsable configuré ou « Non configuré », avec ajout/modification/
+   suppression via une modale simple (nom + email).
+7. **Compte de test créé** : `administrateur@hshield237.local` /
+   `Administrateur1234!` (rôle administrateur) — n'existait pas
+   auparavant (l'ancien `admin@hshield237.local` a le rôle `employe`,
+   nom historique trompeur, non modifié pour ne pas casser d'éventuel
+   usage existant — voir « Bugs connus »/« Comptes de test »).
+8. **Navigation filtrée par rôle** (nouveauté, `Sidebar.jsx` +
+   `navConfig.js`) : les entrées de `NAV_SECTIONS` acceptent désormais un
+   champ optionnel `roles` (tableau) ; une section entière disparaît si
+   plus aucun de ses items n'est visible pour le rôle courant. Seul
+   l'item « Responsables » utilise ce filtre pour l'instant
+   (`roles: ["administrateur"]`).
+
+### 2. Justificatif de refus obligatoire
+
+9. **`Consentement.motifs_refus`** (`ArrayField`, choix `MotifRefus` :
+   périmètre trop large / timing inapproprié / scénario inadapté /
+   informations insuffisantes / autre) et **`motif_refus_details`**
+   (texte libre, obligatoire uniquement si « Autre » est coché).
+10. **`ConsentementRefuserView.post`** exige désormais au moins un motif
+    valide dans `motifs` (`400` sinon) et un texte non vide dans
+    `details` si `autre` est présent parmi les motifs cochés. Les motifs
+    et le texte sont journalisés dans `JournalAudit`.
+11. **Frontend** : la simple `window.confirm()` a été remplacée par une
+    vraie modale (`ConsentementsPage.jsx`) avec cases à cocher pour
+    chaque motif prédéfini + un champ texte pour « Autre » ; les motifs
+    et le texte libre sont affichés sur la ligne du consentement refusé
+    (liste à puces + citation).
+
+### 3. Bouton « Lancer » désactivé sans consentement validé
+
+12. **Écart n°37 — gap comblé** : jusqu'ici, `CampagnesPage.jsx` ne
+    vérifiait jamais `campagne.perimetre_valide` côté frontend avant
+    d'ouvrir la modale de lancement — seul le backend refusait l'envoi
+    (`400`), après que l'utilisateur ait déjà rempli tout le formulaire
+    d'expéditeur. Corrigé : le bouton « Lancer » (icône avion en papier)
+    est maintenant visuellement désactivé (`.action-btn.disabled`,
+    opacité réduite, `cursor: not-allowed`) et son clic ignoré tant que
+    `perimetre_valide` est `false`, avec une info-bulle explicite («En
+    attente de validation du responsable désigné»).
+
+### Vérification réelle complète
+
+13. **Backend** : 39/39 tests passent (13 nouveaux : registre des
+    responsables — CRUD et permissions admin-only —, création
+    automatique du consentement à la création d'une campagne via l'API,
+    génération manuelle admin-only dérivant toujours du registre, refus
+    avec/sans motif). Un test préexistant
+    (`test_refus_par_le_bon_responsable`) a dû être adapté pour fournir
+    un motif, la nouvelle exigence de justification le faisant échouer
+    autrement.
+14. **Frontend, en navigateur réel** (Puppeteer/Chrome, comme pour le
+    Jour 13) : administrateur configure un responsable pour le
+    département Informatique → création d'une campagne pour ce
+    département → demande de consentement visible immédiatement dans
+    Consentements avec le bon nom/email, sans aucune saisie manuelle →
+    bouton Lancer confirmé grisé (`action-btn disabled`) sur la nouvelle
+    campagne, actif sur une campagne déjà validée → connexion avec le
+    compte responsable → refus avec motif « Le moment choisi n'est pas
+    approprié » → motif affiché correctement sur la ligne refusée,
+    compteurs mis à jour. Aucune erreur console (une paire de `403` sur
+    `/api/campagnes/` et `/api/campagnes/departements/score/` isolée et
+    confirmée **préexistante, sans lien** : la page Tableau de bord
+    (racine `/`) n'a jamais été accessible au rôle responsable, qui y
+    atterrit brièvement après connexion avant toute redirection
+    manuelle — hors périmètre de cette session).
+
 ## Modules implémentés
 
 ### Backend (`backend/apps/`)
@@ -600,7 +727,7 @@ conditions réelles, committé et poussé.** Prochaine étape : **Jour 14**
 | `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests) |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
 | `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
-| `gouvernance` | ✅ Fait (jour 11) | Modèles `Consentement`, `JournalAudit` ; endpoints demande/liste/valider/refuser/journal-audit ; `tests.py` (10 tests) |
+| `gouvernance` | ✅ Fait (jour 11, étendu le 2026-08-25) | Modèles `Consentement` (+ `motifs_refus`, `motif_refus_details`), `JournalAudit`, `ResponsableDepartement` (registre admin-only) ; endpoints demande (admin-only)/liste/valider/refuser (motifs obligatoires)/journal-audit/responsables (CRUD admin-only) ; `services.creer_consentement_auto` ; `tests.py` (23 tests) |
 | `rapports` | ✅ Fait (jour 13 backend) | `GenerationRapportService` (WeasyPrint 69.0), endpoint `.../rapport/`, `tests.py` (4 tests). Vérifié en direct (PDF réel via curl) et committé — voir « Journal du 2026-08-25 » |
 | `templates_sectoriels` | ⬜ Pas commencé | Prévu jour 14 |
 
@@ -613,7 +740,8 @@ conditions réelles, committé et poussé.** Prochaine étape : **Jour 14**
 | `Dashboard/DashboardPage.jsx` | ✅ Fait (jour 12) | Métriques réelles (campagnes actives, emails envoyés, taux de clic moyen, score de vulnérabilité), comparatif par département, jauge de score (`ScoreRing`), campagnes récentes, alerte automatique si risque élevé |
 | `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal) |
 | `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour |
-| `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de nouvelle demande |
+| `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11, refondu le 2026-08-25) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de refus avec motifs à cocher + texte libre. Plus de saisie manuelle du responsable (retirée) ; section admin-only « Campagnes sans consentement » avec génération manuelle |
+| `Responsables/ResponsablesPage.jsx` | ✅ Fait (2026-08-25) | Registre des responsables par département, réservé à l'administrateur (page et lien de nav). Route `/responsables` |
 | `Resultats/ResultatsPage.jsx` | ✅ Fait (jour 12) | Vue globale (jauge, comportements observés, classement des départements) et vue « Par département » (tableau détaillé), filtre par campagne individuelle. Route `/resultats` câblée dans `App.jsx` |
 | `RapportsPDF/RapportsPDFPage.jsx` | ✅ Fait (jour 13, affiné le 2026-08-25) | Liste des campagnes (une par département), filtres par statut avec compteurs, badge de statut coloré, suppression, aperçu du score au clic (jauge + barres), téléchargement du PDF à la demande via blob. Route `/rapports` câblée dans `App.jsx` |
 | Historique, TemplatesSectoriels, Paramètres | ⬜ Pas commencé | Liens de nav déjà présents dans `navConfig.js`, pointent vers des routes non câblées (redirection vers `/`) |
@@ -735,14 +863,16 @@ gratuit (voir écart n°12).
   relançant simplement la commande — réseau globalement fiable mais pas
   parfaitement stable.
 - **Anomalie observée, cause non confirmée** : plusieurs campagnes de test créées en cours de session (ids 17, 20) ont disparu de la base entre deux vérifications, alors que `db_data` est un volume Docker nommé censé persister. Sans certitude sur la cause exacte (possiblement lié aux redémarrages Docker Desktop de la session) — à surveiller ; aucune perte de données de production n'est en jeu (uniquement des campagnes de test).
-- Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe), `consultant@hshield237.local` / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` / `Responsable1234!` (rôle responsable, créé le 2026-08-21 pour tester la validation de consentement).
+- Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe — nom trompeur, historique, non corrigé pour ne rien casser), `consultant@hshield237.local` / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` / `Responsable1234!` (rôle responsable, créé le 2026-08-21 pour tester la validation de consentement), `administrateur@hshield237.local` / `Administrateur1234!` (rôle administrateur, créé le 2026-08-25 pour tester le registre des responsables).
 
 ## Prochaine action précise
 
 Le **Jour 13 est entièrement terminé** (backend commit `c88aa61`, frontend
-commit `43ffcb4`) — voir « Journal du 2026-08-25 ». Passer au **Jour 14**
-(templates sectoriels + historique des campagnes, voir
-`docs/rapport_planification.md`) :
+commit `43ffcb4`), et la **refonte de la gouvernance du consentement**
+(registre des responsables, refus justifié, blocage du bouton Lancer) est
+également terminée et vérifiée — voir « Journal du 2026-08-25 (suite) ».
+Passer au **Jour 14** (templates sectoriels + historique des campagnes,
+voir `docs/rapport_planification.md`) :
 
 1. **BACKEND** : `apps/templates_sectoriels/` — modèle `TemplateSectoriel`
    (nom, secteur, prompt_structure, nombre_utilisations) et son CRUD ;

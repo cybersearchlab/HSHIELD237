@@ -6,6 +6,8 @@ from .views import (
     ConsentementRefuserView,
     ConsentementValiderView,
     JournalAuditListView,
+    ResponsableDepartementDetailView,
+    ResponsableDepartementListCreateView,
 )
 
 urlpatterns = [
@@ -26,4 +28,10 @@ urlpatterns = [
         name="gouvernance-consentement-refuser",
     ),
     path("journal-audit/", JournalAuditListView.as_view(), name="gouvernance-journal-audit"),
+    path("responsables/", ResponsableDepartementListCreateView.as_view(), name="gouvernance-responsables"),
+    path(
+        "responsables/<int:responsable_id>/",
+        ResponsableDepartementDetailView.as_view(),
+        name="gouvernance-responsable-detail",
+    ),
 ]
