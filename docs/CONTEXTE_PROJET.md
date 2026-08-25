@@ -615,7 +615,7 @@ conditions réelles, committé et poussé.** Prochaine étape : **Jour 14**
 | `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour |
 | `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de nouvelle demande |
 | `Resultats/ResultatsPage.jsx` | ✅ Fait (jour 12) | Vue globale (jauge, comportements observés, classement des départements) et vue « Par département » (tableau détaillé), filtre par campagne individuelle. Route `/resultats` câblée dans `App.jsx` |
-| `RapportsPDF/RapportsPDFPage.jsx` | ✅ Fait (jour 13) | Liste des campagnes (une par département), aperçu du score au clic (jauge + barres), téléchargement du PDF à la demande via blob. Route `/rapports` câblée dans `App.jsx` |
+| `RapportsPDF/RapportsPDFPage.jsx` | ✅ Fait (jour 13, affiné le 2026-08-25) | Liste des campagnes (une par département), filtres par statut avec compteurs, badge de statut coloré, suppression, aperçu du score au clic (jauge + barres), téléchargement du PDF à la demande via blob. Route `/rapports` câblée dans `App.jsx` |
 | Historique, TemplatesSectoriels, Paramètres | ⬜ Pas commencé | Liens de nav déjà présents dans `navConfig.js`, pointent vers des routes non câblées (redirection vers `/`) |
 
 ## Décisions ou écarts par rapport au plan
@@ -666,6 +666,25 @@ conditions réelles, committé et poussé.** Prochaine étape : **Jour 14**
     « document de simulation éducative, à usage interne ». **Point de vigilance pour toute future
     mention du laboratoire dans du contenu généré ou affiché à l'utilisateur** (nouvelles pages,
     nouveaux documents) : toujours écrire « Cybersecurity Research Laboratory (CRL) ».
+34. **Retrait des boutons Topbar sans comportement réel** (`Sidebar`/`Topbar`, décision utilisateur du
+    2026-08-25, en comparant la page Rapports PDF à sa maquette) : les boutons Rechercher, Notifications
+    et Exporter du `Topbar` n'avaient **jamais** eu de gestionnaire de clic depuis leur création au jour 4
+    — ils s'affichaient à l'identique sur **toutes** les pages sans rien faire. Retirés entièrement.
+    Le bouton « + Nouvelle campagne » ne s'affiche désormais **que** sur la page Campagnes (seule page
+    qui le câble réellement via `onNewCampaign`) au lieu d'apparaître partout ailleurs en rouge tout en
+    étant silencieusement désactivé (`disabled={!onNewCampaign}` ne change pas l'apparence du bouton,
+    ce qui créait un piège visuel). **Point de vigilance pour toute nouvelle page** : ne pas s'attendre
+    à retrouver ces boutons génériques dans `Topbar` — chaque page doit désormais câbler explicitement
+    ses propres actions via la prop `actions`.
+35. **Page Rapports PDF affinée pour se rapprocher de `docs/maquettes/rapports.html`** (2026-08-25) :
+    boutons de filtrage par statut avec compteurs (Tous / En attente / Active / Terminé, sur le modèle
+    de `filter-btn` déjà utilisé par `CampagnesPage`) ; badge de statut coloré par gravité (rouge pour
+    en attente, orange actif, vert terminé, gris brouillon — décision utilisateur explicite, contrairement
+    au badge neutre `status-pill` gris utilisé sur `CampagnesPage`, volontairement laissé inchangé pour
+    ne pas affecter cette autre page) ; bouton de suppression par ligne, réutilisant exactement le service
+    `deleteCampagne` et le flux de confirmation déjà en place sur `CampagnesPage` (aucun modèle `Rapport`
+    séparé n'existe côté backend — un rapport n'étant qu'une vue PDF à la demande d'une campagne,
+    « supprimer le rapport » supprime la campagne elle-même).
 
 ## Variables d'environnement (`.env`, jamais commité)
 
