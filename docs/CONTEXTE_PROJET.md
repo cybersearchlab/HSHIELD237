@@ -655,6 +655,17 @@ conditions réelles, committé et poussé.** Prochaine étape : **Jour 14**
 30. **Les pages Tableau de bord et Résultats (jour 12) ont été délibérément réécrites pour ne comparer que des départements entre eux**, jamais des entreprises ou des secteurs, alors que les maquettes `app.html`/`resultats.html` d'origine comparaient plusieurs entreprises clientes par secteur — cohérent avec la suppression du modèle `Entreprise` au jour 6 (écart n°1). Consigne explicite de l'utilisateur pour ce jour précis. Aucune donnée fictive n'a été introduite pour compenser l'absence de graphiques d'évolution temporelle ou de détail par employé (ces vues du plan initial n'ont pas d'équivalent réel dans les endpoints du jour 12 et ont donc été omises plutôt que fabriquées).
 31. **`build-essential` retiré du `Dockerfile` backend** (jour 13, décision utilisateur explicite après diagnostic) : aucune dépendance du projet n'a besoin de compiler quoi que ce soit sur Linux/amd64 (`psycopg[binary]` utilise des wheels précompilées, comme le reste des dépendances). Ce paquet tirait ~40 Mo de chaîne de compilation C/C++ qui échouait systématiquement à télécharger pendant la session du 2026-08-23. **Non encore vérifié que le build réussit sans lui** — première chose à confirmer à la reprise ; si `pip install` échoue avec une erreur de compilation, le réintroduire.
 32. **`weasyprint>=61` remplacé par `weasyprint==62.3`** (épinglage exact) dans `requirements.txt`, suite au diagnostic du 2026-08-24 : une plage de version ouverte forçait `pip` à retélécharger et comparer 18 versions différentes, ce qui multipliait les occasions pour la corruption réseau active ce jour-là de produire des messages de conflit incohérents (`asgiref` puis `Pillow` selon l'essai). L'épinglage exact reste une bonne pratique au-delà du contexte réseau (résolution plus rapide et reproductible).
+33. **Sigle officiel corrigé, décision utilisateur du 2026-08-25** : le sigle à utiliser partout dans le
+    projet est **« Cybersecurity Research Laboratory (CRL) »** — et non « CyberSecurity Research
+    Laboratory (CSRL) », qui apparaissait par erreur dans le pied de page du rapport PDF (jour 13) et
+    dans les maquettes d'origine (`docs/maquettes/`, non modifiées — fichiers de référence historiques,
+    hors périmètre de cette correction) et le document de planification (`docs/rapport_planification.md`,
+    idem). La phrase de crédit « , IUSJC Eyang · CyberSecurity Research Laboratory (CSRL) » a par
+    ailleurs été **entièrement retirée** du pied de page du rapport PDF (`apps/rapports/templates/rapports/rapport.html`)
+    sur demande explicite — le pied de page ne mentionne désormais plus que H-SHIELD237 et la mention
+    « document de simulation éducative, à usage interne ». **Point de vigilance pour toute future
+    mention du laboratoire dans du contenu généré ou affiché à l'utilisateur** (nouvelles pages,
+    nouveaux documents) : toujours écrire « Cybersecurity Research Laboratory (CRL) ».
 
 ## Variables d'environnement (`.env`, jamais commité)
 
