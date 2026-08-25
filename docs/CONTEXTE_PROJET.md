@@ -34,14 +34,21 @@
   `7d7d8d0`).
 - Jalon 1 (jour 5) et **Jalon 2 (jour 10) : atteints.**
 - Phase 3 du sprint (« Gouvernance & résultats », jours 11-15) : **en cours**
-  — Jours 11 et 12 terminés, jour 13 (rapport PDF) démarré mais **non
-  vérifié** (voir ci-dessous).
-- **Jour 13 (rapport PDF) : code backend écrit, ⚠️ PAS VÉRIFIÉ ni committé.**
-  Deux sessions interrompues par une panne réseau persistante sur la
-  machine de développement — voir « Journal du 2026-08-23 » et surtout
-  « Journal du 2026-08-24 » (diagnostic précis : **corruption de données en
-  transit**, pas un simple ralentissement). Reprendre sur un réseau
-  différent — voir « Prochaine action précise ».
+  — Jours 11 et 12 terminés, jour 13 backend (rapport PDF) terminé et
+  vérifié (voir « Journal du 2026-08-25 »), frontend jour 13 pas encore
+  démarré.
+- **Jour 13 (rapport PDF) — backend : ✅ terminé, vérifié en conditions
+  réelles, committé et poussé (commit `c88aa61`).**
+  `apps/rapports/` (`GenerationRapportService` + WeasyPrint) expose
+  `GET /api/campagnes/{id}/rapport/` ; 25/25 tests passent ; endpoint testé
+  en direct via curl (PDF réel de 13 Ko, `Content-Type: application/pdf`).
+  Deux sessions précédentes avaient été bloquées par une panne réseau
+  (voir « Journal du 2026-08-23 » et « Journal du 2026-08-24 ») — résolue
+  d'elle-même à la reprise. Un bug distinct (incompatibilité
+  weasyprint/pydyf) a aussi été trouvé et corrigé ce jour-là — voir
+  « Journal du 2026-08-25 ».
+  **Frontend jour 13 (page « Rapports PDF », téléchargement à la demande) :
+  pas encore démarré** — prochaine étape.
 
 ## Journal du 2026-08-19 (session de suivi post-Jour 7)
 
@@ -501,6 +508,52 @@ déterminante.
    plutôt que d'insister sur le même réseau. Session mise en pause dans
    l'attente.
 
+## Journal du 2026-08-25 (Jour 13, backend terminé et vérifié)
+
+Reprise directe sur la « Prochaine action précise » du 2026-08-24. Le
+réseau fonctionnait normalement dès le début de cette session (`pip
+install` complet en 549 s sans aucune erreur de somme de contrôle, `apt-get
+update` en 14 s à 700-1000+ kB/s) — la corruption réseau du 2026-08-24
+n'a pas eu besoin d'être contournée activement, elle s'était résolue
+d'elle-même.
+
+1. **Rebuild propre confirmé** : la suppression de `build-essential` du
+   `Dockerfile` (écart n°31, session précédente) est validée — `pip
+   install` s'est déroulé sans compilation, tous les wheels étaient
+   disponibles.
+2. **Nouveau bug trouvé, distinct du problème réseau** : `python manage.py
+   test` → 23/25 passent, 2 échecs dans `apps.rapports.tests` avec
+   `AttributeError: 'super' object has no attribute 'transform'` dans
+   `weasyprint/pdf/stream.py`. Diagnostic : `weasyprint==62.3` (épinglé la
+   veille pour une raison sans rapport, voir écart n°32) est incompatible
+   avec `pydyf==0.12.1` (résolu par pip car aucune contrainte de version
+   n'existait sur `pydyf`), une version qui a introduit des changements
+   d'API cassants. **Correctif** : `weasyprint` bump à `69.0` (dernière
+   version disponible) dans `requirements.txt`.
+3. **Bug cosmétique corrigé au passage** : `Fontconfig error: No writable
+   cache directories` répété à chaque test — l'utilisateur non-root
+   `appuser` n'a pas de `$HOME` inscriptible pour le cache de polices.
+   Corrigé en ajoutant `XDG_CACHE_HOME=/app/.cache` dans le `Dockerfile`
+   (+ création du dossier, déjà couvert par le `chown -R` existant).
+4. **Rebuild + vérification complète après correctifs** :
+   - `docker compose build backend` : succès, aucune erreur.
+   - `docker compose up -d` : recréation propre du conteneur backend,
+     tous les services `healthy`.
+   - `python manage.py test` : **25/25 tests passent**, plus aucune
+     erreur fontconfig.
+   - Test en direct via `curl` (JWT obtenu via `POST
+     /api/auth/login/`) : `GET /api/campagnes/24/rapport/` →
+     `200 OK`, `Content-Type: application/pdf`, PDF réel de 13 136
+     octets commençant par `%PDF-1.7`.
+5. **Committé et poussé** (commit `c88aa61`) : `apps/rapports/`,
+   `Dockerfile`, `requirements.txt`, `settings/base.py`, `urls.py`. Le
+   `git push` a de nouveau connu un ralentissement ponctuel (timeout à
+   60 s) mais a abouti en relançant la commande — cohérent avec un réseau
+   redevenu globalement fiable mais pas parfaitement stable.
+6. **Jour 13 frontend (page « Rapports PDF », téléchargement à la
+   demande, <10 s) : non démarré** — prochaine étape de la session
+   suivante.
+
 ## Modules implémentés
 
 ### Backend (`backend/apps/`)
@@ -513,7 +566,7 @@ déterminante.
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
 | `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `gouvernance` | ✅ Fait (jour 11) | Modèles `Consentement`, `JournalAudit` ; endpoints demande/liste/valider/refuser/journal-audit ; `tests.py` (10 tests) |
-| `rapports` | 🟡 Écrit, non vérifié | `GenerationRapportService` (WeasyPrint), endpoint `.../rapport/`, `tests.py` (4 tests). Session interrompue par une panne réseau avant tout rebuild — voir « Journal du 2026-08-23 » |
+| `rapports` | ✅ Fait (jour 13 backend) | `GenerationRapportService` (WeasyPrint 69.0), endpoint `.../rapport/`, `tests.py` (4 tests). Vérifié en direct (PDF réel via curl) et committé — voir « Journal du 2026-08-25 » |
 | `templates_sectoriels` | ⬜ Pas commencé | Prévu jour 14 |
 
 ### Frontend (`frontend/src/pages/`)
@@ -605,51 +658,33 @@ gratuit (voir écart n°12).
   pris plusieurs minutes sans sortie, et le conteneur `db` a dû effectuer
   une récupération WAL après arrêt non propre — résolu automatiquement,
   sans perte de données, mais nettement plus lent que d'habitude.
-- **⚠️ Panne réseau bloquante active, diagnostic précis établi le
-  2026-08-24** (voir « Journal du 2026-08-23 » et surtout « Journal du
-  2026-08-24 ») : ce n'est **pas** un simple ralentissement ni un problème
-  Docker — les fichiers téléchargés (paquets `apt`, wheels `pip`) arrivent
-  **corrompus** (échec de vérification de hash confirmé sur un wheel pip).
-  Hypothèse retenue : défaut de déchargement de somme de contrôle réseau
-  (TCP Checksum/Large Send Offload) au niveau de la carte réseau ou du
-  pilote de la machine, aggravé par WSL2. **À faire en tout début de la
-  prochaine session** : tester sur un réseau différent (partage de
-  connexion mobile, autre Wi-Fi) avant de relancer `docker compose build` —
-  si le build passe sur cet autre réseau, cela confirme le diagnostic et il
-  faudra soit rester sur ce réseau, soit désactiver le déchargement de
-  somme de contrôle sur l'adaptateur réseau habituel (Windows : Panneau de
-  configuration > Adaptateurs réseau > Propriétés > Avancé > désactiver
-  « Checksum Offload » / « Large Send Offload » IPv4 et IPv6). Ne pas
-  insister avec des redémarrages Docker seuls — confirmé inefficaces sur ce
-  problème précis.
+- **Panne réseau du 2026-08-24 (corruption de données en transit,
+  diagnostic précis établi ce jour-là) : résolue d'elle-même** à la reprise
+  de session du 2026-08-25 — `pip install` complet sans aucune erreur de
+  hash, `apt-get` rapide (700-1000+ kB/s). L'hypothèse d'un défaut de
+  déchargement de somme de contrôle réseau (TCP Checksum/Large Send
+  Offload) reste plausible mais n'a pas eu besoin d'être contournée
+  activement ; à surveiller si le symptôme (hash mismatch pip/apt) revient.
+  Un `git push` isolé a de nouveau timeout le 2026-08-25 mais a réussi en
+  relançant simplement la commande — réseau globalement fiable mais pas
+  parfaitement stable.
 - **Anomalie observée, cause non confirmée** : plusieurs campagnes de test créées en cours de session (ids 17, 20) ont disparu de la base entre deux vérifications, alors que `db_data` est un volume Docker nommé censé persister. Sans certitude sur la cause exacte (possiblement lié aux redémarrages Docker Desktop de la session) — à surveiller ; aucune perte de données de production n'est en jeu (uniquement des campagnes de test).
 - Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe), `consultant@hshield237.local` / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` / `Responsable1234!` (rôle responsable, créé le 2026-08-21 pour tester la validation de consentement).
 
 ## Prochaine action précise
 
-1. **Changer de réseau avant toute chose** (voir « Bugs connus » — panne de
-   corruption réseau diagnostiquée le 2026-08-24, pas un simple
-   ralentissement) : basculer sur un partage de connexion mobile ou un
-   autre Wi-Fi, puis vérifier avec un test simple (`docker pull
-   hello-world`, ou directement l'étape 2 ci-dessous) que les
-   téléchargements aboutissent sans erreur de hash.
-2. **Reconstruire et vérifier le Jour 13**, déjà entièrement écrit mais pas
-   testé :
-   ```
-   docker compose build backend
-   docker compose up -d
-   docker compose exec backend python manage.py test
-   ```
-   Vérifier en particulier que `pip install` ne réclame pas de compilateur
-   C (le `Dockerfile` n'a plus `build-essential`, voir écart n°31) — si une
-   erreur de compilation apparaît, réintroduire `build-essential` dans
-   `backend/Dockerfile`. Vérifier ensuite les 4 tests de
-   `apps/rapports/tests.py`, puis tester `GET /api/campagnes/{id}/rapport/`
-   en conditions réelles (le PDF doit commencer par `%PDF`).
-3. **Committer et pousser le Jour 13** une fois vérifié : `backend/apps/rapports/`,
-   `backend/Dockerfile`, `backend/requirements.txt`,
-   `backend/config/settings/base.py`, `backend/config/urls.py`.
-4. Puis enchaîner sur le **FRONTEND du Jour 13** (pas encore commencé) :
-   connecter la page Rapports PDF (`docs/maquettes/rapports.html`, page pas
-   encore créée) à cet endpoint — génération à la demande et téléchargement.
-   Objectif fixé au cahier des charges : moins de 10 secondes de génération.
+Le **backend du Jour 13 est terminé, vérifié et poussé** (commit
+`c88aa61`) — voir « Journal du 2026-08-25 ». Reste à faire :
+
+1. **FRONTEND du Jour 13** (pas encore commencé) : créer la page
+   « Rapports PDF » (s'inspirer de `docs/maquettes/rapports.html` si elle
+   existe, sinon suivre la charte des autres pages), câbler la route dans
+   `navConfig.js`/`App.jsx` (actuellement redirigée vers `/`), bouton de
+   génération à la demande qui appelle `GET /api/campagnes/{id}/rapport/`
+   et déclenche le téléchargement du PDF. Objectif cahier des charges :
+   moins de 10 secondes de génération perçue côté utilisateur.
+2. Vérifier en conditions réelles dans le navigateur (pas seulement via
+   curl) avant de committer/pousser le frontend.
+3. Comptes de test : le mot de passe de `consultant@hshield237.local` a
+   été temporairement changé puis restauré à `Consultant1234!` pendant la
+   vérification du 2026-08-25 — reste valide tel que documenté ci-dessus.
