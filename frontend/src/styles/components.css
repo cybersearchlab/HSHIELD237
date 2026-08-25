@@ -1407,6 +1407,9 @@ tr:hover td {
 
 .rapport-actions {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .preview-sticky {

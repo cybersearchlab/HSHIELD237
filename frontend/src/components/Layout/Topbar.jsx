@@ -1,3 +1,9 @@
+// Les boutons Rechercher / Notifications / Exporter n'ont jamais eu de
+// comportement réel (aucun onClick depuis leur création au jour 4) et
+// s'affichaient à l'identique sur toutes les pages — retirés. Le bouton
+// « Nouvelle campagne » ne s'affiche désormais que sur la page qui le
+// câble réellement (Campagnes), au lieu d'apparaître partout en rouge
+// tout en étant desactivé ailleurs.
 export default function Topbar({ title, subtitle, actions, onNewCampaign }) {
   return (
     <header className="topbar">
@@ -6,30 +12,11 @@ export default function Topbar({ title, subtitle, actions, onNewCampaign }) {
         {subtitle && <span>{subtitle}</span>}
       </div>
       <div className="topbar-right">
-        <button className="btn btn-icon" aria-label="Rechercher">
-          <i className="ti ti-search" />
-        </button>
-        <button className="btn btn-icon" aria-label="Notifications" style={{ position: "relative" }}>
-          <i className="ti ti-bell" />
-          <span
-            style={{
-              position: "absolute",
-              top: 4,
-              right: 4,
-              width: 7,
-              height: 7,
-              background: "var(--red)",
-              borderRadius: "50%",
-              border: "1.5px solid #fff",
-            }}
-          />
-        </button>
-        <button className="btn">
-          <i className="ti ti-download" /> Exporter
-        </button>
-        <button className="btn btn-primary" onClick={onNewCampaign} disabled={!onNewCampaign}>
-          <i className="ti ti-plus" /> Nouvelle campagne
-        </button>
+        {onNewCampaign && (
+          <button className="btn btn-primary" onClick={onNewCampaign}>
+            <i className="ti ti-plus" /> Nouvelle campagne
+          </button>
+        )}
         {actions}
       </div>
     </header>

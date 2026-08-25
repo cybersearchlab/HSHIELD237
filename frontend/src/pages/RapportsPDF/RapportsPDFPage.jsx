@@ -1,20 +1,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { listCampagnes } from "../../api/campagnes";
+import { deleteCampagne, listCampagnes } from "../../api/campagnes";
 import { downloadRapportCampagne } from "../../api/rapports";
 import { getScoreCampagne } from "../../api/scores";
 import Layout from "../../components/Layout";
 import ScoreRing from "../../components/ScoreRing";
 import { DEPARTEMENT_ICONS, DEPARTEMENT_LABELS } from "../../utils/departements";
-import { fillColorClass, pctColorClass, scoreColor } from "../../utils/score";
+import { fillColorClass, pctColorClass } from "../../utils/score";
 import { STATUT_LABELS } from "../../utils/statuts";
 
-const STATUT_PILL_CLASS = {
-  brouillon: "s-draft dot-draft",
-  en_attente: "s-pending dot-pending",
-  active: "s-active dot-active",
-  terminee: "s-done dot-done",
+// Couleur distincte par statut pour repérer une campagne en attente au
+// premier coup d'œil dans la liste des rapports (demande explicite de
+// l'utilisateur, en attente = rouge).
+const STATUT_BADGE_CLASS = {
+  brouillon: "badge-neutral",
+  en_attente: "badge-danger",
+  active: "badge-warning",
+  terminee: "badge-success",
 };
+
+const STATUT_FILTERS = [
+  { key: "all", label: "Tous" },
+  { key: "en_attente", label: "En attente" },
+  { key: "active", label: "Active" },
+  { key: "terminee", label: "Terminé" },
+];
 
 const TOAST_ICONS = { success: "ti-check", info: "ti-info-circle", error: "ti-alert-circle" };
 const TOAST_COLORS = { success: "#4ADE80", info: "#60A5FA", error: "#F87171" };
@@ -42,6 +52,7 @@ export default function RapportsPDFPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [statutFilter, setStatutFilter] = useState("all");
 
   const [selectedId, setSelectedId] = useState(null);
   const [score, setScore] = useState(null);
@@ -89,10 +100,22 @@ export default function RapportsPDFPage() {
   }, [selectedId]);
 
   const visibleCampagnes = useMemo(() => {
-    if (!search.trim()) return campagnes;
     const q = search.trim().toLowerCase();
-    return campagnes.filter((c) => (c.departement_display || "").toLowerCase().includes(q) || String(c.id).includes(q));
-  }, [campagnes, search]);
+    return campagnes.filter((c) => {
+      const matchesStatut = statutFilter === "all" || c.statut === statutFilter;
+      const matchesSearch =
+        !q || (c.departement_display || "").toLowerCase().includes(q) || String(c.id).includes(q);
+      return matchesStatut && matchesSearch;
+    });
+  }, [campagnes, search, statutFilter]);
+
+  const statutCounts = useMemo(() => {
+    const counts = { all: campagnes.length, en_attente: 0, active: 0, terminee: 0 };
+    campagnes.forEach((c) => {
+      if (counts[c.statut] !== undefined) counts[c.statut] += 1;
+    });
+    return counts;
+  }, [campagnes]);
 
   const selected = campagnes.find((c) => c.id === selectedId);
 
@@ -124,6 +147,27 @@ export default function RapportsPDFPage() {
           next.delete(campagne.id);
           return next;
         });
+      }
+    },
+    []
+  );
+
+  const handleSupprimer = useCallback(
+    async (campagne) => {
+      if (
+        !window.confirm(
+          `Supprimer la campagne #${campagne.id} (${campagne.departement_display}) ? Son rapport ne sera plus disponible. Cette action est irréversible.`
+        )
+      ) {
+        return;
+      }
+      try {
+        await deleteCampagne(campagne.id);
+        setCampagnes((prev) => prev.filter((c) => c.id !== campagne.id));
+        setSelectedId((prev) => (prev === campagne.id ? null : prev));
+        showToast(`Campagne #${campagne.id} supprimée.`, "success");
+      } catch {
+        showToast("Impossible de supprimer cette campagne.", "error");
       }
     },
     []
@@ -174,6 +218,17 @@ export default function RapportsPDFPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+            <div className="filter-group">
+              {STATUT_FILTERS.map((f) => (
+                <button
+                  key={f.key}
+                  className={`filter-btn${statutFilter === f.key ? " active" : ""}`}
+                  onClick={() => setStatutFilter(f.key)}
+                >
+                  {f.label} ({statutCounts[f.key] || 0})
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="reports-layout">
@@ -199,8 +254,7 @@ export default function RapportsPDFPage() {
                 <div>
                   {visibleCampagnes.map((c) => {
                     const isGenerating = generatingIds.has(c.id);
-                    const pillClasses = STATUT_PILL_CLASS[c.statut] || "s-draft dot-draft";
-                    const [pillClass, dotClass] = pillClasses.split(" ");
+                    const badgeClass = STATUT_BADGE_CLASS[c.statut] || "badge-neutral";
                     return (
                       <div
                         key={c.id}
@@ -219,9 +273,7 @@ export default function RapportsPDFPage() {
                             <span>
                               <i className="ti ti-calendar" /> {formatDate(c.date_creation)}
                             </span>
-                            <span className={`status-pill ${pillClass}`}>
-                              <span className={`dot ${dotClass}`} /> {STATUT_LABELS[c.statut] || c.statut}
-                            </span>
+                            <span className={`badge ${badgeClass}`}>{STATUT_LABELS[c.statut] || c.statut}</span>
                           </div>
                         </div>
                         <div className="rapport-actions">
@@ -235,6 +287,16 @@ export default function RapportsPDFPage() {
                             }}
                           >
                             <i className={isGenerating ? "ti ti-loader-2" : "ti ti-download"} />
+                          </button>
+                          <button
+                            className="action-btn danger"
+                            title="Supprimer la campagne"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSupprimer(c);
+                            }}
+                          >
+                            <i className="ti ti-trash" />
                           </button>
                         </div>
                       </div>
