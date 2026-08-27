@@ -6,6 +6,15 @@
 
 ## État d'avancement
 
+- **2026-08-27 (demande de l'encadreur, hors plan des 20 jours — chantier en
+  deux étapes)** : **Étape 1/2 terminée** — les 10 départements figés en dur
+  sont remplacés par un registre en base (`DepartementConfigure`), géré par
+  l'administrateur (créer/renommer/supprimer, page `/departements`),
+  propagé immédiatement partout (libellés, sélecteurs, agrégations).
+  Committé et poussé (commit `86450c9`). Voir « Journal du 2026-08-27
+  (suite 4) ». **Étape 2/2 — annuaire des employés + envoi individuel
+  ciblé — en cours**, construite sur cette base. Voir « Prochaine action
+  précise » pour le détail du plan approuvé.
 - **2026-08-27 (suite de session, après les corrections déjà validées le
   même jour)** : troisième retour utilisateur sur la modale « Voir
   l'email » — quand une campagne a plusieurs versions de scénario, elles
@@ -927,7 +936,7 @@ ci-dessus.
 |---|---|---|
 | `accounts` | ✅ Fait | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur` |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
-| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires. `ScenarioPhishing.date_creation` ajouté (absent jusqu'ici), tri explicite du plus récent au plus ancien, 1 test supplémentaire (57 tests au total) |
+| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires. `ScenarioPhishing.date_creation` ajouté (absent jusqu'ici), tri explicite du plus récent au plus ancien, 1 test supplémentaire (57 tests au total). **2026-08-27 (suite 4)** : nouveau modèle `DepartementConfigure` (registre dynamique des départements, remplace `Departement.choices`), CRUD `/api/departements/` (admin-only, suppression bloquée si utilisé), `services.departement_label()` (résolution live du libellé), 7 tests supplémentaires (64 tests au total) |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
 | `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `gouvernance` | ✅ Fait (jour 11, étendu le 2026-08-25) | Modèles `Consentement` (+ `motifs_refus`, `motif_refus_details`), `JournalAudit`, `ResponsableDepartement` (registre admin-only) ; endpoints demande (admin-only)/liste/valider/refuser (motifs obligatoires)/journal-audit/responsables (CRUD admin-only) ; `services.creer_consentement_auto` ; `tests.py` (23 tests) |
@@ -948,6 +957,7 @@ ci-dessus.
 | `Resultats/ResultatsPage.jsx` | ✅ Fait (jour 12) | Vue globale (jauge, comportements observés, classement des départements) et vue « Par département » (tableau détaillé), filtre par campagne individuelle. Route `/resultats` câblée dans `App.jsx` |
 | `RapportsPDF/RapportsPDFPage.jsx` | ✅ Fait (jour 13, affiné le 2026-08-25) | Liste des campagnes (une par département), filtres par statut avec compteurs, badge de statut coloré, suppression, aperçu du score au clic (jauge + barres), téléchargement du PDF à la demande via blob. Route `/rapports` câblée dans `App.jsx` |
 | `Historique/HistoriquePage.jsx` | ✅ Fait (2026-08-25) | Timeline chronologique de toutes les campagnes groupées par mois, panneau de détail (score + barres) avec téléchargement du rapport PDF (réutilise le Jour 13), graphique d'évolution mensuelle réel. Route `/historique` |
+| `Departements/DepartementsPage.jsx` | ✅ Fait (2026-08-27) | Registre des départements de l'entreprise (créer/renommer/supprimer), réservé à l'administrateur (page et lien de nav). Route `/departements` |
 | Paramètres | ⬜ Pas commencé | Lien de nav déjà présent dans `navConfig.js`, pointe vers une route non câblée (redirection vers `/`) |
 
 ## Décisions ou écarts par rapport au plan
@@ -1039,6 +1049,17 @@ ci-dessus.
     backfill `default=timezone.now` pour les scénarios déjà existants, qui héritent donc tous de la même
     date d'application de la migration plutôt que de leur véritable date de création — sans conséquence
     pratique, ces scénarios de test n'ont pas besoin d'être distingués entre eux par date exacte.
+39. **Départements rendus dynamiques sans convertir les champs existants en `ForeignKey`** (2026-08-27,
+    demande de l'encadreur) : `Campagne.departement`, `Destinataire.departement`,
+    `ResponsableDepartement.departement`, `TemplateDepartement.departement` restent des `CharField` —
+    seule la contrainte `choices=` (liée à l'ancienne énumération figée `Departement`) est retirée. Un
+    nouveau modèle `DepartementConfigure` sert de registre autoritaire (code stable auto-généré + nom
+    éditable), interrogé en live pour valider un code et résoudre son libellé
+    (`services.departement_label()`) plutôt qu'une conversion FK jugée trop risquée pour les données de
+    test déjà en place ce sprint (`ScenarioPhishing.departements_cibles`, en particulier, est un
+    `ArrayField` qui n'admet pas nativement un tableau de FK). La classe `Departement(TextChoices)`
+    d'origine est conservée comme constantes de commodité (tests, lisibilité), simplement débranchée de
+    tout champ. Voir « Journal du 2026-08-27 (suite 4) » pour le détail complet de la décision.
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -1254,31 +1275,140 @@ de décider.
    code.
 6. **Committé et poussé** (commit `805033f`).
 
+## Journal du 2026-08-27 (suite 4) — registre dynamique des départements (étape 1/2)
+
+Demande directe de l'encadreur, hors plan des 20 jours, en deux volets :
+(1) rendre les départements configurables par l'administrateur plutôt que
+figés en dur, (2) un annuaire d'employés + envoi individuel ciblé (voir
+plan approuvé en mode plan, écrit dans
+`C:\Users\Mr NDJOCK LEVY\.claude\plans\binary-imagining-kernighan.md`).
+Livré en deux étapes indépendantes, vérifiées et committées séparément —
+**cette entrée couvre l'étape 1**.
+
+1. **Décision d'architecture retenue** (voir le plan pour la comparaison
+   complète des deux options envisagées) : les champs qui stockaient déjà
+   un code de département (`Campagne.departement`, `Destinataire.departement`,
+   `ResponsableDepartement.departement`, `TemplateDepartement.departement`)
+   **restent des `CharField` classiques** — pas de conversion en
+   `ForeignKey`, jugée trop risquée pour un gain surtout esthétique
+   (`ScenarioPhishing.departements_cibles` est un `ArrayField`, qui
+   n'admet pas nativement un tableau de FK sans modèle intermédiaire, et
+   les 4 autres conversions auraient exigé des migrations de données en
+   plusieurs étapes sur des tables contenant déjà les données de test de
+   cette session). Seule la contrainte `choices=` (liée à l'ancienne
+   énumération figée) est retirée.
+2. **Nouveau modèle `DepartementConfigure`** (`apps.campagnes.models`) :
+   `code` (slug généré automatiquement depuis `nom` à la création,
+   jamais modifiable ensuite — stabilité des références existantes),
+   `nom` (éditable), `date_creation`. La classe `Departement(TextChoices)`
+   d'origine est **conservée telle quelle** comme constantes de commodité
+   (`Departement.IT == "it"`) pour ne pas casser la quasi-totalité des
+   tests existants qui la référencent — elle n'est simplement plus
+   branchée à `choices=` sur aucun champ.
+3. **Libellé résolu en live plutôt que figé** : nouvelle fonction
+   `apps.campagnes.services.departement_label(code)` (lecture de
+   `DepartementConfigure`, repli sur le code brut si le département a été
+   supprimé depuis). Remplace `get_departement_display()` (qui dépendait
+   de `choices=`) dans 5 serializers (`CampagneSerializer`,
+   `DestinataireSerializer`, `ResponsableDepartementSerializer`,
+   `ConsentementSerializer.campagne_departement_display`,
+   `TemplateDepartementSerializer`), dans les `__str__()` des modèles
+   concernés, dans `score_par_departement()`/`historique_par_departement()`
+   (itèrent maintenant sur `DepartementConfigure.objects.all()` au lieu de
+   `Departement.choices` — ces endpoints ne renvoient donc plus
+   systématiquement 10 entrées, mais autant que de départements réellement
+   configurés), et dans le prompt de génération Claude
+   (`apps.generation.services`).
+4. **CRUD `/api/departements/`** (`DepartementViewSet`, `apps.campagnes`) :
+   lecture ouverte à consultant/administrateur/responsable, écriture
+   (créer/renommer/supprimer) réservée à l'administrateur.
+   **Suppression bloquée** si le département est encore référencé par des
+   campagnes, destinataires, responsables ou templates — `400` avec un
+   message listant explicitement ce qui bloque, plutôt qu'une suppression
+   silencieuse qui laisserait des données orphelines.
+5. **Migrations écrites à la main** (pas de bind mount backend, voir
+   écart n°3) : `campagnes/0006_departement_registry` (création du modèle
+   + seed des 10 départements existants, mêmes codes qu'avant — aucune
+   donnée existante à migrer), `campagnes/0007_departement_choices_dynamiques`
+   + `gouvernance/0003_...` + `templates_departement/0002_...` (retrait de
+   `choices=`, aucun changement de colonne).
+6. **Frontend** : nouveau `DepartementsContext` (même motif que
+   `AuthContext`/`ThemeContext`) chargeant la liste une fois et exposant
+   `labelFor(code)` ; `utils/departements.js` ne garde que les icônes
+   (statiques, décoratives) — la liste et les libellés viennent
+   désormais de l'API. Nouvelle page `/departements` (admin uniquement,
+   même motif modale/toast que `ResponsablesPage.jsx`).
+   `CampagnesPage`, `GenererScenarioPage`, `RapportsPDFPage`,
+   `ResponsablesPage`, `TemplatesDepartementPage` adaptées pour consommer
+   la liste dynamique. Nav : entrée « Départements »
+   (`roles: ["administrateur"]`).
+7. **Bug trouvé et corrigé pendant la vérification** : `EnvoiCampagneService`
+   (`apps.simulation.services`) appelait encore
+   `destinataire.get_departement_display()` — raté lors de l'exploration
+   initiale (hors des serializers, dans un message d'erreur). Corrigé en
+   important `departement_label`.
+8. **7 nouveaux tests** (`apps.campagnes.tests.DepartementRegistryTests`) :
+   lecture consultant, création admin-only avec code auto-généré,
+   renommage propagé, suppression bloquée si utilisé, suppression permise
+   si inutilisé, campagne refusant un code de département inconnu.
+   **64/64 tests backend passent.**
+9. **Vérification réelle complète en navigateur** (Puppeteer, compte
+   administrateur) : création d'un département « Support technique »
+   (code auto-généré `support-technique`) ; renommage d'« Informatique »
+   en « Technologies de l'information » confirmé propagé immédiatement au
+   sélecteur de création de campagne (sans rechargement de page ni action
+   supplémentaire) ; suppression bloquée sur « Direction générale »
+   (utilisée par la campagne de test du responsable `arthur@hshield237.local`)
+   avec le message d'erreur exact attendu ; suppression réussie sur les
+   départements réellement inutilisés. Pages Templates et Responsables
+   revérifiées fonctionnelles avec la nouvelle source dynamique, aucune
+   erreur console. **Données de test restaurées après vérification**
+   (« Informatique » et « Ressources humaines » recréés à l'identique
+   pour ne pas fausser l'état du jeu de données de démonstration).
+10. **Committé et poussé** (commit `86450c9`).
+
+Prochaine étape : **annuaire des employés par département + sélecteur
+d'envoi individuel ciblé** (étape 2/2 du même chantier) — voir « Prochaine
+action précise ».
+
 ## Prochaine action précise
 
-**Toutes les demandes explicites sont à jour**, y compris les trois
-changements de gouvernance/ergonomie du 2026-08-27 (notification de refus
-sur Campagnes, email visible par le responsable, déconnexion globale dans
-la sidebar), les deux correctifs de la même journée (doublon d'objet,
-mode sombre) et le classement par date des versions d'email dans la
-modale du responsable — voir « Journal du 2026-08-27 », « Journal du
-2026-08-27 (suite 2) » et « Journal du 2026-08-27 (suite 3) » ci-dessus.
-Pistes pour la suite, aucune n'a encore été redemandée explicitement :
+**Étape 2/2 en cours** : annuaire des employés (nom + email + département,
+géré par l'administrateur) et sélecteur « Tous les employés du
+département / Un employé en particulier » dans la modale de lancement de
+campagne, construits sur le registre des départements livré à l'étape 1.
+Plan détaillé déjà approuvé et disponible dans
+`C:\Users\Mr NDJOCK LEVY\.claude\plans\binary-imagining-kernighan.md` — le
+suivre directement plutôt que re-planifier. Points clés à ne pas
+re-découvrir en reprenant :
 
-1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
-   chaque page développée à sa maquette de référence — d'autant plus
-   pertinent maintenant que Templates, Historique et le mode sombre
-   viennent d'être ajoutés (voir point 8 ci-dessus pour les quelques
-   couleurs codées en dur à vérifier en mode sombre à cette occasion).
-2. **Jour 16** (page Paramètres) : reste le seul lien de nav encore non
-   câblé.
-3. Avant de reprendre, vérifier l'état de Docker Desktop
+1. **Le point NB de la demande (« seul l'expéditeur et le récepteur
+   visibles dans l'en-tête ») est déjà satisfait** par le code existant —
+   `EnvoiCampagneService.envoyer_scenario()` construit toujours
+   `to=[un_seul_email]`. Aucun changement nécessaire sur cette partie ;
+   le travail restant est uniquement : nouveau modèle `Employe`
+   (`apps.employes`, nouvelle app), CRUD admin-only, et une nouvelle
+   méthode `envoyer_aux_employes(cible, employe_id=None)` sur
+   `EnvoiCampagneService` qui réutilise `_scenario_pour_departement()` +
+   `envoyer_scenario()` déjà en place.
+2. Nouvel endpoint frontend `api/employes.js` + page
+   `pages/Employes/EmployesPage.jsx` (même motif que
+   `TemplatesDepartementPage.jsx` — navigation par département).
+3. Modale de lancement (`CampagnesPage.jsx`) : ajouter la section
+   « Destinataires » (radio tous/un employé), étendre
+   `envoyerCampagne()` (`api/simulation.js`) et
+   `EnvoyerCampagneRequestSerializer` (`cible`, `employe_id`).
+4. Avant de reprendre, vérifier l'état de Docker Desktop
    (`docker compose ps`) — il s'est arrêté entre deux sessions à plusieurs
    reprises ce sprint (voir « Bugs connus ») ; relancer avec
    `docker compose up -d` et patienter le ralentissement au premier
    démarrage si les workers backend bouclent en `WORKER TIMEOUT`.
-4. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
+5. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
    `administrateur@hshield237.local` / `Administrateur1234!` toujours
    valides ; `arthur@hshield237.local` / `Responsable1234!` (rôle
-   responsable, désigné pour Direction générale, créé le 2026-08-27 pour
-   tester le refus + la visualisation d'email) (voir « Bugs connus »).
+   responsable, désigné pour Direction générale) (voir « Bugs connus »).
+6. **Une fois l'étape 2 livrée et vérifiée**, revenir aux pistes du plan
+   des 20 jours non redemandées explicitement : Jour 15 (vérification de
+   fidélité visuelle, d'autant plus pertinent après le mode sombre et les
+   départements dynamiques) et Jour 16 (page Paramètres, seul lien de nav
+   encore non câblé).
