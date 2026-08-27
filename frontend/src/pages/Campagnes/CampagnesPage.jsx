@@ -99,6 +99,14 @@ export default function CampagnesPage() {
     return data.results.filter((c) => (c.departement_display || "").toLowerCase().includes(q));
   }, [data.results, search]);
 
+  // Notifie directement dans l'onglet Campagnes qu'un responsable a refusé
+  // — pas seulement visible depuis la page Consentements (demande
+  // explicite de l'utilisateur).
+  const campagnesRefusees = useMemo(
+    () => visibleResults.filter((c) => c.consentement_statut === "refuse"),
+    [visibleResults]
+  );
+
   async function openLaunchModal(campagne) {
     setLaunchCampagne(campagne);
     setLaunchFieldErrors({});
@@ -246,6 +254,20 @@ export default function CampagnesPage() {
         </div>
       </div>
 
+      {campagnesRefusees.length > 0 && (
+        <div className="alert-strip" role="alert">
+          <i className="ti ti-alert-triangle" aria-hidden="true" />
+          <span>
+            <strong>
+              {campagnesRefusees.length} campagne{campagnesRefusees.length > 1 ? "s" : ""} refusée
+              {campagnesRefusees.length > 1 ? "s" : ""}
+            </strong>{" "}
+            par le responsable désigné — le motif est indiqué dans la colonne « Périmètre validé » du
+            tableau ci-dessous.
+          </span>
+        </div>
+      )}
+
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div className="table-wrap">
           <table aria-label="Liste des campagnes">
@@ -294,7 +316,34 @@ export default function CampagnesPage() {
                         </span>
                       </td>
                       <td>
-                        {c.perimetre_valide ? (
+                        {c.consentement_statut === "refuse" ? (
+                          <div>
+                            <span
+                              className="badge badge-danger"
+                              title={c.consentement_motif_refus_details || undefined}
+                            >
+                              <i className="ti ti-x" style={{ fontSize: 10, verticalAlign: -1 }} /> Refusée
+                            </span>
+                            {c.consentement_motifs_refus_display?.length > 0 && (
+                              <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4, maxWidth: 220 }}>
+                                {c.consentement_motifs_refus_display.join(" · ")}
+                              </div>
+                            )}
+                            {c.consentement_motif_refus_details && (
+                              <div
+                                style={{
+                                  fontSize: 11,
+                                  color: "var(--text3)",
+                                  marginTop: 2,
+                                  maxWidth: 220,
+                                  fontStyle: "italic",
+                                }}
+                              >
+                                « {c.consentement_motif_refus_details} »
+                              </div>
+                            )}
+                          </div>
+                        ) : c.perimetre_valide ? (
                           <span className="badge badge-success">Validé</span>
                         ) : (
                           <span className="badge badge-neutral">Non validé</span>
@@ -310,7 +359,9 @@ export default function CampagnesPage() {
                               title={
                                 c.perimetre_valide
                                   ? "Lancer la campagne"
-                                  : "En attente de validation du responsable désigné — voir Consentements"
+                                  : c.consentement_statut === "refuse"
+                                    ? "Campagne refusée par le responsable désigné — voir le motif ci-contre"
+                                    : "En attente de validation du responsable désigné — voir Consentements"
                               }
                             >
                               <i className="ti ti-send" style={{ fontSize: 15 }} />

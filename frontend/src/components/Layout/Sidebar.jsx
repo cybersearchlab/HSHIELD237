@@ -1,5 +1,6 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
+import { logout } from "../../api/auth";
 import { useAuth } from "../../context/AuthContext";
 import { roleLabel } from "../../utils/roles";
 import { NAV_SECTIONS } from "./navConfig";
@@ -20,7 +21,14 @@ function displayNameFor(user) {
 }
 
 export default function Sidebar() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    refresh();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <aside className="sidebar">
@@ -61,10 +69,21 @@ export default function Sidebar() {
       {user && (
         <div className="sidebar-footer">
           <div className="avatar">{initialsFor(user)}</div>
-          <div>
-            <div className="ava-name">{displayNameFor(user)}</div>
+          <div className="sidebar-footer-info">
+            <div className="ava-name" title={displayNameFor(user)}>
+              {user.email}
+            </div>
             <div className="ava-role">{roleLabel(user.role)}</div>
           </div>
+          <button
+            type="button"
+            className="sidebar-logout-btn"
+            onClick={handleLogout}
+            title="Se déconnecter"
+            aria-label="Se déconnecter"
+          >
+            <i className="ti ti-logout" aria-hidden="true" />
+          </button>
         </div>
       )}
     </aside>

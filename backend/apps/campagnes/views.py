@@ -6,17 +6,21 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from apps.accounts.permissions import IsAdministrateur, IsConsultant
+from apps.accounts.models import Role
+from apps.accounts.permissions import IsAdministrateur, IsConsultant, IsResponsable
 
 from .models import Campagne, Destinataire
 from .serializers import CampagneSerializer, DestinataireSerializer, ScenarioPhishingSerializer
 from .services import historique_par_departement, score_campagne, score_par_departement
 
 CAN_MANAGE_CAMPAGNE = [IsAuthenticated & (IsConsultant | IsAdministrateur)]
+CAN_VIEW_SCENARIOS = [IsAuthenticated & (IsConsultant | IsAdministrateur | IsResponsable)]
 
 
 class CampagneViewSet(ModelViewSet):
-    queryset = Campagne.objects.all()
+    # select_related("consentement") évite une requête par campagne pour
+    # exposer consentement_statut/motifs_refus dans CampagneSerializer.
+    queryset = Campagne.objects.select_related("consentement").all()
     serializer_class = CampagneSerializer
     permission_classes = CAN_MANAGE_CAMPAGNE
     filter_backends = [DjangoFilterBackend]
@@ -58,12 +62,21 @@ class ScenarioListView(APIView):
     """GET /api/campagnes/<id>/scenarios/ — liste des scénarios d'une
     campagne, du plus récent au plus ancien. Utilisée notamment pour
     préremplir l'expéditeur affiché de la modale de lancement à partir du
-    dernier scénario généré (voir apps.simulation.ConfigurationEnvoi)."""
+    dernier scénario généré (voir apps.simulation.ConfigurationEnvoi), et
+    par le responsable désigné pour visualiser l'email de phishing avant
+    de valider ou refuser son département — voir ConsentementsPage."""
 
-    permission_classes = CAN_MANAGE_CAMPAGNE
+    permission_classes = CAN_VIEW_SCENARIOS
 
     def get(self, request, campagne_id):
         campagne = get_object_or_404(Campagne, pk=campagne_id)
+        if request.user.role == Role.RESPONSABLE:
+            consentement = getattr(campagne, "consentement", None)
+            if not consentement or consentement.responsable_email.lower() != request.user.email.lower():
+                return Response(
+                    {"detail": "Vous n'êtes pas le responsable désigné pour cette campagne."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
         scenarios = campagne.scenarios.order_by("-id")
         return Response(ScenarioPhishingSerializer(scenarios, many=True).data)
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { listCampagnes } from "../../api/campagnes";
+import { listCampagnes, listScenarios } from "../../api/campagnes";
 import { genererConsentement, listConsentements, refuserConsentement, validerConsentement } from "../../api/gouvernance";
 import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
@@ -51,6 +51,13 @@ export default function ConsentementsPage() {
   const [refuserDetails, setRefuserDetails] = useState("");
   const [refuserError, setRefuserError] = useState("");
   const [refuserSaving, setRefuserSaving] = useState(false);
+
+  // Le responsable doit pouvoir visualiser l'email de phishing avant de
+  // décider — pas seulement le nom du département.
+  const [emailCible, setEmailCible] = useState(null);
+  const [emailScenarios, setEmailScenarios] = useState([]);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -135,6 +142,17 @@ export default function ConsentementsPage() {
     setRefuserMotifs([]);
     setRefuserDetails("");
     setRefuserError("");
+  }
+
+  function openEmailModal(c) {
+    setEmailCible(c);
+    setEmailScenarios([]);
+    setEmailError("");
+    setEmailLoading(true);
+    listScenarios(c.campagne)
+      .then(setEmailScenarios)
+      .catch(() => setEmailError("Impossible de charger l'email de cette campagne."))
+      .finally(() => setEmailLoading(false));
   }
 
   function toggleMotif(value) {
@@ -374,6 +392,11 @@ export default function ConsentementsPage() {
                     )}
                   </div>
                   <div className="consent-actions">
+                    {isMyResponsability(c) && (
+                      <button className="btn btn-sm" onClick={() => openEmailModal(c)}>
+                        <i className="ti ti-mail" /> Voir l'email
+                      </button>
+                    )}
                     {canAct && (
                       <>
                         <button
@@ -458,6 +481,81 @@ export default function ConsentementsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {emailCible && (
+        <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && setEmailCible(null)}>
+          <div className="modal" style={{ maxWidth: 640 }}>
+            <div className="modal-header">
+              <h3>Email — {emailCible.campagne_departement_display}</h3>
+              <div className="close-btn" role="button" tabIndex={0} onClick={() => setEmailCible(null)}>
+                <i className="ti ti-x" />
+              </div>
+            </div>
+            <div className="modal-body">
+              {emailLoading && <p style={{ color: "var(--text3)", textAlign: "center" }}>Chargement…</p>}
+              {!emailLoading && emailError && (
+                <p style={{ color: "var(--red)", textAlign: "center" }}>{emailError}</p>
+              )}
+              {!emailLoading && !emailError && emailScenarios.length === 0 && (
+                <p style={{ color: "var(--text3)", textAlign: "center" }}>
+                  Aucun scénario n'a encore été généré pour cette campagne.
+                </p>
+              )}
+              {!emailLoading &&
+                !emailError &&
+                emailScenarios.map((s) => (
+                  <div key={s.id} style={{ marginBottom: 16 }}>
+                    <div className="email-meta">
+                      <div className="email-meta-row">
+                        <span className="em-key">De :</span>
+                        <span className="em-val">
+                          {s.expediteur_nom || s.expediteur_email
+                            ? `${s.expediteur_nom ? `${s.expediteur_nom} ` : ""}${
+                                s.expediteur_email ? `<${s.expediteur_email}>` : ""
+                              }`
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="email-meta-row">
+                        <span className="em-key">À :</span>
+                        <span className="em-val">{s.destinataire_email || "—"}</span>
+                      </div>
+                      <div className="email-meta-row">
+                        <span className="em-key">Objet :</span>
+                        <span className="em-val">{s.objet_email}</span>
+                      </div>
+                    </div>
+                    <div className="email-subject-line">{s.objet_email}</div>
+                    {s.est_html ? (
+                      <div className="email-content" dangerouslySetInnerHTML={{ __html: s.corps_email }} />
+                    ) : (
+                      <div className="email-content">{s.corps_email}</div>
+                    )}
+                    {s.url_fausse_page && (
+                      <a
+                        href={s.url_fausse_page}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="email-cta"
+                      >
+                        <i className="ti ti-external-link" /> Accéder à la page →
+                      </a>
+                    )}
+                    <div className="sim-warning" style={{ marginTop: 12 }}>
+                      <i className="ti ti-shield-exclamation" />
+                      <span>Simulation éducative H-SHIELD237 — aucune donnée réelle n'est collectée.</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn" onClick={() => setEmailCible(null)}>
+                Fermer
+              </button>
+            </div>
           </div>
         </div>
       )}

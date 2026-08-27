@@ -910,7 +910,7 @@ ci-dessus.
 |---|---|---|
 | `accounts` | ✅ Fait | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur` |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
-| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires |
+| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
 | `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `gouvernance` | ✅ Fait (jour 11, étendu le 2026-08-25) | Modèles `Consentement` (+ `motifs_refus`, `motif_refus_details`), `JournalAudit`, `ResponsableDepartement` (registre admin-only) ; endpoints demande (admin-only)/liste/valider/refuser (motifs obligatoires)/journal-audit/responsables (CRUD admin-only) ; `services.creer_consentement_auto` ; `tests.py` (23 tests) |
@@ -922,11 +922,11 @@ ci-dessus.
 | Page | État | Détail |
 |---|---|---|
 | `Login/LoginPage.jsx` | ✅ Fait | Fidèle à `login.html`, connectée à l'API |
-| `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages |
+| `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages. **Sidebar** : bouton de déconnexion + email du compte connecté dans le pied de page, sur toutes les pages (2026-08-27, auparavant seulement sur Dashboard) |
 | `Dashboard/DashboardPage.jsx` | ✅ Fait (jour 12) | Métriques réelles (campagnes actives, emails envoyés, taux de clic moyen, score de vulnérabilité), comparatif par département, jauge de score (`ScoreRing`), campagnes récentes, alerte automatique si risque élevé |
-| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal) |
+| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal). **2026-08-27** : bandeau d'alerte + badge rouge « Refusée » avec motifs, si le responsable a refusé la campagne |
 | `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour. **Sélecteur de template de départ** (mode API uniquement, filtré par département de la campagne) ajouté le 2026-08-25 |
-| `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11, refondu le 2026-08-25) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de refus avec motifs à cocher + texte libre. Plus de saisie manuelle du responsable (retirée) ; section admin-only « Campagnes sans consentement » avec génération manuelle |
+| `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11, refondu le 2026-08-25) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de refus avec motifs à cocher + texte libre. Plus de saisie manuelle du responsable (retirée) ; section admin-only « Campagnes sans consentement » avec génération manuelle. **2026-08-27** : bouton « Voir l'email » (responsable uniquement) ouvrant une modale d'aperçu du scénario de phishing |
 | `Responsables/ResponsablesPage.jsx` | ✅ Fait (2026-08-25) | Registre des responsables par département, réservé à l'administrateur (page et lien de nav). Route `/responsables` |
 | `Resultats/ResultatsPage.jsx` | ✅ Fait (jour 12) | Vue globale (jauge, comportements observés, classement des départements) et vue « Par département » (tableau détaillé), filtre par campagne individuelle. Route `/resultats` câblée dans `App.jsx` |
 | `RapportsPDF/RapportsPDFPage.jsx` | ✅ Fait (jour 13, affiné le 2026-08-25) | Liste des campagnes (une par département), filtres par statut avec compteurs, badge de statut coloré, suppression, aperçu du score au clic (jauge + barres), téléchargement du PDF à la demande via blob. Route `/rapports` câblée dans `App.jsx` |
@@ -1050,18 +1050,73 @@ gratuit (voir écart n°12).
   relançant simplement la commande — réseau globalement fiable mais pas
   parfaitement stable.
 - **Anomalie observée, cause non confirmée** : plusieurs campagnes de test créées en cours de session (ids 17, 20) ont disparu de la base entre deux vérifications, alors que `db_data` est un volume Docker nommé censé persister. Sans certitude sur la cause exacte (possiblement lié aux redémarrages Docker Desktop de la session) — à surveiller ; aucune perte de données de production n'est en jeu (uniquement des campagnes de test).
-- Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe — nom trompeur, historique, non corrigé pour ne rien casser), `consultant@hshield237.local` / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` / `Responsable1234!` (rôle responsable, créé le 2026-08-21 pour tester la validation de consentement), `administrateur@hshield237.local` / `Administrateur1234!` (rôle administrateur, créé le 2026-08-25 pour tester le registre des responsables).
+- Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe — nom trompeur, historique, non corrigé pour ne rien casser), `consultant@hshield237.local` / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` / `Responsable1234!` (rôle responsable, désigné pour Informatique, créé le 2026-08-21 pour tester la validation de consentement), `administrateur@hshield237.local` / `Administrateur1234!` (rôle administrateur, créé le 2026-08-25 pour tester le registre des responsables), `arthur@hshield237.local` / `Responsable1234!` (rôle responsable, désigné pour Direction générale, créé le 2026-08-27 pour tester le refus de campagne et la visualisation d'email).
+
+## Journal du 2026-08-27 — notification de refus, email visible par le responsable, déconnexion globale
+
+Reprise de session après une pause (Docker Desktop à relancer manuellement
+— voir « Bugs connus »). Trois demandes directes de l'utilisateur, toutes
+liées à l'expérience du responsable et à la visibilité du refus.
+
+1. **Le refus d'une campagne est désormais visible depuis l'onglet
+   Campagnes**, pas seulement depuis Consentements. `CampagneSerializer`
+   expose 4 nouveaux champs en lecture seule
+   (`consentement_statut`, `consentement_statut_display`,
+   `consentement_motifs_refus_display`, `consentement_motif_refus_details`),
+   dérivés de `campagne.consentement` (`getattr` défensif, une campagne
+   peut ne pas encore en avoir). `CampagneViewSet.queryset` utilise
+   `select_related("consentement")` pour éviter une requête par campagne.
+   Frontend (`CampagnesPage.jsx`) : bandeau d'alerte en haut de page si au
+   moins une campagne affichée est refusée, et la colonne « Périmètre
+   validé » affiche un badge rouge « Refusée » + la liste des motifs +
+   le texte libre éventuel, à la place du badge neutre habituel.
+2. **Le responsable peut désormais visualiser l'email de phishing avant
+   de décider.** `ScenarioListView` (`GET
+   /api/campagnes/<id>/scenarios/`) acceptait auparavant uniquement
+   `IsConsultant | IsAdministrateur` — un responsable recevait un `403`.
+   Élargi à `IsResponsable`, avec une vérification d'objet manuelle (même
+   principe que `ConsentementValiderView`/`ConsentementRefuserView`) :
+   un responsable ne peut voir que les scénarios d'une campagne dont il
+   est effectivement le responsable désigné (`consentement.responsable_email`),
+   `403` sinon — testé explicitement (bon responsable ✓, mauvais
+   responsable ✗, campagne sans consentement assigné ✗). Frontend
+   (`ConsentementsPage.jsx`) : nouveau bouton « Voir l'email » par ligne,
+   visible dès que `isMyResponsability(c)`, ouvrant une modale qui
+   réutilise le rendu d'aperçu déjà existant (`GenererScenarioPage.jsx`)
+   — mêmes classes CSS (`email-meta`, `email-content`, `email-cta`,
+   `sim-warning`).
+3. **Le bouton « Se déconnecter » est déplacé dans le pied de la barre
+   latérale**, en bas à gauche, à côté de l'email du compte connecté —
+   auparavant, c'était un bouton `actions` du `Topbar`, câblé sur la
+   seule page `DashboardPage.jsx` : **aucune autre page ne permettait de
+   se déconnecter**, un vrai manque d'ergonomie corrigé au passage.
+   `Sidebar.jsx` affiche maintenant l'email complet (plus le nom
+   d'affichage, réservé au `title` du survol) + le rôle + un bouton icône
+   dédié (`sidebar-logout-btn`), sur toutes les pages. `DashboardPage.jsx`
+   nettoyé de son ancienne logique de déconnexion, désormais redondante.
+4. **Vérification réelle complète** : 56/56 tests backend passent (5
+   nouveaux : 2 pour l'exposition du consentement sur `CampagneSerializer`,
+   3 pour la restriction d'accès aux scénarios par responsable). En
+   navigateur réel (Puppeteer/Chrome) : compte responsable de test créé
+   (`arthur@hshield237.local`), scénario de test généré, refus effectué
+   avec motif → bandeau + badge rouge confirmés sur Campagnes, modale
+   « Voir l'email » confirmée avec le bon contenu, pied de sidebar
+   confirmé sur plusieurs pages (email tronqué proprement en CSS,
+   bouton de déconnexion visible). Aucune erreur console.
+5. **Aléa de reprise de session** : Docker Desktop s'était arrêté pendant
+   la pause — redémarré manuellement par l'utilisateur puis par
+   l'environnement, avec le ralentissement au premier démarrage déjà
+   documenté (`WORKER TIMEOUT`/`SIGKILL` sur le backend) résolu par un
+   `docker compose restart backend` ciblé, cohérent avec le pattern déjà
+   observé plusieurs fois dans ce projet.
 
 ## Prochaine action précise
 
-**Le Jour 14 (backend + frontend) et son complément — le sélecteur de
-template dans « Générer un scénario » — sont maintenant entièrement
-terminés**, vérifiés en conditions réelles — voir « Journal du
-2026-08-25 (suite 3) » et « (suite 4) ». Tout le contenu explicitement
-demandé jusqu'ici est fait : Jour 13 (rapport PDF), refonte de la
-gouvernance du consentement, Jour 14 (templates + historique), et son
-intégration dans la génération de scénario. Pistes pour la suite,
-aucune n'a encore été demandée explicitement :
+**Toutes les demandes explicites sont à jour**, y compris les trois
+changements du 2026-08-27 (notification de refus sur Campagnes, email
+visible par le responsable, déconnexion globale dans la sidebar) — voir
+« Journal du 2026-08-27 » ci-dessus. Pistes pour la suite, aucune n'a
+encore été redemandée explicitement :
 
 1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
    chaque page développée à sa maquette de référence — pertinent
@@ -1071,4 +1126,7 @@ aucune n'a encore été demandée explicitement :
    câblé.
 3. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
    `administrateur@hshield237.local` / `Administrateur1234!` toujours
-   valides (voir « Bugs connus »).
+   valides ; nouveau compte `arthur@hshield237.local` /
+   `Responsable1234!` (rôle responsable, désigné pour Direction générale,
+   créé le 2026-08-27 pour tester le refus + la visualisation d'email)
+   (voir « Bugs connus »).

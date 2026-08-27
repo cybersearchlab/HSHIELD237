@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import Role, Utilisateur
+from apps.gouvernance.models import Consentement, MotifRefus, StatutConsentement
 from apps.simulation.models import EnvoiTracking, Interaction, TypeInteraction
 
 from .models import Campagne, Departement, ScenarioPhishing
@@ -207,3 +208,92 @@ class HistoriqueParDepartementTests(TestCase):
         self.assertEqual(entree["campagnes"][0]["taux_clic"], 100.0)
         self.assertEqual(entree["campagnes"][1]["campagne_id"], campagne_2.id)
         self.assertEqual(entree["campagnes"][1]["taux_clic"], 0.0)
+
+
+class ConsentementSurCampagneTests(TestCase):
+    """Le statut et le motif de refus du consentement doivent être visibles
+    directement depuis l'onglet Campagnes (CampagneSerializer), pas
+    seulement depuis Consentements."""
+
+    def setUp(self):
+        self.consultant = Utilisateur.objects.create_user(
+            username="consultant-camp-consent",
+            email="consultant-camp-consent@entreprise.cm",
+            password="Consultant1234!",
+            role=Role.CONSULTANT,
+        )
+        self.client.force_login(self.consultant)
+
+    def test_campagne_sans_consentement(self):
+        campagne = Campagne.objects.create(departement=Departement.IT)
+        response = self.client.get(reverse("campagne-detail", kwargs={"pk": campagne.id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.data["consentement_statut"])
+        self.assertEqual(response.data["consentement_motifs_refus_display"], [])
+
+    def test_campagne_avec_consentement_refuse(self):
+        campagne = Campagne.objects.create(departement=Departement.IT)
+        Consentement.objects.create(
+            campagne=campagne,
+            responsable_nom="Resp",
+            responsable_email="resp@entreprise.cm",
+            statut=StatutConsentement.REFUSE,
+            motifs_refus=[MotifRefus.TIMING_INAPPROPRIE],
+            motif_refus_details="Contexte particulier.",
+        )
+        response = self.client.get(reverse("campagne-detail", kwargs={"pk": campagne.id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["consentement_statut"], StatutConsentement.REFUSE)
+        self.assertIn("n'est pas approprié", response.data["consentement_motifs_refus_display"][0])
+        self.assertEqual(response.data["consentement_motif_refus_details"], "Contexte particulier.")
+
+
+class VisualisationScenarioResponsableTests(TestCase):
+    """Le responsable désigné doit pouvoir consulter le contenu de l'email
+    de phishing avant de valider/refuser sa campagne — mais uniquement
+    pour la campagne dont il est le responsable désigné."""
+
+    def setUp(self):
+        self.campagne = Campagne.objects.create(departement=Departement.RH)
+        self.consentement = Consentement.objects.create(
+            campagne=self.campagne, responsable_nom="Resp", responsable_email="resp-scenario@entreprise.cm"
+        )
+        ScenarioPhishing.objects.create(
+            campagne=self.campagne,
+            objet_email="Objet test",
+            corps_email="Corps test",
+            url_fausse_page="https://exemple.cm/",
+            secteur_cible="Test",
+        )
+        self.responsable = Utilisateur.objects.create_user(
+            username="resp-scenario",
+            email="resp-scenario@entreprise.cm",
+            password="Responsable1234!",
+            role=Role.RESPONSABLE,
+        )
+        self.autre_responsable = Utilisateur.objects.create_user(
+            username="autre-resp-scenario",
+            email="autre-resp-scenario@entreprise.cm",
+            password="Responsable1234!",
+            role=Role.RESPONSABLE,
+        )
+        self.url = reverse("campagne-scenarios", kwargs={"campagne_id": self.campagne.id})
+
+    def test_le_bon_responsable_peut_voir_le_scenario(self):
+        self.client.force_login(self.responsable)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["objet_email"], "Objet test")
+
+    def test_un_autre_responsable_ne_peut_pas_voir_le_scenario(self):
+        self.client.force_login(self.autre_responsable)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_responsable_sans_consentement_assigne_refuse(self):
+        campagne_orpheline = Campagne.objects.create(departement=Departement.JURIDIQUE)
+        url = reverse("campagne-scenarios", kwargs={"campagne_id": campagne_orpheline.id})
+        self.client.force_login(self.responsable)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)

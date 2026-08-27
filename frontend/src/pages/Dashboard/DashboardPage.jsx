@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
-import { logout } from "../../api/auth";
 import { listCampagnes } from "../../api/campagnes";
 import { getScoreParDepartement } from "../../api/scores";
 import Layout from "../../components/Layout";
 import ScoreRing from "../../components/ScoreRing";
-import { useAuth } from "../../context/AuthContext";
 import { computeGlobalStats, fillColorClass, metricAccentClass, pctColorClass, scoreColor } from "../../utils/score";
 import { STATUT_LABELS } from "../../utils/statuts";
 
@@ -22,9 +19,6 @@ function formatDate(iso) {
 }
 
 export default function DashboardPage() {
-  const { refresh } = useAuth();
-  const navigate = useNavigate();
-
   const [campagnes, setCampagnes] = useState({ count: 0, results: [] });
   const [deptScores, setDeptScores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,12 +41,6 @@ export default function DashboardPage() {
     };
   }, []);
 
-  function handleLogout() {
-    logout();
-    refresh();
-    navigate("/login", { replace: true });
-  }
-
   const global = computeGlobalStats(deptScores);
   const deptsTestes = deptScores.filter((d) => d.total_envois > 0);
   const deptsTries = [...deptScores].sort((a, b) => b.taux_clic - a.taux_clic);
@@ -65,15 +53,7 @@ export default function DashboardPage() {
     : `${campagnes.count} campagne${campagnes.count > 1 ? "s" : ""} · ${global.totalEnvois} email${global.totalEnvois > 1 ? "s" : ""} envoyé${global.totalEnvois > 1 ? "s" : ""}`;
 
   return (
-    <Layout
-      pageTitle="Tableau de bord"
-      pageSubtitle={subtitle}
-      actions={
-        <button className="btn" onClick={handleLogout}>
-          <i className="ti ti-logout" /> Se déconnecter
-        </button>
-      }
-    >
+    <Layout pageTitle="Tableau de bord" pageSubtitle={subtitle}>
       {loading && <p style={{ color: "var(--text3)", padding: "40px 0", textAlign: "center" }}>Chargement…</p>}
       {!loading && error && <p style={{ color: "var(--red)", padding: "40px 0", textAlign: "center" }}>{error}</p>}
 
