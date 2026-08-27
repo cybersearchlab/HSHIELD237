@@ -1,7 +1,5 @@
 from django.db import models
 
-from apps.campagnes.models import Departement
-
 
 class TemplateDepartement(models.Model):
     """Structure de scénario réutilisable pour un département donné —
@@ -16,7 +14,7 @@ class TemplateDepartement(models.Model):
     nommage dans tout le projet)."""
 
     nom = models.CharField(max_length=255)
-    departement = models.CharField(max_length=20, choices=Departement.choices)
+    departement = models.CharField(max_length=30)
     prompt_structure = models.TextField(
         help_text="Base de structure fournie à l'API Claude au moment de la génération — "
         "pas un email déjà rédigé, un guide de contenu à adapter."
@@ -28,4 +26,6 @@ class TemplateDepartement(models.Model):
         ordering = ["-date_creation"]
 
     def __str__(self):
-        return f"{self.nom} — {self.get_departement_display()}"
+        from apps.campagnes.services import departement_label
+
+        return f"{self.nom} — {departement_label(self.departement)}"

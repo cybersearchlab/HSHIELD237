@@ -1,6 +1,22 @@
 from rest_framework import serializers
 
-from .models import Campagne, Destinataire, ScenarioPhishing
+from .models import Campagne, DepartementConfigure, Destinataire, ScenarioPhishing
+from .services import departement_label
+
+
+def validate_departement_existe(value):
+    if not DepartementConfigure.objects.filter(code=value).exists():
+        raise serializers.ValidationError(
+            "Département inconnu — configurez-le d'abord dans Départements."
+        )
+    return value
+
+
+class DepartementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DepartementConfigure
+        fields = ["id", "code", "nom", "date_creation"]
+        read_only_fields = ["id", "code", "date_creation"]
 
 
 class ScenarioPhishingSerializer(serializers.ModelSerializer):
@@ -25,16 +41,22 @@ class ScenarioPhishingSerializer(serializers.ModelSerializer):
 
 
 class DestinataireSerializer(serializers.ModelSerializer):
-    departement_display = serializers.CharField(source="get_departement_display", read_only=True)
+    departement_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Destinataire
         fields = ["id", "campagne", "email", "departement", "departement_display"]
         read_only_fields = ["id", "campagne"]
 
+    def get_departement_display(self, obj):
+        return departement_label(obj.departement)
+
+    def validate_departement(self, value):
+        return validate_departement_existe(value)
+
 
 class CampagneSerializer(serializers.ModelSerializer):
-    departement_display = serializers.CharField(source="get_departement_display", read_only=True)
+    departement_display = serializers.SerializerMethodField()
     # Remonte l'état du consentement directement sur la campagne — un refus
     # doit être visible depuis l'onglet Campagnes, pas seulement depuis
     # Consentements (demande explicite de l'utilisateur, 2026-08-27).
@@ -58,6 +80,12 @@ class CampagneSerializer(serializers.ModelSerializer):
             "consentement_motif_refus_details",
         ]
         read_only_fields = ["id", "date_creation"]
+
+    def get_departement_display(self, obj):
+        return departement_label(obj.departement)
+
+    def validate_departement(self, value):
+        return validate_departement_existe(value)
 
     def _consentement(self, obj):
         return getattr(obj, "consentement", None)

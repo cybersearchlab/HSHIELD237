@@ -5,7 +5,7 @@ from apps.accounts.models import Role, Utilisateur
 from apps.gouvernance.models import Consentement, MotifRefus, StatutConsentement
 from apps.simulation.models import EnvoiTracking, Interaction, TypeInteraction
 
-from .models import Campagne, Departement, ScenarioPhishing
+from .models import Campagne, Departement, DepartementConfigure, ScenarioPhishing
 
 
 def _envoyer_et_interagir(scenario, email, types_interaction):
@@ -149,7 +149,7 @@ class ScoreParDepartementTests(TestCase):
     def test_toutes_les_valeurs_de_departement_sont_representees(self):
         url = reverse("campagnes-score-departements")
         response = self.client.get(url)
-        self.assertEqual(len(response.data), len(Departement.choices))
+        self.assertEqual(len(response.data), DepartementConfigure.objects.count())
 
 
 class HistoriqueParDepartementTests(TestCase):
@@ -171,7 +171,7 @@ class HistoriqueParDepartementTests(TestCase):
     def test_toutes_les_valeurs_de_departement_sont_representees(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), len(Departement.choices))
+        self.assertEqual(len(response.data), DepartementConfigure.objects.count())
 
     def test_departement_sans_campagne_a_une_liste_vide(self):
         response = self.client.get(self.url)
@@ -319,3 +319,80 @@ class VisualisationScenarioResponsableTests(TestCase):
         self.assertEqual(data[1]["objet_email"], "Objet test")
         self.assertIn("date_creation", data[0])
         self.assertGreaterEqual(data[0]["date_creation"], data[1]["date_creation"])
+
+
+class DepartementRegistryTests(TestCase):
+    """Le registre des départements (DepartementConfigure) remplace
+    l'ancienne liste figée — ajout/renommage/suppression gérés par
+    l'administrateur, propagés immédiatement partout puisque le libellé
+    est désormais résolu par lecture live (voir services.departement_label)."""
+
+    def setUp(self):
+        self.administrateur = Utilisateur.objects.create_user(
+            username="admin-dept",
+            email="admin-dept@hshield237.local",
+            password="Test1234!",
+            role=Role.ADMINISTRATEUR,
+        )
+        self.consultant = Utilisateur.objects.create_user(
+            username="consultant-dept",
+            email="consultant-dept@hshield237.local",
+            password="Test1234!",
+            role=Role.CONSULTANT,
+        )
+
+    def test_liste_accessible_a_un_consultant_en_lecture(self):
+        self.client.force_login(self.consultant)
+        response = self.client.get("/api/departements/")
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        results = data["results"] if isinstance(data, dict) and "results" in data else data
+        self.assertEqual(len(results), 10)
+
+    def test_creation_reservee_a_l_administrateur(self):
+        self.client.force_login(self.consultant)
+        response = self.client.post("/api/departements/", {"nom": "Support technique"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_administrateur_peut_creer_un_departement_avec_code_auto(self):
+        self.client.force_login(self.administrateur)
+        response = self.client.post("/api/departements/", {"nom": "Support technique"})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["code"], "support-technique")
+        self.assertEqual(response.data["nom"], "Support technique")
+
+    def test_renommer_un_departement_met_a_jour_le_libelle_partout(self):
+        self.client.force_login(self.administrateur)
+        dept = DepartementConfigure.objects.get(code="it")
+        campagne = Campagne.objects.create(departement="it")
+
+        response = self.client.patch(
+            f"/api/departements/{dept.id}/", {"nom": "Technologies de l'information"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        detail = self.client.get(f"/api/campagnes/{campagne.id}/")
+        self.assertEqual(detail.data["departement_display"], "Technologies de l'information")
+
+    def test_suppression_bloquee_si_departement_encore_utilise(self):
+        self.client.force_login(self.administrateur)
+        dept = DepartementConfigure.objects.get(code="rh")
+        Campagne.objects.create(departement="rh")
+
+        response = self.client.delete(f"/api/departements/{dept.id}/")
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(DepartementConfigure.objects.filter(code="rh").exists())
+
+    def test_suppression_possible_si_departement_inutilise(self):
+        self.client.force_login(self.administrateur)
+        dept = DepartementConfigure.objects.create(nom="Département de test à supprimer")
+
+        response = self.client.delete(f"/api/departements/{dept.id}/")
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(DepartementConfigure.objects.filter(pk=dept.id).exists())
+
+    def test_campagne_refuse_un_departement_inconnu(self):
+        self.client.force_login(self.consultant)
+        response = self.client.post("/api/campagnes/", {"departement": "inexistant"})
+        self.assertEqual(response.status_code, 400)

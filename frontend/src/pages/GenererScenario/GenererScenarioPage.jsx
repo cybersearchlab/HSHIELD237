@@ -5,7 +5,7 @@ import { listCampagnes } from "../../api/campagnes";
 import { generateManuel, generateViaAPI } from "../../api/generation";
 import { listTemplates } from "../../api/templatesDepartement";
 import Layout from "../../components/Layout";
-import { departementLabel } from "../../utils/departements";
+import { useDepartements } from "../../context/DepartementsContext";
 import { statutLabel } from "../../utils/statuts";
 
 const TOAST_ICONS = { success: "ti-check", info: "ti-info-circle", error: "ti-alert-circle" };
@@ -28,6 +28,7 @@ function isValidUrl(value) {
 
 export default function GenererScenarioPage() {
   const navigate = useNavigate();
+  const { labelFor } = useDepartements();
   const [mode, setMode] = useState("api"); // "api" | "manuel"
 
   const [campagnes, setCampagnes] = useState([]);
@@ -243,7 +244,7 @@ export default function GenererScenarioPage() {
         objet_email: objetEmail,
         corps_email: corpsEmail,
         url_fausse_page: urlFaussePage,
-        secteur_cible: selectedCampagne ? departementLabel(selectedCampagne.departement) : "",
+        secteur_cible: selectedCampagne ? labelFor(selectedCampagne.departement) : "",
         piece_jointe: pieceJointe,
         expediteur_nom: expediteurNom,
         expediteur_email: expediteurEmail,
@@ -323,7 +324,7 @@ export default function GenererScenarioPage() {
                   {!campagnesLoading && campagnes.length === 0 && <option value="">Aucune campagne disponible</option>}
                   {campagnes.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.departement_display || departementLabel(c.departement)} — {statutLabel(c.statut)} (#{c.id})
+                      {c.departement_display || labelFor(c.departement)} — {statutLabel(c.statut)} (#{c.id})
                     </option>
                   ))}
                 </select>

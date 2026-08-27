@@ -1,6 +1,6 @@
 from apps.simulation.models import EnvoiTracking, Interaction, TypeInteraction
 
-from .models import Campagne, Departement, ScenarioPhishing
+from .models import Campagne, DepartementConfigure, ScenarioPhishing
 
 # Le signalement traduit une vigilance réelle de l'employé : il atténue le
 # score plutôt que de l'aggraver, contrairement aux 3 autres taux.
@@ -8,6 +8,18 @@ POIDS_SOUMISSION = 0.5
 POIDS_CLIC = 0.3
 POIDS_OUVERTURE = 0.2
 POIDS_SIGNALEMENT = 0.3
+
+
+def departement_label(code):
+    """Libellé affiché d'un code de département, résolu par lecture live du
+    registre DepartementConfigure (géré par l'administrateur) plutôt que
+    par l'ancienne énumération figée Departement.choices (voir décision du
+    2026-08-27, docs/CONTEXTE_PROJET.md). Si le code ne correspond à aucun
+    département configuré (département supprimé depuis, ou donnée
+    historique), le code brut est retourné tel quel plutôt que de lever
+    une erreur — un affichage dégradé mais sans casser la page."""
+    nom = DepartementConfigure.objects.filter(code=code).values_list("nom", flat=True).first()
+    return nom or code
 
 
 def _taux(interactions_qs, type_interaction, total_envois):
@@ -65,13 +77,13 @@ def score_par_departement():
     calculé sur l'ensemble des campagnes de ce département (toutes campagnes
     et tous scénarios confondus)."""
     resultats = []
-    for valeur, libelle in Departement.choices:
-        campagnes = Campagne.objects.filter(departement=valeur)
+    for dept in DepartementConfigure.objects.all():
+        campagnes = Campagne.objects.filter(departement=dept.code)
         scenarios = ScenarioPhishing.objects.filter(campagne__in=campagnes)
         envois = EnvoiTracking.objects.filter(scenario__in=scenarios)
         resultat = calculer_score(envois)
-        resultat["departement"] = valeur
-        resultat["departement_libelle"] = libelle
+        resultat["departement"] = dept.code
+        resultat["departement_libelle"] = dept.nom
         resultat["nombre_campagnes"] = campagnes.count()
         resultats.append(resultat)
     return resultats
@@ -83,8 +95,8 @@ def historique_par_departement():
     chiffre, ici chaque campagne garde sa propre entrée chronologique pour
     permettre d'afficher l'évolution du score dans le temps (jour 14)."""
     resultats = []
-    for valeur, libelle in Departement.choices:
-        campagnes = Campagne.objects.filter(departement=valeur).order_by("date_creation")
+    for dept in DepartementConfigure.objects.all():
+        campagnes = Campagne.objects.filter(departement=dept.code).order_by("date_creation")
         historique = []
         for campagne in campagnes:
             score = score_campagne(campagne)
@@ -103,8 +115,8 @@ def historique_par_departement():
             )
         resultats.append(
             {
-                "departement": valeur,
-                "departement_libelle": libelle,
+                "departement": dept.code,
+                "departement_libelle": dept.nom,
                 "nombre_campagnes": campagnes.count(),
                 "campagnes": historique,
             }

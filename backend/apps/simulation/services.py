@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
 
+from apps.campagnes.services import departement_label
 from apps.gouvernance.models import StatutConsentement
 
 from .models import ConfigurationEnvoi, EnvoiTracking
@@ -139,7 +140,7 @@ class EnvoiCampagneService:
                 if scenario is None:
                     raise EnvoiCampagneError(
                         f"Aucun scénario ne cible le département "
-                        f"« {destinataire.get_departement_display()} » et aucun scénario "
+                        f"« {departement_label(destinataire.departement)} » et aucun scénario "
                         f"générique n'est défini sur cette campagne."
                     )
                 if not premier_envoi and self.delai_entre_envois:

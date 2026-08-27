@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { createResponsable, deleteResponsable, listResponsables, updateResponsable } from "../../api/responsables";
 import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
-import { DEPARTEMENT_ICONS, DEPARTEMENT_LABELS } from "../../utils/departements";
+import { useDepartements } from "../../context/DepartementsContext";
+import { DEPARTEMENT_ICONS } from "../../utils/departements";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function isValidEmail(value) {
@@ -16,6 +17,7 @@ const TOAST_COLORS = { success: "#4ADE80", info: "#60A5FA", error: "#F87171" };
 export default function ResponsablesPage() {
   const { user } = useAuth();
   const estAdministrateur = user?.role === "administrateur";
+  const { departements, labelFor } = useDepartements();
 
   const [responsables, setResponsables] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,10 +85,10 @@ export default function ResponsablesPage() {
     try {
       if (existing) {
         await updateResponsable(existing.id, { nom: formNom, email: formEmail });
-        showToast(`Responsable mis à jour pour ${DEPARTEMENT_LABELS[modalDepartement]}.`, "success");
+        showToast(`Responsable mis à jour pour ${labelFor(modalDepartement)}.`, "success");
       } else {
         await createResponsable({ departement: modalDepartement, nom: formNom, email: formEmail });
-        showToast(`Responsable configuré pour ${DEPARTEMENT_LABELS[modalDepartement]}.`, "success");
+        showToast(`Responsable configuré pour ${labelFor(modalDepartement)}.`, "success");
       }
       setModalDepartement(null);
       load();
@@ -100,7 +102,7 @@ export default function ResponsablesPage() {
   async function handleDelete(existing) {
     if (
       !window.confirm(
-        `Retirer ${existing.nom} comme responsable de ${DEPARTEMENT_LABELS[existing.departement]} ? Les nouvelles campagnes de ce département n'auront plus de demande de consentement générée automatiquement.`
+        `Retirer ${existing.nom} comme responsable de ${labelFor(existing.departement)} ? Les nouvelles campagnes de ce département n'auront plus de demande de consentement générée automatiquement.`
       )
     ) {
       return;
@@ -128,7 +130,7 @@ export default function ResponsablesPage() {
     <Layout
       pageTitle="Responsables"
       pageSubtitle={
-        loading ? undefined : `${responsables.length} / 10 départements avec un responsable configuré`
+        loading ? undefined : `${responsables.length} / ${departements.length} département${departements.length > 1 ? "s" : ""} avec un responsable configuré`
       }
     >
       <div
@@ -169,7 +171,7 @@ export default function ResponsablesPage() {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(DEPARTEMENT_LABELS).map(([dept, label]) => {
+                {departements.map(({ code: dept, nom: label }) => {
                   const existing = parDepartement[dept];
                   return (
                     <tr key={dept}>
@@ -209,7 +211,7 @@ export default function ResponsablesPage() {
         <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && setModalDepartement(null)}>
           <div className="modal">
             <div className="modal-header">
-              <h3>Responsable — {DEPARTEMENT_LABELS[modalDepartement]}</h3>
+              <h3>Responsable — {labelFor(modalDepartement)}</h3>
               <div className="close-btn" role="button" tabIndex={0} onClick={() => setModalDepartement(null)}>
                 <i className="ti ti-x" />
               </div>

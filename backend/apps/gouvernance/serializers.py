@@ -1,23 +1,37 @@
 from rest_framework import serializers
 
+from apps.campagnes.models import DepartementConfigure
+from apps.campagnes.services import departement_label
+
 from .models import Consentement, JournalAudit, MotifRefus, ResponsableDepartement
 
 
 class ResponsableDepartementSerializer(serializers.ModelSerializer):
-    departement_display = serializers.CharField(source="get_departement_display", read_only=True)
+    departement_display = serializers.SerializerMethodField()
 
     class Meta:
         model = ResponsableDepartement
         fields = ["id", "departement", "departement_display", "nom", "email", "date_maj"]
         read_only_fields = ["id", "date_maj"]
 
+    def get_departement_display(self, obj):
+        return departement_label(obj.departement)
+
+    def validate_departement(self, value):
+        if not DepartementConfigure.objects.filter(code=value).exists():
+            raise serializers.ValidationError(
+                "Département inconnu — configurez-le d'abord dans Départements."
+            )
+        return value
+
 
 class ConsentementSerializer(serializers.ModelSerializer):
     statut_display = serializers.CharField(source="get_statut_display", read_only=True)
-    campagne_departement_display = serializers.CharField(
-        source="campagne.get_departement_display", read_only=True
-    )
+    campagne_departement_display = serializers.SerializerMethodField()
     motifs_refus_display = serializers.SerializerMethodField()
+
+    def get_campagne_departement_display(self, obj):
+        return departement_label(obj.campagne.departement)
 
     class Meta:
         model = Consentement

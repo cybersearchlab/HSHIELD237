@@ -5,7 +5,8 @@ import { downloadRapportCampagne } from "../../api/rapports";
 import { getScoreCampagne } from "../../api/scores";
 import Layout from "../../components/Layout";
 import ScoreRing from "../../components/ScoreRing";
-import { DEPARTEMENT_ICONS, DEPARTEMENT_LABELS } from "../../utils/departements";
+import { useDepartements } from "../../context/DepartementsContext";
+import { DEPARTEMENT_ICONS } from "../../utils/departements";
 import { fillColorClass, pctColorClass } from "../../utils/score";
 import { STATUT_LABELS } from "../../utils/statuts";
 
@@ -48,6 +49,7 @@ function triggerDownload(blob, filename) {
 }
 
 export default function RapportsPDFPage() {
+  const { labelFor } = useDepartements();
   const [campagnes, setCampagnes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -267,7 +269,7 @@ export default function RapportsPDFPage() {
                         </div>
                         <div className="rapport-info">
                           <div className="rapport-name">
-                            Campagne #{c.id} — {c.departement_display || DEPARTEMENT_LABELS[c.departement] || c.departement}
+                            Campagne #{c.id} — {c.departement_display || labelFor(c.departement)}
                           </div>
                           <div className="rapport-meta">
                             <span>
@@ -329,7 +331,7 @@ export default function RapportsPDFPage() {
                       <i className="ti ti-file-report" />
                       <div>
                         <div className="preview-title">
-                          Campagne #{selected.id} — {selected.departement_display || DEPARTEMENT_LABELS[selected.departement]}
+                          Campagne #{selected.id} — {selected.departement_display || labelFor(selected.departement)}
                         </div>
                         <div className="preview-sub">{STATUT_LABELS[selected.statut] || selected.statut}</div>
                       </div>

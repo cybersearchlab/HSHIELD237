@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createTemplate, deleteTemplate, listTemplates, updateTemplate } from "../../api/templatesDepartement";
 import Layout from "../../components/Layout";
-import { DEPARTEMENT_ICONS, DEPARTEMENT_LABELS } from "../../utils/departements";
+import { useDepartements } from "../../context/DepartementsContext";
+import { DEPARTEMENT_ICONS } from "../../utils/departements";
 
 const TOAST_ICONS = { success: "ti-check", info: "ti-info-circle", error: "ti-alert-circle" };
 const TOAST_COLORS = { success: "#4ADE80", info: "#60A5FA", error: "#F87171" };
@@ -12,6 +13,7 @@ function formatDate(iso) {
 }
 
 export default function TemplatesDepartementPage() {
+  const { departements } = useDepartements();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,7 +22,7 @@ export default function TemplatesDepartementPage() {
 
   const [modalTemplate, setModalTemplate] = useState(undefined); // undefined = fermée, null = création, objet = édition
   const [formNom, setFormNom] = useState("");
-  const [formDepartement, setFormDepartement] = useState("direction");
+  const [formDepartement, setFormDepartement] = useState("");
   const [formPrompt, setFormPrompt] = useState("");
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -78,11 +80,12 @@ export default function TemplatesDepartementPage() {
   }, [templates]);
 
   const departementsCouverts = Object.keys(countsByDept).length;
+  const totalDepartements = departements.length;
 
   function openCreateModal() {
     setModalTemplate(null);
     setFormNom("");
-    setFormDepartement("direction");
+    setFormDepartement(departements[0]?.code || "");
     setFormPrompt("");
     setFormError("");
   }
@@ -142,7 +145,7 @@ export default function TemplatesDepartementPage() {
   return (
     <Layout
       pageTitle="Templates par département"
-      pageSubtitle={loading ? undefined : `${templates.length} template${templates.length > 1 ? "s" : ""} · ${departementsCouverts} / 10 départements couverts`}
+      pageSubtitle={loading ? undefined : `${templates.length} template${templates.length > 1 ? "s" : ""} · ${departementsCouverts} / ${totalDepartements} départements couverts`}
     >
       {loading && <p style={{ color: "var(--text3)", padding: "40px 0", textAlign: "center" }}>Chargement…</p>}
       {!loading && error && <p style={{ color: "var(--red)", padding: "40px 0", textAlign: "center" }}>{error}</p>}
@@ -161,7 +164,7 @@ export default function TemplatesDepartementPage() {
               <div className="metric-label">
                 <i className="ti ti-building" /> Départements couverts
               </div>
-              <div className="metric-value">{departementsCouverts} / 10</div>
+              <div className="metric-value">{departementsCouverts} / {totalDepartements}</div>
             </div>
             <div className="metric m-red">
               <div className="metric-label">
@@ -208,7 +211,7 @@ export default function TemplatesDepartementPage() {
                 <div className="dept-name">Tous</div>
                 <span className="badge badge-neutral">{templates.length}</span>
               </div>
-              {Object.entries(DEPARTEMENT_LABELS).map(([dept, label]) => (
+              {departements.map(({ code: dept, nom: label }) => (
                 <div
                   key={dept}
                   className={`dept-nav-item${departementFilter === dept ? " selected" : ""}`}
@@ -305,9 +308,9 @@ export default function TemplatesDepartementPage() {
                       value={formDepartement}
                       onChange={(e) => setFormDepartement(e.target.value)}
                     >
-                      {Object.entries(DEPARTEMENT_LABELS).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
+                      {departements.map((d) => (
+                        <option key={d.code} value={d.code}>
+                          {d.nom}
                         </option>
                       ))}
                     </select>

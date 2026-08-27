@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
-from apps.campagnes.models import Campagne, Departement
+from apps.campagnes.models import Campagne
 
 
 class StatutConsentement(models.TextChoices):
@@ -26,13 +26,15 @@ class ResponsableDepartement(models.Model):
     département — ce n'est plus le consultant qui initie la campagne qui
     saisit librement un nom/email de responsable, par souci de sécurité."""
 
-    departement = models.CharField(max_length=20, choices=Departement.choices, unique=True)
+    departement = models.CharField(max_length=30, unique=True)
     nom = models.CharField(max_length=255)
     email = models.EmailField()
     date_maj = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.get_departement_display()} — {self.nom}"
+        from apps.campagnes.services import departement_label
+
+        return f"{departement_label(self.departement)} — {self.nom}"
 
 
 class Consentement(models.Model):

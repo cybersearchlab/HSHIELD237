@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 
-from apps.campagnes.models import Departement
+from apps.campagnes.services import departement_label as get_departement_label
 
 SYSTEM_PROMPT = (
     "Tu es un expert en sensibilisation à la cybersécurité pour H-SHIELD237, une plateforme "
@@ -45,8 +45,8 @@ class ClaudeGenerationService:
         return anthropic.Anthropic(api_key=self.api_key)
 
     def _build_prompt(self, departement, contexte_additionnel="", template=None):
-        departement_label = dict(Departement.choices).get(departement, departement)
-        prompt = f"Génère un scénario de phishing ciblant le département : {departement_label}."
+        label = get_departement_label(departement)
+        prompt = f"Génère un scénario de phishing ciblant le département : {label}."
         if template is not None:
             # Le template ne fournit qu'une structure de base à adapter — pas
             # un email déjà rédigé — d'où l'instruction explicite « adapte »

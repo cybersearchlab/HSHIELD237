@@ -10,6 +10,7 @@ from apps.accounts.views import MeView
 from apps.campagnes.views import (
     CampagneScoreView,
     CampagneViewSet,
+    DepartementViewSet,
     DestinataireDetailView,
     DestinataireListCreateView,
     HistoriqueParDepartementView,
@@ -31,6 +32,7 @@ def health(request):
 router = DefaultRouter()
 router.register("campagnes", CampagneViewSet, basename="campagne")
 router.register("templates-departement", TemplateDepartementViewSet, basename="templatedepartement")
+router.register("departements", DepartementViewSet, basename="departement")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

@@ -1,20 +1,9 @@
-export const DEPARTEMENT_LABELS = {
-  direction: "Direction générale",
-  rh: "Ressources humaines",
-  comptabilite: "Comptabilité / Finance",
-  it: "Informatique",
-  commercial: "Commercial / Ventes",
-  juridique: "Juridique",
-  marketing: "Marketing / Communication",
-  production: "Production / Opérations",
-  achats: "Achats / Logistique",
-  autre: "Autre",
-};
-
-export function departementLabel(value) {
-  return DEPARTEMENT_LABELS[value] || value;
-}
-
+// Correspondance esthétique code → icône Tabler, purement décorative.
+// Le libellé affiché et la liste des départements existants viennent
+// désormais du registre géré par l'administrateur — voir
+// context/DepartementsContext.jsx (useDepartements()). Un nouveau
+// département créé par l'administrateur n'a pas d'icône dédiée ici : le
+// repli générique "ti-building" s'applique.
 export const DEPARTEMENT_ICONS = {
   direction: "ti-building-skyscraper",
   rh: "ti-users",

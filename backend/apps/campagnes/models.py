@@ -1,5 +1,6 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.utils.text import slugify
 
 
 class Statut(models.TextChoices):
@@ -10,6 +11,13 @@ class Statut(models.TextChoices):
 
 
 class Departement(models.TextChoices):
+    """Constantes de commodité pour le code (tests, seed de migration,
+    lisibilité). N'est plus branchée à `choices=` sur aucun champ depuis
+    le 2026-08-27 (voir Departement, le modèle ci-dessous) — la liste
+    réelle des départements est désormais gérée dynamiquement par
+    l'administrateur, en base. Ces 10 valeurs restent le contenu du
+    seed initial (migration 0006)."""
+
     DIRECTION = "direction", "Direction générale"
     RH = "rh", "Ressources humaines"
     COMPTABILITE = "comptabilite", "Comptabilité / Finance"
@@ -22,8 +30,43 @@ class Departement(models.TextChoices):
     AUTRE = "autre", "Autre"
 
 
+class DepartementConfigure(models.Model):
+    """Registre autoritaire des départements de l'entreprise cliente,
+    géré par l'administrateur (créer/renommer/supprimer). Remplace
+    l'ancienne liste figée `Departement.choices` — les champs qui
+    stockaient déjà un code de département (Campagne.departement,
+    Destinataire.departement, ResponsableDepartement.departement,
+    TemplateDepartement.departement) continuent de stocker ce même code
+    en CharField libre (pas de ForeignKey — voir docs/CONTEXTE_PROJET.md,
+    décision du 2026-08-27, pour la justification), mais sa validité et
+    son libellé affiché sont désormais résolus par lecture live de cette
+    table plutôt que par une énumération figée dans le code."""
+
+    code = models.SlugField(max_length=30, unique=True, editable=False)
+    nom = models.CharField(max_length=100, unique=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["nom"]
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            base = slugify(self.nom)[:30] or "departement"
+            code = base
+            suffixe = 2
+            while DepartementConfigure.objects.filter(code=code).exclude(pk=self.pk).exists():
+                suffixe_str = f"-{suffixe}"
+                code = f"{base[: 30 - len(suffixe_str)]}{suffixe_str}"
+                suffixe += 1
+            self.code = code
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.nom
+
+
 class Campagne(models.Model):
-    departement = models.CharField(max_length=20, choices=Departement.choices)
+    departement = models.CharField(max_length=30)
     statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.BROUILLON)
     date_creation = models.DateTimeField(auto_now_add=True)
     perimetre_valide = models.BooleanField(default=False)
@@ -32,7 +75,9 @@ class Campagne(models.Model):
         ordering = ["-date_creation"]
 
     def __str__(self):
-        return f"{self.get_departement_display()} — {self.get_statut_display()}"
+        from .services import departement_label
+
+        return f"{departement_label(self.departement)} — {self.get_statut_display()}"
 
 
 class ScenarioPhishing(models.Model):
@@ -48,14 +93,18 @@ class ScenarioPhishing(models.Model):
     est_html = models.BooleanField(default=False)
     date_creation = models.DateTimeField(auto_now_add=True)
     departements_cibles = ArrayField(
-        models.CharField(max_length=20, choices=Departement.choices),
+        models.CharField(max_length=30),
         default=list,
         blank=True,
         help_text=(
             "Départements ciblés par ce scénario au sein de sa campagne. "
             "Vide = scénario générique, utilisé par défaut pour tout "
             "destinataire dont le département n'est ciblé par aucun autre "
-            "scénario de la campagne."
+            "scénario de la campagne. Champ retiré de l'interface depuis "
+            "le 2026-08-21 (voir docs/CONTEXTE_PROJET.md) — non concerné "
+            "par le passage des départements en registre dynamique : les "
+            "codes ici stockés ne sont plus validés contre la liste "
+            "actuelle des départements."
         ),
     )
 
@@ -73,11 +122,13 @@ class Destinataire(models.Model):
 
     campagne = models.ForeignKey(Campagne, on_delete=models.CASCADE, related_name="destinataires")
     email = models.EmailField()
-    departement = models.CharField(max_length=20, choices=Departement.choices)
+    departement = models.CharField(max_length=30)
 
     class Meta:
         ordering = ["email"]
         unique_together = ("campagne", "email")
 
     def __str__(self):
-        return f"{self.email} ({self.get_departement_display()})"
+        from .services import departement_label
+
+        return f"{self.email} ({departement_label(self.departement)})"

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createCampagne, deleteCampagne, listCampagnes, listScenarios, updateCampagne } from "../../api/campagnes";
 import { envoyerCampagne, getConfigurationEnvoi, updateConfigurationEnvoi } from "../../api/simulation";
 import Layout from "../../components/Layout";
-import { DEPARTEMENT_LABELS } from "../../utils/departements";
+import { useDepartements } from "../../context/DepartementsContext";
 import { STATUT_LABELS } from "../../utils/statuts";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,6 +34,7 @@ function formatDate(iso) {
 }
 
 export default function CampagnesPage() {
+  const { departements } = useDepartements();
   const [statutFilter, setStatutFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -43,7 +44,7 @@ export default function CampagnesPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formDepartement, setFormDepartement] = useState("direction");
+  const [formDepartement, setFormDepartement] = useState("");
 
   const [launchCampagne, setLaunchCampagne] = useState(null);
   const [launchLoading, setLaunchLoading] = useState(false);
@@ -200,7 +201,7 @@ export default function CampagnesPage() {
   }
 
   function openModal() {
-    setFormDepartement("direction");
+    setFormDepartement(departements[0]?.code || "");
     setModalOpen(true);
   }
 
@@ -430,9 +431,9 @@ export default function CampagnesPage() {
                     value={formDepartement}
                     onChange={(e) => setFormDepartement(e.target.value)}
                   >
-                    {Object.entries(DEPARTEMENT_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
+                    {departements.map((d) => (
+                      <option key={d.code} value={d.code}>
+                        {d.nom}
                       </option>
                     ))}
                   </select>

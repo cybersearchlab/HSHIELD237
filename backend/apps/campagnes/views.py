@@ -9,12 +9,60 @@ from rest_framework.viewsets import ModelViewSet
 from apps.accounts.models import Role
 from apps.accounts.permissions import IsAdministrateur, IsConsultant, IsResponsable
 
-from .models import Campagne, Destinataire
-from .serializers import CampagneSerializer, DestinataireSerializer, ScenarioPhishingSerializer
+from .models import Campagne, DepartementConfigure, Destinataire
+from .serializers import CampagneSerializer, DepartementSerializer, DestinataireSerializer, ScenarioPhishingSerializer
 from .services import historique_par_departement, score_campagne, score_par_departement
 
 CAN_MANAGE_CAMPAGNE = [IsAuthenticated & (IsConsultant | IsAdministrateur)]
 CAN_VIEW_SCENARIOS = [IsAuthenticated & (IsConsultant | IsAdministrateur | IsResponsable)]
+CAN_VIEW_DEPARTEMENTS = [IsAuthenticated & (IsConsultant | IsAdministrateur | IsResponsable)]
+CAN_MANAGE_DEPARTEMENTS = [IsAuthenticated & IsAdministrateur]
+
+
+class DepartementViewSet(ModelViewSet):
+    """CRUD du registre des départements de l'entreprise, géré par
+    l'administrateur (voir docs/CONTEXTE_PROJET.md, décision du
+    2026-08-27) — remplace l'ancienne liste figée de 10 départements.
+    Lecture ouverte à tout rôle métier (les formulaires de campagne,
+    génération, responsables, templates en ont besoin), écriture réservée
+    à l'administrateur."""
+
+    queryset = DepartementConfigure.objects.all()
+    serializer_class = DepartementSerializer
+
+    def get_permissions(self):
+        permission_classes = CAN_VIEW_DEPARTEMENTS if self.action in ("list", "retrieve") else CAN_MANAGE_DEPARTEMENTS
+        return [perm() for perm in permission_classes]
+
+    def destroy(self, request, *args, **kwargs):
+        dept = self.get_object()
+        # Suppression bloquée si des données existantes référencent encore
+        # ce département — évite de laisser des campagnes/destinataires/
+        # responsables/templates orphelins avec un code qui ne résout plus
+        # à rien de configuré.
+        from apps.gouvernance.models import ResponsableDepartement
+        from apps.templates_departement.models import TemplateDepartement
+
+        references = []
+        if Campagne.objects.filter(departement=dept.code).exists():
+            references.append("des campagnes")
+        if Destinataire.objects.filter(departement=dept.code).exists():
+            references.append("des destinataires")
+        if ResponsableDepartement.objects.filter(departement=dept.code).exists():
+            references.append("un responsable désigné")
+        if TemplateDepartement.objects.filter(departement=dept.code).exists():
+            references.append("des templates")
+        if references:
+            return Response(
+                {
+                    "detail": (
+                        f"Impossible de supprimer « {dept.nom} » : "
+                        f"{', '.join(references)} y font encore référence."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
 
 
 class CampagneViewSet(ModelViewSet):
