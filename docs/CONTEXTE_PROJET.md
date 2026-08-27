@@ -6,6 +6,15 @@
 
 ## État d'avancement
 
+- **2026-08-27 (suite de session, après les trois changements de
+  gouvernance/ergonomie déjà validés le même jour)** : deux corrections
+  supplémentaires demandées dans la foulée, toutes deux hors plan des 20
+  jours — suppression d'un doublon d'affichage de l'objet dans l'aperçu
+  d'email (« Générer un scénario » + modale « Voir l'email »), et ajout
+  d'un bouton de bascule mode sombre / mode clair dans la Topbar,
+  persistant via `localStorage`. Aucun nouveau jour du plan entamé ce
+  jour-là. Voir « Journal du 2026-08-27 (suite 2) » plus bas. Committé et
+  poussé (commits `6392f7b`, `37aa153`).
 - **Dernier jour du plan entièrement terminé et vérifié en conditions
   réelles : Jour 14** (templates par département + historique, backend et
   frontend) — voir « Journal du 2026-08-25 (suite 3) » ci-dessous. Complété
@@ -922,11 +931,11 @@ ci-dessus.
 | Page | État | Détail |
 |---|---|---|
 | `Login/LoginPage.jsx` | ✅ Fait | Fidèle à `login.html`, connectée à l'API |
-| `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages. **Sidebar** : bouton de déconnexion + email du compte connecté dans le pied de page, sur toutes les pages (2026-08-27, auparavant seulement sur Dashboard) |
+| `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages. **Sidebar** : bouton de déconnexion + email du compte connecté dans le pied de page, sur toutes les pages (2026-08-27, auparavant seulement sur Dashboard). **Topbar** : bouton de bascule mode sombre / mode clair (2026-08-27, `ThemeContext`), visible sur toutes les pages |
 | `Dashboard/DashboardPage.jsx` | ✅ Fait (jour 12) | Métriques réelles (campagnes actives, emails envoyés, taux de clic moyen, score de vulnérabilité), comparatif par département, jauge de score (`ScoreRing`), campagnes récentes, alerte automatique si risque élevé |
 | `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal). **2026-08-27** : bandeau d'alerte + badge rouge « Refusée » avec motifs, si le responsable a refusé la campagne |
-| `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour. **Sélecteur de template de départ** (mode API uniquement, filtré par département de la campagne) ajouté le 2026-08-25 |
-| `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11, refondu le 2026-08-25) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de refus avec motifs à cocher + texte libre. Plus de saisie manuelle du responsable (retirée) ; section admin-only « Campagnes sans consentement » avec génération manuelle. **2026-08-27** : bouton « Voir l'email » (responsable uniquement) ouvrant une modale d'aperçu du scénario de phishing |
+| `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour. **Sélecteur de template de départ** (mode API uniquement, filtré par département de la campagne) ajouté le 2026-08-25. **2026-08-27** : suppression d'une ligne dupliquant l'objet dans l'aperçu (n'apparaît plus que dans l'en-tête) |
+| `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11, refondu le 2026-08-25) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de refus avec motifs à cocher + texte libre. Plus de saisie manuelle du responsable (retirée) ; section admin-only « Campagnes sans consentement » avec génération manuelle. **2026-08-27** : bouton « Voir l'email » (responsable uniquement) ouvrant une modale d'aperçu du scénario de phishing, corrigée le même jour pour ne plus dupliquer l'objet |
 | `Responsables/ResponsablesPage.jsx` | ✅ Fait (2026-08-25) | Registre des responsables par département, réservé à l'administrateur (page et lien de nav). Route `/responsables` |
 | `Resultats/ResultatsPage.jsx` | ✅ Fait (jour 12) | Vue globale (jauge, comportements observés, classement des départements) et vue « Par département » (tableau détaillé), filtre par campagne individuelle. Route `/resultats` câblée dans `App.jsx` |
 | `RapportsPDF/RapportsPDFPage.jsx` | ✅ Fait (jour 13, affiné le 2026-08-25) | Liste des campagnes (une par département), filtres par statut avec compteurs, badge de statut coloré, suppression, aperçu du score au clic (jauge + barres), téléchargement du PDF à la demande via blob. Route `/rapports` câblée dans `App.jsx` |
@@ -1000,6 +1009,20 @@ ci-dessus.
     `deleteCampagne` et le flux de confirmation déjà en place sur `CampagnesPage` (aucun modèle `Rapport`
     séparé n'existe côté backend — un rapport n'étant qu'une vue PDF à la demande d'une campagne,
     « supprimer le rapport » supprime la campagne elle-même).
+36. **Le mode sombre est implémenté par redéfinition de variables CSS sous `[data-theme="dark"]`,
+    plutôt que par une feuille de style sombre séparée ou des classes dupliquées par composant**
+    (2026-08-27, `frontend/src/context/ThemeContext.jsx` + `index.css`). Rendu possible sans toucher un
+    seul composant existant, car chaque page utilisait déjà `var(--bg)`/`var(--surface)`/`var(--text)`/etc.
+    plutôt que des couleurs figées — décision de conception du jour 4 (layout de référence unique) qui
+    paie ici. La sidebar (`var(--navy)`) reste volontairement identique dans les deux modes : déjà sombre
+    par construction, conforme à la maquette. Quelques couleurs d'état ponctuelles restent codées en dur
+    (ex. `.sector-btn.selected`, `#ebf0f9`) — lisibles mais pas parfaitement alignées sur la palette
+    sombre ; non bloquant, à revoir au Jour 15 (QA visuelle) si jugé nécessaire.
+37. **Choix du thème persisté côté client uniquement** (`localStorage`, clé `hshield-theme`), pas en base
+    de données ni sur le profil utilisateur — cohérent avec la nature de préférence d'affichage locale,
+    pas une donnée métier ; repris automatiquement à la reconnexion sur le même navigateur, mais pas
+    partagé entre appareils. Non demandé explicitement, choix par défaut raisonnable pour ce type de
+    réglage.
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -1110,23 +1133,88 @@ liées à l'expérience du responsable et à la visibilité du refus.
    `docker compose restart backend` ciblé, cohérent avec le pattern déjà
    observé plusieurs fois dans ce projet.
 
+## Journal du 2026-08-27 (suite 2) — correctif objet dupliqué, mode sombre / mode clair
+
+Reprise directe dans la même session que le « Journal du 2026-08-27 »
+ci-dessus (Docker Desktop déjà relancé, services `healthy`). Deux demandes
+directes de l'utilisateur, toutes deux hors plan des 20 jours.
+
+### 1. Doublon de l'objet dans l'aperçu de l'email simulé
+
+1. **Bug trouvé** : l'objet de l'email s'affichait deux fois dans
+   l'aperçu — une fois dans la ligne d'en-tête (`De` / `À` / `Objet`), une
+   seconde fois juste en dessous comme titre du corps du message
+   (`<div className="email-subject-line">`, un reliquat visiblement inutile
+   une fois l'en-tête déjà en place).
+2. **Corrigé dans les deux endroits qui partagent ce motif d'aperçu** :
+   `GenererScenarioPage.jsx` (aperçu du scénario généré) et
+   `ConsentementsPage.jsx` (modale « Voir l'email » ajoutée le
+   2026-08-27, qui avait copié le même motif). La ligne
+   `email-subject-line` est supprimée dans les deux fichiers ; l'objet ne
+   s'affiche plus que dans l'en-tête.
+3. **Vérifié via Puppeteer** : soumission d'un scénario de test avec un
+   objet unique (« TEST OBJET UNIQUE 12345 ») — une seule occurrence
+   trouvée dans l'aperçu après correctif (contre deux avant), confirmé à
+   la fois par comptage textuel du DOM et par capture d'écran.
+4. **Committé et poussé** (commit `6392f7b`).
+
+### 2. Bouton de bascule mode sombre / mode clair
+
+5. **Nouveau `ThemeContext`** (`frontend/src/context/ThemeContext.jsx`) :
+   gère le thème actif (`light`/`dark`), le persiste dans `localStorage`
+   (clé `hshield-theme`, repris à la reconnexion) et l'initialise sinon
+   sur la préférence système (`prefers-color-scheme`). Le thème est posé
+   en attribut `data-theme` sur `<html>`.
+6. **Aucun composant existant n'a eu besoin d'être modifié pour supporter
+   le mode sombre** : un jeu de variables CSS sombres est redéfini sous
+   `[data-theme="dark"]` dans `index.css` (`--bg`, `--surface`,
+   `--surface2`, `--border`, `--text`, `--text2`, `--text3`, les fonds
+   `*-light` des badges, les ombres) — chaque page utilisait déjà ces
+   variables plutôt que des couleurs figées, décision de conception
+   antérieure (jour 4) qui a rendu ce chantier presque gratuit. La
+   sidebar (`var(--navy)`) reste inchangée dans les deux modes : elle est
+   déjà sombre par construction, conforme à la maquette.
+7. **Bouton ajouté dans `Topbar.jsx`** (icône soleil/lune + libellé),
+   donc visible sur toutes les pages protégées plutôt que sur une seule.
+   `App.jsx` enveloppé dans `<ThemeProvider>` (autour de `AuthProvider`).
+8. **Écart mineur assumé, non traité** : quelques couleurs d'état
+   « sélectionné » ponctuelles (ex. `.sector-btn.selected`, `#ebf0f9`) sont
+   encore codées en dur plutôt que dérivées d'une variable — elles restent
+   lisibles en mode sombre (texte navy sur pastille claire) mais ne
+   suivent pas parfaitement la palette sombre. Non bloquant, à corriger
+   si un futur passage de QA visuelle (Jour 15) le juge nécessaire.
+9. **Vérifié via Puppeteer** : clic sur le bouton → `data-theme` passe de
+   `light` à `dark`, couleur de fond du `body` changée, thème conservé
+   après navigation vers une autre page et après rechargement complet
+   (`localStorage.getItem("hshield-theme")` confirmé), aucune erreur
+   console. Captures d'écran des deux états comparées visuellement
+   (Tableau de bord) — rendu propre dans les deux modes.
+10. **Committé et poussé** (commit `37aa153`).
+
 ## Prochaine action précise
 
 **Toutes les demandes explicites sont à jour**, y compris les trois
-changements du 2026-08-27 (notification de refus sur Campagnes, email
-visible par le responsable, déconnexion globale dans la sidebar) — voir
-« Journal du 2026-08-27 » ci-dessus. Pistes pour la suite, aucune n'a
-encore été redemandée explicitement :
+changements de gouvernance/ergonomie du 2026-08-27 (notification de refus
+sur Campagnes, email visible par le responsable, déconnexion globale dans
+la sidebar) et les deux correctifs de la même journée (doublon d'objet,
+mode sombre) — voir « Journal du 2026-08-27 » et « Journal du 2026-08-27
+(suite 2) » ci-dessus. Pistes pour la suite, aucune n'a encore été
+redemandée explicitement :
 
 1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
-   chaque page développée à sa maquette de référence — pertinent
-   maintenant que Templates et Historique viennent d'être ajoutés avec
-   des adaptations significatives par rapport aux maquettes d'origine.
+   chaque page développée à sa maquette de référence — d'autant plus
+   pertinent maintenant que Templates, Historique et le mode sombre
+   viennent d'être ajoutés (voir point 8 ci-dessus pour les quelques
+   couleurs codées en dur à vérifier en mode sombre à cette occasion).
 2. **Jour 16** (page Paramètres) : reste le seul lien de nav encore non
    câblé.
-3. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
+3. Avant de reprendre, vérifier l'état de Docker Desktop
+   (`docker compose ps`) — il s'est arrêté entre deux sessions à plusieurs
+   reprises ce sprint (voir « Bugs connus ») ; relancer avec
+   `docker compose up -d` et patienter le ralentissement au premier
+   démarrage si les workers backend bouclent en `WORKER TIMEOUT`.
+4. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
    `administrateur@hshield237.local` / `Administrateur1234!` toujours
-   valides ; nouveau compte `arthur@hshield237.local` /
-   `Responsable1234!` (rôle responsable, désigné pour Direction générale,
-   créé le 2026-08-27 pour tester le refus + la visualisation d'email)
-   (voir « Bugs connus »).
+   valides ; `arthur@hshield237.local` / `Responsable1234!` (rôle
+   responsable, désigné pour Direction générale, créé le 2026-08-27 pour
+   tester le refus + la visualisation d'email) (voir « Bugs connus »).
