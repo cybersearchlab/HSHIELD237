@@ -18,9 +18,10 @@ class ScenarioPhishingSerializer(serializers.ModelSerializer):
             "expediteur_email",
             "destinataire_email",
             "est_html",
+            "date_creation",
             "departements_cibles",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "date_creation"]
 
 
 class DestinataireSerializer(serializers.ModelSerializer):

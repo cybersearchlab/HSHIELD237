@@ -77,7 +77,7 @@ class ScenarioListView(APIView):
                     {"detail": "Vous n'êtes pas le responsable désigné pour cette campagne."},
                     status=status.HTTP_403_FORBIDDEN,
                 )
-        scenarios = campagne.scenarios.order_by("-id")
+        scenarios = campagne.scenarios.order_by("-date_creation")
         return Response(ScenarioPhishingSerializer(scenarios, many=True).data)
 
 

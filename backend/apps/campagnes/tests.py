@@ -297,3 +297,25 @@ class VisualisationScenarioResponsableTests(TestCase):
         self.client.force_login(self.responsable)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
+
+    def test_plusieurs_scenarios_tries_du_plus_recent_au_plus_ancien(self):
+        # Le responsable doit pouvoir distinguer plusieurs versions d'un
+        # même email plutôt que de tout recevoir mélangé dans le désordre —
+        # la liste doit toujours arriver classée par date, la plus récente
+        # en premier, avec la date exposée pour l'affichage.
+        ScenarioPhishing.objects.create(
+            campagne=self.campagne,
+            objet_email="Deuxième version",
+            corps_email="Corps v2",
+            url_fausse_page="https://exemple.cm/v2",
+            secteur_cible="Test",
+        )
+        self.client.force_login(self.responsable)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data[0]["objet_email"], "Deuxième version")
+        self.assertEqual(data[1]["objet_email"], "Objet test")
+        self.assertIn("date_creation", data[0])
+        self.assertGreaterEqual(data[0]["date_creation"], data[1]["date_creation"])

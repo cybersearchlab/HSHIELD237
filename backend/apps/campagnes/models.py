@@ -46,6 +46,7 @@ class ScenarioPhishing(models.Model):
     expediteur_email = models.EmailField(blank=True, default="")
     destinataire_email = models.EmailField(blank=True, default="")
     est_html = models.BooleanField(default=False)
+    date_creation = models.DateTimeField(auto_now_add=True)
     departements_cibles = ArrayField(
         models.CharField(max_length=20, choices=Departement.choices),
         default=list,
@@ -57,6 +58,9 @@ class ScenarioPhishing(models.Model):
             "scénario de la campagne."
         ),
     )
+
+    class Meta:
+        ordering = ["-date_creation"]
 
     def __str__(self):
         return self.objet_email

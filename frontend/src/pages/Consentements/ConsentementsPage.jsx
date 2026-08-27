@@ -53,11 +53,16 @@ export default function ConsentementsPage() {
   const [refuserSaving, setRefuserSaving] = useState(false);
 
   // Le responsable doit pouvoir visualiser l'email de phishing avant de
-  // décider — pas seulement le nom du département.
+  // décider — pas seulement le nom du département. Quand une campagne a
+  // plusieurs versions de scénario, elles sont présentées classées par
+  // date (la plus récente en premier, cf. tri backend) plutôt que toutes
+  // affichées à la suite dans la même boîte de dialogue — le responsable
+  // choisit explicitement celle qu'il consulte.
   const [emailCible, setEmailCible] = useState(null);
   const [emailScenarios, setEmailScenarios] = useState([]);
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [selectedScenarioId, setSelectedScenarioId] = useState(null);
 
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -147,10 +152,18 @@ export default function ConsentementsPage() {
   function openEmailModal(c) {
     setEmailCible(c);
     setEmailScenarios([]);
+    setSelectedScenarioId(null);
     setEmailError("");
     setEmailLoading(true);
     listScenarios(c.campagne)
-      .then(setEmailScenarios)
+      .then((data) => {
+        // Classés du plus récent au plus ancien (déjà trié côté API, tri
+        // défensif conservé ici) — la version la plus récente est celle
+        // affichée par défaut.
+        const tries = [...data].sort((a, b) => new Date(b.date_creation) - new Date(a.date_creation));
+        setEmailScenarios(tries);
+        setSelectedScenarioId(tries[0]?.id ?? null);
+      })
       .catch(() => setEmailError("Impossible de charger l'email de cette campagne."))
       .finally(() => setEmailLoading(false));
   }
@@ -504,51 +517,82 @@ export default function ConsentementsPage() {
                   Aucun scénario n'a encore été généré pour cette campagne.
                 </p>
               )}
+              {!emailLoading && !emailError && emailScenarios.length > 1 && (
+                <div className="email-version-picker">
+                  <div className="email-version-hint">
+                    <i className="ti ti-history" /> {emailScenarios.length} versions de cet email existent pour
+                    cette campagne — choisissez celle à consulter (la plus récente est sélectionnée par défaut) :
+                  </div>
+                  <div className="email-version-list">
+                    {emailScenarios.map((s, i) => (
+                      <button
+                        type="button"
+                        key={s.id}
+                        className={`email-version-item${s.id === selectedScenarioId ? " selected" : ""}`}
+                        onClick={() => setSelectedScenarioId(s.id)}
+                      >
+                        <span className="email-version-date">
+                          <i className="ti ti-clock" /> {formatDateTime(s.date_creation)}
+                          {i === 0 && <span className="email-version-latest">Plus récente</span>}
+                        </span>
+                        <span className="email-version-subject">{s.objet_email}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {!emailLoading &&
                 !emailError &&
-                emailScenarios.map((s) => (
-                  <div key={s.id} style={{ marginBottom: 16 }}>
-                    <div className="email-meta">
-                      <div className="email-meta-row">
-                        <span className="em-key">De :</span>
-                        <span className="em-val">
-                          {s.expediteur_nom || s.expediteur_email
-                            ? `${s.expediteur_nom ? `${s.expediteur_nom} ` : ""}${
-                                s.expediteur_email ? `<${s.expediteur_email}>` : ""
-                              }`
-                            : "—"}
-                        </span>
+                emailScenarios
+                  .filter((s) => s.id === selectedScenarioId)
+                  .map((s) => (
+                    <div key={s.id}>
+                      {emailScenarios.length === 1 && (
+                        <div className="email-version-hint" style={{ marginBottom: 10 }}>
+                          <i className="ti ti-clock" /> Généré le {formatDateTime(s.date_creation)}
+                        </div>
+                      )}
+                      <div className="email-meta">
+                        <div className="email-meta-row">
+                          <span className="em-key">De :</span>
+                          <span className="em-val">
+                            {s.expediteur_nom || s.expediteur_email
+                              ? `${s.expediteur_nom ? `${s.expediteur_nom} ` : ""}${
+                                  s.expediteur_email ? `<${s.expediteur_email}>` : ""
+                                }`
+                              : "—"}
+                          </span>
+                        </div>
+                        <div className="email-meta-row">
+                          <span className="em-key">À :</span>
+                          <span className="em-val">{s.destinataire_email || "—"}</span>
+                        </div>
+                        <div className="email-meta-row">
+                          <span className="em-key">Objet :</span>
+                          <span className="em-val">{s.objet_email}</span>
+                        </div>
                       </div>
-                      <div className="email-meta-row">
-                        <span className="em-key">À :</span>
-                        <span className="em-val">{s.destinataire_email || "—"}</span>
-                      </div>
-                      <div className="email-meta-row">
-                        <span className="em-key">Objet :</span>
-                        <span className="em-val">{s.objet_email}</span>
+                      {s.est_html ? (
+                        <div className="email-content" dangerouslySetInnerHTML={{ __html: s.corps_email }} />
+                      ) : (
+                        <div className="email-content">{s.corps_email}</div>
+                      )}
+                      {s.url_fausse_page && (
+                        <a
+                          href={s.url_fausse_page}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="email-cta"
+                        >
+                          <i className="ti ti-external-link" /> Accéder à la page →
+                        </a>
+                      )}
+                      <div className="sim-warning" style={{ marginTop: 12 }}>
+                        <i className="ti ti-shield-exclamation" />
+                        <span>Simulation éducative H-SHIELD237 — aucune donnée réelle n'est collectée.</span>
                       </div>
                     </div>
-                    {s.est_html ? (
-                      <div className="email-content" dangerouslySetInnerHTML={{ __html: s.corps_email }} />
-                    ) : (
-                      <div className="email-content">{s.corps_email}</div>
-                    )}
-                    {s.url_fausse_page && (
-                      <a
-                        href={s.url_fausse_page}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="email-cta"
-                      >
-                        <i className="ti ti-external-link" /> Accéder à la page →
-                      </a>
-                    )}
-                    <div className="sim-warning" style={{ marginTop: 12 }}>
-                      <i className="ti ti-shield-exclamation" />
-                      <span>Simulation éducative H-SHIELD237 — aucune donnée réelle n'est collectée.</span>
-                    </div>
-                  </div>
-                ))}
+                  ))}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn" onClick={() => setEmailCible(null)}>
