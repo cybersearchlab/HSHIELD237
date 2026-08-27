@@ -7,14 +7,18 @@
 ## État d'avancement
 
 - **2026-08-27 (demande de l'encadreur, hors plan des 20 jours — chantier en
-  deux étapes)** : **Étape 1/2 terminée** — les 10 départements figés en dur
-  sont remplacés par un registre en base (`DepartementConfigure`), géré par
-  l'administrateur (créer/renommer/supprimer, page `/departements`),
-  propagé immédiatement partout (libellés, sélecteurs, agrégations).
-  Committé et poussé (commit `86450c9`). Voir « Journal du 2026-08-27
-  (suite 4) ». **Étape 2/2 — annuaire des employés + envoi individuel
-  ciblé — en cours**, construite sur cette base. Voir « Prochaine action
-  précise » pour le détail du plan approuvé.
+  deux étapes) : les deux étapes sont terminées.**
+  **Étape 1/2** — les 10 départements figés en dur sont remplacés par un
+  registre en base (`DepartementConfigure`), géré par l'administrateur
+  (créer/renommer/supprimer, page `/departements`), propagé immédiatement
+  partout (libellés, sélecteurs, agrégations). Committé et poussé (commit
+  `86450c9`). Voir « Journal du 2026-08-27 (suite 4) ».
+  **Étape 2/2** — annuaire des employés par département (page `/employes`,
+  admin uniquement) remplaçant l'adresse de diffusion ; au lancement d'une
+  campagne, le consultant choisit désormais « tous les employés du
+  département » ou « un employé en particulier », chacun recevant un
+  email individuel. Committé et poussé (commit `951571e`). Voir « Journal
+  du 2026-08-27 (suite 5) ».
 - **2026-08-27 (suite de session, après les corrections déjà validées le
   même jour)** : troisième retour utilisateur sur la modale « Voir
   l'email » — quand une campagne a plusieurs versions de scénario, elles
@@ -938,7 +942,8 @@ ci-dessus.
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
 | `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires. `ScenarioPhishing.date_creation` ajouté (absent jusqu'ici), tri explicite du plus récent au plus ancien, 1 test supplémentaire (57 tests au total). **2026-08-27 (suite 4)** : nouveau modèle `DepartementConfigure` (registre dynamique des départements, remplace `Departement.choices`), CRUD `/api/departements/` (admin-only, suppression bloquée si utilisé), `services.departement_label()` (résolution live du libellé), 7 tests supplémentaires (64 tests au total) |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
-| `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
+| `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **2026-08-27** : `envoyer_aux_employes(cible, employe_id)` (envoi ciblé à l'annuaire `apps.employes`, réutilise entièrement la logique d'envoi individuel déjà en place), `EnvoyerCampagneRequestSerializer` étendu, tests supplémentaires. **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
+| `employes` | ✅ Fait (2026-08-27) | Modèle `Employe` (nom, email unique, département), CRUD `/api/employes/` (lecture consultant+administrateur, écriture admin-only, filtrable par département), 8 tests. Annuaire remplaçant l'adresse de diffusion pour l'envoi de campagne |
 | `gouvernance` | ✅ Fait (jour 11, étendu le 2026-08-25) | Modèles `Consentement` (+ `motifs_refus`, `motif_refus_details`), `JournalAudit`, `ResponsableDepartement` (registre admin-only) ; endpoints demande (admin-only)/liste/valider/refuser (motifs obligatoires)/journal-audit/responsables (CRUD admin-only) ; `services.creer_consentement_auto` ; `tests.py` (23 tests) |
 | `rapports` | ✅ Fait (jour 13 backend) | `GenerationRapportService` (WeasyPrint 69.0), endpoint `.../rapport/`, `tests.py` (4 tests). Vérifié en direct (PDF réel via curl) et committé — voir « Journal du 2026-08-25 » |
 | `templates_departement` | ✅ Fait (backend + frontend, 2026-08-25) | Renommé depuis `templates_sectoriels` du plan (voir écart n°38). Modèle `TemplateDepartement` (nom, departement, prompt_structure, nombre_utilisations), CRUD `IsConsultant\|IsAdministrateur` (`/api/templates-departement/`, filtrable par département). `ClaudeGenerationService` accepte un `template` optionnel, incrémente `nombre_utilisations` à l'usage. `tests.py` (5 tests) + `apps/generation/tests.py` (4 tests, nouveau fichier). Frontend : `TemplatesDepartementPage.jsx`, route `/templates` |
@@ -950,7 +955,7 @@ ci-dessus.
 | `Login/LoginPage.jsx` | ✅ Fait | Fidèle à `login.html`, connectée à l'API |
 | `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages. **Sidebar** : bouton de déconnexion + email du compte connecté dans le pied de page, sur toutes les pages (2026-08-27, auparavant seulement sur Dashboard). **Topbar** : bouton de bascule mode sombre / mode clair (2026-08-27, `ThemeContext`), visible sur toutes les pages |
 | `Dashboard/DashboardPage.jsx` | ✅ Fait (jour 12) | Métriques réelles (campagnes actives, emails envoyés, taux de clic moyen, score de vulnérabilité), comparatif par département, jauge de score (`ScoreRing`), campagnes récentes, alerte automatique si risque élevé |
-| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal). **2026-08-27** : bandeau d'alerte + badge rouge « Refusée » avec motifs, si le responsable a refusé la campagne |
+| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal). **2026-08-27** : bandeau d'alerte + badge rouge « Refusée » avec motifs, si le responsable a refusé la campagne. Modale de lancement : nouvelle section « Destinataires » (tous les employés du département / un employé en particulier, alimentée par l'annuaire `apps.employes`) — remplace l'ancienne absence de sélection de cible |
 | `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour. **Sélecteur de template de départ** (mode API uniquement, filtré par département de la campagne) ajouté le 2026-08-25. **2026-08-27** : suppression d'une ligne dupliquant l'objet dans l'aperçu (n'apparaît plus que dans l'en-tête) |
 | `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11, refondu le 2026-08-25) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de refus avec motifs à cocher + texte libre. Plus de saisie manuelle du responsable (retirée) ; section admin-only « Campagnes sans consentement » avec génération manuelle. **2026-08-27** : bouton « Voir l'email » (responsable uniquement) ouvrant une modale d'aperçu du scénario de phishing, corrigée le même jour pour ne plus dupliquer l'objet, puis pour classer les versions par date (sélecteur, la plus récente pré-sélectionnée) quand une campagne a plusieurs scénarios |
 | `Responsables/ResponsablesPage.jsx` | ✅ Fait (2026-08-25) | Registre des responsables par département, réservé à l'administrateur (page et lien de nav). Route `/responsables` |
@@ -958,6 +963,7 @@ ci-dessus.
 | `RapportsPDF/RapportsPDFPage.jsx` | ✅ Fait (jour 13, affiné le 2026-08-25) | Liste des campagnes (une par département), filtres par statut avec compteurs, badge de statut coloré, suppression, aperçu du score au clic (jauge + barres), téléchargement du PDF à la demande via blob. Route `/rapports` câblée dans `App.jsx` |
 | `Historique/HistoriquePage.jsx` | ✅ Fait (2026-08-25) | Timeline chronologique de toutes les campagnes groupées par mois, panneau de détail (score + barres) avec téléchargement du rapport PDF (réutilise le Jour 13), graphique d'évolution mensuelle réel. Route `/historique` |
 | `Departements/DepartementsPage.jsx` | ✅ Fait (2026-08-27) | Registre des départements de l'entreprise (créer/renommer/supprimer), réservé à l'administrateur (page et lien de nav). Route `/departements` |
+| `Employes/EmployesPage.jsx` | ✅ Fait (2026-08-27) | Annuaire des employés par département (nom, email), réservé à l'administrateur (page et lien de nav), même motif de navigation par département que `TemplatesDepartementPage.jsx`. Route `/employes` |
 | Paramètres | ⬜ Pas commencé | Lien de nav déjà présent dans `navConfig.js`, pointe vers une route non câblée (redirection vers `/`) |
 
 ## Décisions ou écarts par rapport au plan
@@ -1060,6 +1066,16 @@ ci-dessus.
     `ArrayField` qui n'admet pas nativement un tableau de FK). La classe `Departement(TextChoices)`
     d'origine est conservée comme constantes de commodité (tests, lisibilité), simplement débranchée de
     tout champ. Voir « Journal du 2026-08-27 (suite 4) » pour le détail complet de la décision.
+40. **L'annuaire des employés (`apps.employes`) ne modifie ni ne remplace `Destinataire`** (jour 10,
+    `apps.campagnes`) : les deux modèles coexistent, avec des rôles différents. `Destinataire` reste un
+    modèle par-campagne (jamais atteignable depuis l'UI depuis le 2026-08-21, voir écart n°26/27) ;
+    `Employe` est un annuaire persistant, indépendant de toute campagne particulière, géré une fois par
+    l'administrateur et réutilisé à chaque lancement. `EnvoiCampagneService.envoyer_aux_employes()` ne
+    passe jamais par `Destinataire` — il itère directement sur `Employe` et réutilise
+    `_scenario_pour_departement()` + `envoyer_scenario()` (déjà écrits pour le chemin `Destinataire` du
+    jour 10), sans créer de lignes `Destinataire` en coulisses. Choix délibéré : éviter toute ambiguïté
+    entre « qui a été explicitement ciblé pour cette campagne » (`Destinataire`, resté inutilisé) et
+    « qui existe dans l'entreprise » (`Employe`, la source de vérité pour l'envoi réel).
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -1368,47 +1384,110 @@ Livré en deux étapes indépendantes, vérifiées et committées séparément �
 10. **Committé et poussé** (commit `86450c9`).
 
 Prochaine étape : **annuaire des employés par département + sélecteur
-d'envoi individuel ciblé** (étape 2/2 du même chantier) — voir « Prochaine
-action précise ».
+d'envoi individuel ciblé** (étape 2/2 du même chantier) — voir « Journal
+du 2026-08-27 (suite 5) » ci-dessous, désormais terminée elle aussi.
+
+## Journal du 2026-08-27 (suite 5) — annuaire des employés, envoi individuel ciblé (étape 2/2)
+
+Suite directe de l'étape 1 (registre des départements). Plan déjà
+approuvé suivi tel quel (voir
+`C:\Users\Mr NDJOCK LEVY\.claude\plans\binary-imagining-kernighan.md`).
+
+1. **Découverte clé de l'exploration préalable** : le point NB de la
+   demande de l'encadreur (« seul l'expéditeur et le récepteur visibles
+   dans l'en-tête ») était **déjà satisfait** par le code existant —
+   `EnvoiCampagneService.envoyer_scenario()` (jour 8) construit toujours
+   `to=[un_seul_email]`, jamais plusieurs adresses dans un même message.
+   Aucun changement nécessaire sur la construction des emails eux-mêmes —
+   tout le travail a porté sur la source des destinataires et l'interface
+   de sélection.
+2. **Nouvelle app `apps.employes`** (même convention qu'une app par
+   domaine métier) : modèle `Employe` (`nom`, `email` unique,
+   `departement` — `CharField` validé en live contre
+   `DepartementConfigure`, même décision que l'étape 1, pas de
+   `ForeignKey`). CRUD `/api/employes/` (`ModelViewSet`, filtrable par
+   `?departement=`), lecture ouverte à consultant/administrateur (le
+   consultant en a besoin pour choisir un destinataire au lancement),
+   écriture réservée à l'administrateur.
+3. **`EnvoiCampagneService.envoyer_aux_employes(cible, employe_id=None)`** —
+   nouvelle méthode qui **réutilise intégralement**
+   `_scenario_pour_departement()` et `envoyer_scenario()` déjà en place
+   (aucune modification de la logique d'envoi elle-même) : itère soit sur
+   tous les `Employe` du département de la campagne (`cible="tous"`),
+   soit sur un seul (`cible="un_employe"`, `employe_id`) — erreurs
+   claires si l'annuaire est vide pour ce département ou si l'employé
+   choisi appartient à un autre département que la campagne.
+4. **`EnvoyerCampagneRequestSerializer` étendu** (`cible`, `employe_id`) ;
+   `EnvoyerCampagneView` bascule vers `envoyer_aux_employes()` si `cible`
+   est fournie, sinon conserve tel quel le comportement historique
+   (destinataires explicites, ou email de test de chaque scénario à
+   défaut) — rétrocompatible.
+5. **`DepartementViewSet.destroy()`** (étape 1) vérifie désormais aussi
+   les `Employe` avant d'autoriser la suppression d'un département.
+6. **Frontend** : `api/employes.js` (mêmes conventions que les autres
+   modules API) ; nouvelle page `/employes` (admin uniquement, même motif
+   que `TemplatesDepartementPage.jsx` — navigation par département en
+   colonne de gauche). Modale de lancement (`CampagnesPage.jsx`) :
+   nouvelle section « Destinataires » — radio « Tous les employés du
+   département (N) » / « Un employé en particulier » (liste déroulante
+   nom + email) — chargée avec `listEmployes({ departement })` à
+   l'ouverture de la modale ; `envoyerCampagne()` (`api/simulation.js`)
+   étendu pour accepter `{ cible, employeId }`. Nav : entrée « Employés »
+   (`roles: ["administrateur"]`).
+7. **13 nouveaux tests** (`apps.employes.tests`, plus des ajouts dans
+   `apps.simulation.tests` et `apps.campagnes.tests`) : CRUD et
+   permissions de l'annuaire, filtre par département, email déjà utilisé
+   refusé, département inconnu refusé, envoi à tous les employés d'un
+   département, envoi à un seul, employé d'un autre département refusé,
+   annuaire vide levant une erreur claire, endpoint `envoyer/` avec
+   `cible=tous` et `cible=un_employe` sans `employe_id` (400).
+   **78/78 tests backend passent.**
+8. **Vérification réelle complète en navigateur** (Puppeteer, compte
+   administrateur) : 2 employés ajoutés pour le département Informatique,
+   lancement testé sur une campagne à consentement déjà validé (#31) —
+   « Tous les employés du département (2) » a bien déclenché 2 emails
+   individuels distincts (un par employé, confirmé par les
+   `EnvoiTracking` créés en base, horodatés séparément selon le délai
+   configuré) ; « Un employé en particulier » a bien déclenché exactement
+   1 email, uniquement au destinataire sélectionné, testé à plusieurs
+   reprises avec des employés différents à chaque fois. Aucune erreur
+   console sur l'ensemble du parcours. Données de test (les 2 employés)
+   supprimées après vérification.
+9. **Aléa rencontré, non lié au code** : un essai de lancement a renvoyé
+   un `400` isolé pendant les tests répétés en rafale — cohérent avec la
+   limite de débit déjà documentée du plan gratuit Mailtrap (voir écart
+   n°12, « Bugs connus »), confirmé en relançant immédiatement le même
+   envoi avec succès via le service directement (`manage.py shell`) sans
+   aucun changement de code entre les deux tentatives.
+10. **Committé et poussé** (commit `951571e`).
+
+**Les deux étapes de ce chantier sont maintenant terminées et vérifiées.**
 
 ## Prochaine action précise
 
-**Étape 2/2 en cours** : annuaire des employés (nom + email + département,
-géré par l'administrateur) et sélecteur « Tous les employés du
-département / Un employé en particulier » dans la modale de lancement de
-campagne, construits sur le registre des départements livré à l'étape 1.
-Plan détaillé déjà approuvé et disponible dans
-`C:\Users\Mr NDJOCK LEVY\.claude\plans\binary-imagining-kernighan.md` — le
-suivre directement plutôt que re-planifier. Points clés à ne pas
-re-découvrir en reprenant :
+**Toutes les demandes explicites sont à jour**, y compris le chantier
+complet des départements dynamiques + annuaire des employés (étapes 1 et
+2, voir « Journal du 2026-08-27 (suite 4) » et « (suite 5) »). Pistes pour
+la suite, aucune n'a encore été redemandée explicitement :
 
-1. **Le point NB de la demande (« seul l'expéditeur et le récepteur
-   visibles dans l'en-tête ») est déjà satisfait** par le code existant —
-   `EnvoiCampagneService.envoyer_scenario()` construit toujours
-   `to=[un_seul_email]`. Aucun changement nécessaire sur cette partie ;
-   le travail restant est uniquement : nouveau modèle `Employe`
-   (`apps.employes`, nouvelle app), CRUD admin-only, et une nouvelle
-   méthode `envoyer_aux_employes(cible, employe_id=None)` sur
-   `EnvoiCampagneService` qui réutilise `_scenario_pour_departement()` +
-   `envoyer_scenario()` déjà en place.
-2. Nouvel endpoint frontend `api/employes.js` + page
-   `pages/Employes/EmployesPage.jsx` (même motif que
-   `TemplatesDepartementPage.jsx` — navigation par département).
-3. Modale de lancement (`CampagnesPage.jsx`) : ajouter la section
-   « Destinataires » (radio tous/un employé), étendre
-   `envoyerCampagne()` (`api/simulation.js`) et
-   `EnvoyerCampagneRequestSerializer` (`cible`, `employe_id`).
-4. Avant de reprendre, vérifier l'état de Docker Desktop
+1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
+   chaque page développée à sa maquette de référence — d'autant plus
+   pertinent après le mode sombre, les départements dynamiques et les
+   deux nouvelles pages (Départements, Employés) qui n'ont pas de
+   maquette de référence d'origine et suivent donc uniquement les
+   conventions déjà établies (cartes, modales, toasts).
+2. **Jour 16** (page Paramètres) : reste le seul lien de nav encore non
+   câblé.
+3. Avant de reprendre, vérifier l'état de Docker Desktop
    (`docker compose ps`) — il s'est arrêté entre deux sessions à plusieurs
    reprises ce sprint (voir « Bugs connus ») ; relancer avec
    `docker compose up -d` et patienter le ralentissement au premier
    démarrage si les workers backend bouclent en `WORKER TIMEOUT`.
-5. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
+4. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
    `administrateur@hshield237.local` / `Administrateur1234!` toujours
    valides ; `arthur@hshield237.local` / `Responsable1234!` (rôle
    responsable, désigné pour Direction générale) (voir « Bugs connus »).
-6. **Une fois l'étape 2 livrée et vérifiée**, revenir aux pistes du plan
-   des 20 jours non redemandées explicitement : Jour 15 (vérification de
-   fidélité visuelle, d'autant plus pertinent après le mode sombre et les
-   départements dynamiques) et Jour 16 (page Paramètres, seul lien de nav
-   encore non câblé).
+   L'annuaire des employés (`/employes`) est vide en conditions réelles —
+   à peupler avant toute démonstration de lancement de campagne (le
+   lancement est bloqué avec un message explicite tant qu'aucun employé
+   n'est configuré pour le département concerné).
