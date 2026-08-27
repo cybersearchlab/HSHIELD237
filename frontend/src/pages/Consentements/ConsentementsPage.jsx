@@ -528,7 +528,6 @@ export default function ConsentementsPage() {
                         <span className="em-val">{s.objet_email}</span>
                       </div>
                     </div>
-                    <div className="email-subject-line">{s.objet_email}</div>
                     {s.est_html ? (
                       <div className="email-content" dangerouslySetInnerHTML={{ __html: s.corps_email }} />
                     ) : (

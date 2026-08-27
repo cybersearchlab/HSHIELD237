@@ -622,7 +622,6 @@ export default function GenererScenarioPage() {
                       </div>
                     )}
                   </div>
-                  <div className="email-subject-line">{result.objet_email}</div>
 
                   {result.est_html && (
                     <div className="preview-tabs" role="group" aria-label="Affichage du contenu HTML">
