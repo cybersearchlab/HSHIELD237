@@ -6,6 +6,14 @@
 
 ## État d'avancement
 
+- **2026-08-27 (suite de session, après les corrections déjà validées le
+  même jour)** : troisième retour utilisateur sur la modale « Voir
+  l'email » — quand une campagne a plusieurs versions de scénario, elles
+  s'affichaient toutes empilées dans la même boîte de dialogue, sans
+  ordre. Corrigé par un sélecteur de versions classé par date (la plus
+  récente en premier), avec un nouveau champ `ScenarioPhishing.date_creation`
+  côté backend. Voir « Journal du 2026-08-27 (suite 3) » plus bas.
+  Committé et poussé (commit `805033f`).
 - **2026-08-27 (suite de session, après les trois changements de
   gouvernance/ergonomie déjà validés le même jour)** : deux corrections
   supplémentaires demandées dans la foulée, toutes deux hors plan des 20
@@ -919,7 +927,7 @@ ci-dessus.
 |---|---|---|
 | `accounts` | ✅ Fait | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur` |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
-| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires |
+| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires. `ScenarioPhishing.date_creation` ajouté (absent jusqu'ici), tri explicite du plus récent au plus ancien, 1 test supplémentaire (57 tests au total) |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
 | `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `gouvernance` | ✅ Fait (jour 11, étendu le 2026-08-25) | Modèles `Consentement` (+ `motifs_refus`, `motif_refus_details`), `JournalAudit`, `ResponsableDepartement` (registre admin-only) ; endpoints demande (admin-only)/liste/valider/refuser (motifs obligatoires)/journal-audit/responsables (CRUD admin-only) ; `services.creer_consentement_auto` ; `tests.py` (23 tests) |
@@ -935,7 +943,7 @@ ci-dessus.
 | `Dashboard/DashboardPage.jsx` | ✅ Fait (jour 12) | Métriques réelles (campagnes actives, emails envoyés, taux de clic moyen, score de vulnérabilité), comparatif par département, jauge de score (`ScoreRing`), campagnes récentes, alerte automatique si risque élevé |
 | `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal). **2026-08-27** : bandeau d'alerte + badge rouge « Refusée » avec motifs, si le responsable a refusé la campagne |
 | `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour. **Sélecteur de template de départ** (mode API uniquement, filtré par département de la campagne) ajouté le 2026-08-25. **2026-08-27** : suppression d'une ligne dupliquant l'objet dans l'aperçu (n'apparaît plus que dans l'en-tête) |
-| `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11, refondu le 2026-08-25) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de refus avec motifs à cocher + texte libre. Plus de saisie manuelle du responsable (retirée) ; section admin-only « Campagnes sans consentement » avec génération manuelle. **2026-08-27** : bouton « Voir l'email » (responsable uniquement) ouvrant une modale d'aperçu du scénario de phishing, corrigée le même jour pour ne plus dupliquer l'objet |
+| `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11, refondu le 2026-08-25) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de refus avec motifs à cocher + texte libre. Plus de saisie manuelle du responsable (retirée) ; section admin-only « Campagnes sans consentement » avec génération manuelle. **2026-08-27** : bouton « Voir l'email » (responsable uniquement) ouvrant une modale d'aperçu du scénario de phishing, corrigée le même jour pour ne plus dupliquer l'objet, puis pour classer les versions par date (sélecteur, la plus récente pré-sélectionnée) quand une campagne a plusieurs scénarios |
 | `Responsables/ResponsablesPage.jsx` | ✅ Fait (2026-08-25) | Registre des responsables par département, réservé à l'administrateur (page et lien de nav). Route `/responsables` |
 | `Resultats/ResultatsPage.jsx` | ✅ Fait (jour 12) | Vue globale (jauge, comportements observés, classement des départements) et vue « Par département » (tableau détaillé), filtre par campagne individuelle. Route `/resultats` câblée dans `App.jsx` |
 | `RapportsPDF/RapportsPDFPage.jsx` | ✅ Fait (jour 13, affiné le 2026-08-25) | Liste des campagnes (une par département), filtres par statut avec compteurs, badge de statut coloré, suppression, aperçu du score au clic (jauge + barres), téléchargement du PDF à la demande via blob. Route `/rapports` câblée dans `App.jsx` |
@@ -1023,6 +1031,14 @@ ci-dessus.
     pas une donnée métier ; repris automatiquement à la reconnexion sur le même navigateur, mais pas
     partagé entre appareils. Non demandé explicitement, choix par défaut raisonnable pour ce type de
     réglage.
+38. **`ScenarioPhishing` n'avait aucun champ de date jusqu'au 2026-08-27** — un oubli du modèle initial
+    (jour 6), jamais remarqué faute de besoin d'affichage chronologique jusqu'à l'ajout de la modale
+    « Voir l'email » (même journée). Ajouté avec `auto_now_add=True` et `Meta.ordering = ["-date_creation"]`,
+    exactement le motif déjà en place sur `Campagne` — cohérence délibérée plutôt qu'un nouveau choix de
+    conception. Migration écrite à la main (`0005_scenariophishing_date_creation`, voir écart n°3) avec un
+    backfill `default=timezone.now` pour les scénarios déjà existants, qui héritent donc tous de la même
+    date d'application de la migration plutôt que de leur véritable date de création — sans conséquence
+    pratique, ces scénarios de test n'ont pas besoin d'être distingués entre eux par date exacte.
 
 ## Variables d'environnement (`.env`, jamais commité)
 
@@ -1191,15 +1207,63 @@ directes de l'utilisateur, toutes deux hors plan des 20 jours.
    (Tableau de bord) — rendu propre dans les deux modes.
 10. **Committé et poussé** (commit `37aa153`).
 
+## Journal du 2026-08-27 (suite 3) — versions d'email classées par date
+
+Retour utilisateur direct sur la modale « Voir l'email » ajoutée plus tôt
+dans la journée (« Journal du 2026-08-27 ») : quand une campagne compte
+plusieurs scénarios (plusieurs versions successives d'un même email), ils
+s'affichaient tous à la suite dans la même boîte de dialogue, sans ordre
+ni repère — le responsable ne pouvait pas savoir laquelle consulter avant
+de décider.
+
+1. **Nouveau champ `ScenarioPhishing.date_creation`** (`DateTimeField`,
+   `auto_now_add=True`), absent jusqu'ici — aucune date n'existait sur ce
+   modèle. Migration `0005_scenariophishing_date_creation` écrite à la
+   main (convention du projet, pas de bind mount backend — voir écart
+   n°3), avec un `default=timezone.now` en `preserve_default=False` pour
+   les lignes déjà existantes. `Meta.ordering = ["-date_creation"]` ajouté
+   au modèle, identique au motif déjà utilisé sur `Campagne`.
+2. **`ScenarioPhishingSerializer`** expose désormais `date_creation`
+   (lecture seule). `ScenarioListView` trie explicitement
+   `.order_by("-date_creation")` (remplace l'ancien `-id`, resté correct
+   mais moins explicite).
+3. **Frontend (`ConsentementsPage.jsx`)** : la modale affiche maintenant,
+   quand une campagne a plus d'un scénario, un **sélecteur de versions**
+   — liste classée de la plus récente à la plus ancienne, chaque entrée
+   affichant sa date/heure et son objet, avec un badge « Plus récente »
+   sur la première et un fond bleu clair sur la version actuellement
+   affichée. Cliquer une entrée change l'aperçu affiché en dessous, sans
+   recharger la page. Avec un seul scénario, le sélecteur est masqué et
+   seule sa date de génération est rappelée en petit, pour ne pas
+   surcharger le cas simple.
+4. **Vérification réelle complète** : 57/57 tests backend (1 nouveau —
+   tri du plus récent au plus ancien + présence de `date_creation` dans
+   la réponse). En navigateur réel (Puppeteer) : 2 scénarios créés via le
+   compte consultant sur la campagne Direction générale (déjà 5 scénarios
+   de test des sessions précédentes, total 7 versions), connexion avec
+   `arthur@hshield237.local` → modale « Voir l'email » → 7 entrées
+   affichées classées par date, la plus récente pré-sélectionnée et son
+   contenu affiché ; clic sur une entrée plus ancienne → contenu affiché
+   mis à jour correctement (objet et corps de la bonne version).
+5. **Aléa Docker Desktop rencontré et résolu** : après `docker compose up
+   -d`, le backend est resté en boucle `WORKER TIMEOUT`/`SIGKILL` (pattern
+   déjà documenté à plusieurs reprises), et le conteneur `frontend` est
+   resté bloqué à l'état `Created` sans jamais démarrer alors que `nginx`
+   dépendait de lui — résolu par `docker compose restart backend` puis
+   `docker compose up -d frontend nginx` explicite. Pas un problème de
+   code.
+6. **Committé et poussé** (commit `805033f`).
+
 ## Prochaine action précise
 
 **Toutes les demandes explicites sont à jour**, y compris les trois
 changements de gouvernance/ergonomie du 2026-08-27 (notification de refus
 sur Campagnes, email visible par le responsable, déconnexion globale dans
-la sidebar) et les deux correctifs de la même journée (doublon d'objet,
-mode sombre) — voir « Journal du 2026-08-27 » et « Journal du 2026-08-27
-(suite 2) » ci-dessus. Pistes pour la suite, aucune n'a encore été
-redemandée explicitement :
+la sidebar), les deux correctifs de la même journée (doublon d'objet,
+mode sombre) et le classement par date des versions d'email dans la
+modale du responsable — voir « Journal du 2026-08-27 », « Journal du
+2026-08-27 (suite 2) » et « Journal du 2026-08-27 (suite 3) » ci-dessus.
+Pistes pour la suite, aucune n'a encore été redemandée explicitement :
 
 1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
    chaque page développée à sa maquette de référence — d'autant plus
