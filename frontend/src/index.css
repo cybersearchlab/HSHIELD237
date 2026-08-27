@@ -42,6 +42,31 @@
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
+/* Mode sombre — bascule via ThemeContext (data-theme sur <html>), variables
+   redéfinies plutôt que dupliquées : tout composant déjà construit avec
+   var(--bg)/var(--surface)/var(--text)... hérite du thème sans modification.
+   La sidebar (var(--navy)) reste inchangée dans les deux modes — elle est
+   déjà sombre par construction (voir docs/maquettes/app.html). */
+[data-theme="dark"] {
+  --bg: #10141d;
+  --surface: #171c28;
+  --surface2: #1e2432;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-str: rgba(255, 255, 255, 0.14);
+  --text: #e8ebf2;
+  --text2: #b3bac9;
+  --text3: #7b8496;
+  --red-light: rgba(192, 57, 43, 0.18);
+  --gold-light: rgba(196, 154, 26, 0.16);
+  --green-light: rgba(26, 127, 74, 0.18);
+  --orange-light: rgba(230, 126, 34, 0.16);
+  --blue-light: rgba(26, 95, 160, 0.2);
+  --teal-light: rgba(14, 124, 123, 0.2);
+  --purple-light: rgba(107, 33, 168, 0.2);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.28);
+}
+
 html,
 body,
 #root {

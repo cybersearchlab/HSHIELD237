@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import CampagnesPage from "./pages/Campagnes/CampagnesPage";
 import ConsentementsPage from "./pages/Consentements/ConsentementsPage";
 import DashboardPage from "./pages/Dashboard/DashboardPage";
@@ -16,84 +17,86 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/campagnes"
-            element={
-              <ProtectedRoute>
-                <CampagnesPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/generer-scenario"
-            element={
-              <ProtectedRoute>
-                <GenererScenarioPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/resultats"
-            element={
-              <ProtectedRoute>
-                <ResultatsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/rapports"
-            element={
-              <ProtectedRoute>
-                <RapportsPDFPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/consentements"
-            element={
-              <ProtectedRoute>
-                <ConsentementsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/responsables"
-            element={
-              <ProtectedRoute>
-                <ResponsablesPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/templates"
-            element={
-              <ProtectedRoute>
-                <TemplatesDepartementPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/historique"
-            element={
-              <ProtectedRoute>
-                <HistoriquePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/campagnes"
+              element={
+                <ProtectedRoute>
+                  <CampagnesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generer-scenario"
+              element={
+                <ProtectedRoute>
+                  <GenererScenarioPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/resultats"
+              element={
+                <ProtectedRoute>
+                  <ResultatsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/rapports"
+              element={
+                <ProtectedRoute>
+                  <RapportsPDFPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/consentements"
+              element={
+                <ProtectedRoute>
+                  <ConsentementsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/responsables"
+              element={
+                <ProtectedRoute>
+                  <ResponsablesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/templates"
+              element={
+                <ProtectedRoute>
+                  <TemplatesDepartementPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/historique"
+              element={
+                <ProtectedRoute>
+                  <HistoriquePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

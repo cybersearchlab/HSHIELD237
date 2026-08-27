@@ -267,3 +267,33 @@
   padding: 22px 24px 48px;
   flex: 1;
 }
+
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  cursor: pointer;
+  border: 1px solid var(--border-str);
+  background: var(--surface);
+  color: var(--text2);
+  font-family: inherit;
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--surface2);
+}
+
+.theme-toggle-btn i {
+  font-size: 15px;
+}
+
+@media (max-width: 900px) {
+  .theme-toggle-btn span {
+    display: none;
+  }
+}
