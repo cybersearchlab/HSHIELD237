@@ -25,4 +25,18 @@ class EnvoiTrackingSerializer(serializers.ModelSerializer):
 
 
 class EnvoyerCampagneRequestSerializer(serializers.Serializer):
+    # "cible" pilote l'envoi individuel à l'annuaire des employés
+    # (apps.employes) — "tous" (département de la campagne) ou
+    # "un_employe" (employe_id requis). Laissé vide, le comportement
+    # historique est conservé (destinataires explicites, ou email de test
+    # de chaque scénario à défaut) pour ne rien casser.
+    cible = serializers.ChoiceField(choices=["tous", "un_employe"], required=False, allow_null=True, default=None)
+    employe_id = serializers.IntegerField(required=False, allow_null=True, default=None)
     destinataires = serializers.ListField(child=serializers.EmailField(), required=False, allow_empty=True)
+
+    def validate(self, data):
+        if data.get("cible") == "un_employe" and not data.get("employe_id"):
+            raise serializers.ValidationError(
+                {"employe_id": "Sélectionnez un employé."}
+            )
+        return data

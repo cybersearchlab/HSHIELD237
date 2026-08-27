@@ -17,6 +17,7 @@ from apps.campagnes.views import (
     ScenarioListView,
     ScoreParDepartementView,
 )
+from apps.employes.views import EmployeViewSet
 from apps.generation.views import GenerationAPIView, GenerationManuelView
 from apps.gouvernance.urls import urlpatterns as gouvernance_urls
 from apps.rapports.views import RapportCampagneView
@@ -33,6 +34,7 @@ router = DefaultRouter()
 router.register("campagnes", CampagneViewSet, basename="campagne")
 router.register("templates-departement", TemplateDepartementViewSet, basename="templatedepartement")
 router.register("departements", DepartementViewSet, basename="departement")
+router.register("employes", EmployeViewSet, basename="employe")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

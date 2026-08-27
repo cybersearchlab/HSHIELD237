@@ -1,7 +1,9 @@
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from apps.accounts.models import Role, Utilisateur
 from apps.campagnes.models import Campagne, Departement, Destinataire, ScenarioPhishing
+from apps.employes.models import Employe
 from apps.gouvernance.models import Consentement, StatutConsentement
 
 from .models import ConfigurationEnvoi, EnvoiTracking, TypeInteraction
@@ -139,3 +141,102 @@ class SegmentationDepartementTests(TestCase):
         trackings = EnvoiCampagneService(self.campagne).envoyer_campagne()
         scenario_par_email = {t.destinataire_email: t.scenario_id for t in trackings}
         self.assertEqual(scenario_par_email["marketing@entreprise.cm"], scenario_generique.id)
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class EnvoiAuxEmployesTests(TestCase):
+    """Le lancement d'une campagne peut désormais cibler l'annuaire des
+    employés (apps.employes) plutôt qu'une adresse de diffusion — soit
+    tout le département de la campagne, soit un seul employé (2026-08-27)."""
+
+    def setUp(self):
+        self.campagne = Campagne.objects.create(departement=Departement.IT)
+        Consentement.objects.create(
+            campagne=self.campagne,
+            responsable_nom="Responsable Test",
+            responsable_email="responsable-employes@entreprise.cm",
+            statut=StatutConsentement.VALIDE,
+        )
+        ConfigurationEnvoi.objects.create(
+            campagne=self.campagne,
+            expediteur_nom="Portail Test",
+            expediteur_email="noreply@test.cm",
+            reply_to="reponses-test@hshield237.local",
+            delai_entre_envois=0,
+        )
+        self.scenario = ScenarioPhishing.objects.create(
+            campagne=self.campagne,
+            objet_email="Alerte sécurité",
+            corps_email="Contenu.",
+            url_fausse_page="https://exemple.cm/",
+            secteur_cible="Test",
+        )
+        self.employe_it_1 = Employe.objects.create(
+            nom="Employé IT 1", email="it1@entreprise.cm", departement=Departement.IT
+        )
+        self.employe_it_2 = Employe.objects.create(
+            nom="Employé IT 2", email="it2@entreprise.cm", departement=Departement.IT
+        )
+        self.employe_rh = Employe.objects.create(
+            nom="Employé RH", email="rh@entreprise.cm", departement=Departement.RH
+        )
+        self.consultant = Utilisateur.objects.create_user(
+            username="consultant-envoi-employes",
+            email="consultant-envoi-employes@hshield237.local",
+            password="Test1234!",
+            role=Role.CONSULTANT,
+        )
+        self.url = reverse("simulation-envoyer", kwargs={"campagne_id": self.campagne.id})
+
+    def test_tous_les_employes_du_departement_recoivent_un_email_chacun(self):
+        trackings = EnvoiCampagneService(self.campagne).envoyer_aux_employes("tous")
+        emails = {t.destinataire_email for t in trackings}
+        self.assertEqual(emails, {"it1@entreprise.cm", "it2@entreprise.cm"})
+        # Le RH n'est pas du bon département : jamais sollicité.
+        self.assertNotIn("rh@entreprise.cm", emails)
+
+    def test_un_seul_employe_en_particulier(self):
+        trackings = EnvoiCampagneService(self.campagne).envoyer_aux_employes(
+            "un_employe", self.employe_it_1.id
+        )
+        self.assertEqual(len(trackings), 1)
+        self.assertEqual(trackings[0].destinataire_email, "it1@entreprise.cm")
+
+    def test_employe_d_un_autre_departement_refuse(self):
+        with self.assertRaises(EnvoiCampagneError):
+            EnvoiCampagneService(self.campagne).envoyer_aux_employes("un_employe", self.employe_rh.id)
+
+    def test_annuaire_vide_pour_ce_departement_leve_une_erreur_claire(self):
+        campagne_juridique = Campagne.objects.create(departement=Departement.JURIDIQUE)
+        Consentement.objects.create(
+            campagne=campagne_juridique,
+            responsable_nom="Resp",
+            responsable_email="resp-juridique@entreprise.cm",
+            statut=StatutConsentement.VALIDE,
+        )
+        ConfigurationEnvoi.objects.create(
+            campagne=campagne_juridique,
+            expediteur_nom="Portail Test",
+            expediteur_email="noreply@test.cm",
+            reply_to="reponses-test@hshield237.local",
+        )
+        ScenarioPhishing.objects.create(
+            campagne=campagne_juridique,
+            objet_email="Test",
+            corps_email="Contenu.",
+            url_fausse_page="https://exemple.cm/",
+            secteur_cible="Test",
+        )
+        with self.assertRaises(EnvoiCampagneError):
+            EnvoiCampagneService(campagne_juridique).envoyer_aux_employes("tous")
+
+    def test_endpoint_envoyer_avec_cible_tous(self):
+        self.client.force_login(self.consultant)
+        response = self.client.post(self.url, {"cible": "tous"}, content_type="application/json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(response.json()), 2)
+
+    def test_endpoint_envoyer_avec_cible_un_employe_sans_id_refuse(self):
+        self.client.force_login(self.consultant)
+        response = self.client.post(self.url, {"cible": "un_employe"}, content_type="application/json")
+        self.assertEqual(response.status_code, 400)

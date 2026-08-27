@@ -58,9 +58,14 @@ class ConfigurationEnvoiView(APIView):
 
 
 class EnvoyerCampagneView(APIView):
-    """POST /api/simulation/campagnes/<id>/envoyer/ — envoie chaque scénario
-    de la campagne aux destinataires fournis, ou à défaut à l'email de test
-    de chaque scénario."""
+    """POST /api/simulation/campagnes/<id>/envoyer/ — envoie la campagne.
+
+    Avec `cible` ("tous" ou "un_employe"), envoie individuellement à
+    l'annuaire des employés du département de la campagne (voir
+    apps.employes) — c'est le chemin utilisé par la modale de lancement
+    depuis le 2026-08-27. Sans `cible`, conserve le comportement
+    historique (`destinataires` explicites, ou l'email de test de chaque
+    scénario à défaut)."""
 
     permission_classes = CAN_MANAGE_ENVOI
 
@@ -68,10 +73,16 @@ class EnvoyerCampagneView(APIView):
         campagne = get_object_or_404(Campagne, pk=campagne_id)
         request_serializer = EnvoyerCampagneRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
-        destinataires = request_serializer.validated_data.get("destinataires") or None
+        data = request_serializer.validated_data
+        cible = data.get("cible")
 
         try:
-            trackings = EnvoiCampagneService(campagne).envoyer_campagne(destinataires)
+            service = EnvoiCampagneService(campagne)
+            if cible:
+                trackings = service.envoyer_aux_employes(cible, data.get("employe_id"))
+            else:
+                destinataires = data.get("destinataires") or None
+                trackings = service.envoyer_campagne(destinataires)
         except EnvoiCampagneError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 

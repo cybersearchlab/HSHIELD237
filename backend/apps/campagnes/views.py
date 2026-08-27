@@ -40,6 +40,7 @@ class DepartementViewSet(ModelViewSet):
         # ce département — évite de laisser des campagnes/destinataires/
         # responsables/templates orphelins avec un code qui ne résout plus
         # à rien de configuré.
+        from apps.employes.models import Employe
         from apps.gouvernance.models import ResponsableDepartement
         from apps.templates_departement.models import TemplateDepartement
 
@@ -52,6 +53,8 @@ class DepartementViewSet(ModelViewSet):
             references.append("un responsable désigné")
         if TemplateDepartement.objects.filter(departement=dept.code).exists():
             references.append("des templates")
+        if Employe.objects.filter(departement=dept.code).exists():
+            references.append("des employés")
         if references:
             return Response(
                 {

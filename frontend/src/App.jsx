@@ -7,6 +7,7 @@ import CampagnesPage from "./pages/Campagnes/CampagnesPage";
 import ConsentementsPage from "./pages/Consentements/ConsentementsPage";
 import DashboardPage from "./pages/Dashboard/DashboardPage";
 import DepartementsPage from "./pages/Departements/DepartementsPage";
+import EmployesPage from "./pages/Employes/EmployesPage";
 import GenererScenarioPage from "./pages/GenererScenario/GenererScenarioPage";
 import HistoriquePage from "./pages/Historique/HistoriquePage";
 import LoginPage from "./pages/Login/LoginPage";
@@ -85,6 +86,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <DepartementsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/employes"
+                element={
+                  <ProtectedRoute>
+                    <EmployesPage />
                   </ProtectedRoute>
                 }
               />

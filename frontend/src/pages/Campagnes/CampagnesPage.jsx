@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { createCampagne, deleteCampagne, listCampagnes, listScenarios, updateCampagne } from "../../api/campagnes";
+import { listEmployes } from "../../api/employes";
 import { envoyerCampagne, getConfigurationEnvoi, updateConfigurationEnvoi } from "../../api/simulation";
 import Layout from "../../components/Layout";
 import { useDepartements } from "../../context/DepartementsContext";
@@ -54,6 +55,11 @@ export default function CampagnesPage() {
   const [launchReplyTo, setLaunchReplyTo] = useState("");
   const [launchDelai, setLaunchDelai] = useState(2);
   const [launchFieldErrors, setLaunchFieldErrors] = useState({});
+  // Annuaire des employés du département de la campagne — remplace
+  // l'adresse de diffusion par un envoi individuel, ciblé (2026-08-27).
+  const [launchEmployes, setLaunchEmployes] = useState([]);
+  const [launchCible, setLaunchCible] = useState("tous"); // "tous" | "un_employe"
+  const [launchEmployeId, setLaunchEmployeId] = useState("");
 
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -115,11 +121,15 @@ export default function CampagnesPage() {
     setLaunchExpediteurEmail("");
     setLaunchReplyTo("");
     setLaunchDelai(2);
+    setLaunchEmployes([]);
+    setLaunchCible("tous");
+    setLaunchEmployeId("");
     setLaunchLoading(true);
     try {
-      const [config, scenarios] = await Promise.all([
+      const [config, scenarios, employes] = await Promise.all([
         getConfigurationEnvoi(campagne.id),
         listScenarios(campagne.id),
+        listEmployes({ departement: campagne.departement }),
       ]);
       // Le scénario le plus récent (partie « Expéditeur et destinataire » de
       // la page Générer un scénario) préremplit la configuration d'envoi
@@ -129,6 +139,7 @@ export default function CampagnesPage() {
       setLaunchExpediteurEmail(config.expediteur_email || dernierScenario?.expediteur_email || "");
       setLaunchReplyTo(config.reply_to || "");
       setLaunchDelai(config.delai_entre_envois ?? 2);
+      setLaunchEmployes(employes);
     } catch {
       showToast("Impossible de charger la configuration d'envoi.", "error");
     } finally {
@@ -152,6 +163,12 @@ export default function CampagnesPage() {
     if (!launchReplyTo.trim()) errors.reply_to = "L'email de réponse (Reply-To) est requis.";
     else if (!isValidEmail(launchReplyTo)) errors.reply_to = "Email non valide.";
     if (!launchDelai || Number(launchDelai) < 0) errors.delai_entre_envois = "Le délai doit être un nombre positif.";
+    if (launchEmployes.length === 0) {
+      errors.destinataires =
+        "Aucun employé n'est enregistré pour ce département — configurez l'annuaire des employés d'abord.";
+    } else if (launchCible === "un_employe" && !launchEmployeId) {
+      errors.destinataires = "Sélectionnez un employé.";
+    }
     return errors;
   }
 
@@ -172,7 +189,10 @@ export default function CampagnesPage() {
         reply_to: launchReplyTo,
         delai_entre_envois: Number(launchDelai),
       });
-      const trackings = await envoyerCampagne(launchCampagne.id);
+      const trackings = await envoyerCampagne(launchCampagne.id, {
+        cible: launchCible,
+        employeId: launchCible === "un_employe" ? Number(launchEmployeId) : undefined,
+      });
       await updateCampagne(launchCampagne.id, { statut: "active", perimetre_valide: true });
       setLaunchCampagne(null);
       showToast(`Campagne lancée — ${trackings.length} email${trackings.length > 1 ? "s" : ""} envoyé${trackings.length > 1 ? "s" : ""}.`, "success");
@@ -545,6 +565,68 @@ export default function CampagnesPage() {
                       {launchFieldErrors.delai_entre_envois && (
                         <div className="form-error-text">
                           <i className="ti ti-alert-circle" /> {launchFieldErrors.delai_entre_envois}
+                        </div>
+                      )}
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 20 }}>
+                      <label className="form-label">Destinataires *</label>
+                      {launchEmployes.length === 0 ? (
+                        <div className="form-hint" style={{ color: "var(--red)" }}>
+                          Aucun employé n'est enregistré pour le département {launchCampagne.departement_display} —
+                          configurez l'annuaire depuis la page Employés avant de lancer cette campagne.
+                        </div>
+                      ) : (
+                        <>
+                          <label className="form-check" style={{ marginBottom: 8 }}>
+                            <input
+                              type="radio"
+                              name="launch-cible"
+                              checked={launchCible === "tous"}
+                              onChange={() => {
+                                setLaunchCible("tous");
+                                clearLaunchFieldError("destinataires");
+                              }}
+                            />
+                            Tous les employés du département ({launchEmployes.length})
+                          </label>
+                          <label className="form-check" style={{ marginBottom: 8 }}>
+                            <input
+                              type="radio"
+                              name="launch-cible"
+                              checked={launchCible === "un_employe"}
+                              onChange={() => {
+                                setLaunchCible("un_employe");
+                                clearLaunchFieldError("destinataires");
+                              }}
+                            />
+                            Un employé en particulier
+                          </label>
+                          {launchCible === "un_employe" && (
+                            <select
+                              className="form-select"
+                              value={launchEmployeId}
+                              onChange={(e) => {
+                                setLaunchEmployeId(e.target.value);
+                                clearLaunchFieldError("destinataires");
+                              }}
+                            >
+                              <option value="">— Choisir —</option>
+                              {launchEmployes.map((e) => (
+                                <option key={e.id} value={e.id}>
+                                  {e.nom} ({e.email})
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          <div className="form-hint">
+                            Chaque employé reçoit un email individuel — jamais une adresse de diffusion
+                            visible par les autres destinataires.
+                          </div>
+                        </>
+                      )}
+                      {launchFieldErrors.destinataires && (
+                        <div className="form-error-text">
+                          <i className="ti ti-alert-circle" /> {launchFieldErrors.destinataires}
                         </div>
                       )}
                     </div>

@@ -396,3 +396,14 @@ class DepartementRegistryTests(TestCase):
         self.client.force_login(self.consultant)
         response = self.client.post("/api/campagnes/", {"departement": "inexistant"})
         self.assertEqual(response.status_code, 400)
+
+    def test_suppression_bloquee_si_employe_encore_rattache(self):
+        from apps.employes.models import Employe
+
+        self.client.force_login(self.administrateur)
+        dept = DepartementConfigure.objects.get(code="comptabilite")
+        Employe.objects.create(nom="Test", email="employe-dept-test@entreprise.cm", departement="comptabilite")
+
+        response = self.client.delete(f"/api/departements/{dept.id}/")
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(DepartementConfigure.objects.filter(code="comptabilite").exists())

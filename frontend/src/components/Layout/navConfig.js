@@ -27,6 +27,10 @@ export const NAV_SECTIONS = [
       // l'entreprise cliente (toutes n'ont pas les 10 départements
       // proposés par défaut) — voir docs/CONTEXTE_PROJET.md, 2026-08-27.
       { to: "/departements", label: "Départements", icon: "ti-building", roles: ["administrateur"] },
+      // Réservé à l'administrateur : l'annuaire des employés réels, utilisé
+      // pour envoyer une campagne individuellement plutôt que via une
+      // adresse de diffusion — voir docs/CONTEXTE_PROJET.md, 2026-08-27.
+      { to: "/employes", label: "Employés", icon: "ti-users", roles: ["administrateur"] },
       { to: "/parametres", label: "Paramètres", icon: "ti-settings" },
     ],
   },

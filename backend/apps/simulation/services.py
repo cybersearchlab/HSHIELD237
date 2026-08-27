@@ -165,3 +165,46 @@ class EnvoiCampagneService:
                 "ne possède d'email de destinataire de test."
             )
         return trackings
+
+    def envoyer_aux_employes(self, cible, employe_id=None):
+        """Envoie la campagne à un ou plusieurs employés réels de
+        l'annuaire (apps.employes.Employe), plutôt qu'à une adresse de
+        diffusion — chacun reçoit un message individuel (voir
+        envoyer_scenario, qui ne place jamais qu'un seul destinataire dans
+        l'en-tête). `cible` vaut "tous" (tous les employés du département
+        de la campagne) ou "un_employe" (un seul, désigné par employe_id).
+        """
+        from apps.employes.models import Employe
+
+        if cible == "un_employe":
+            if not employe_id:
+                raise EnvoiCampagneError("Aucun employé sélectionné.")
+            try:
+                employes = [Employe.objects.get(pk=employe_id, departement=self.campagne.departement)]
+            except Employe.DoesNotExist as exc:
+                raise EnvoiCampagneError(
+                    "Cet employé n'existe pas ou n'appartient pas au département de cette campagne."
+                ) from exc
+        else:
+            employes = list(Employe.objects.filter(departement=self.campagne.departement))
+            if not employes:
+                raise EnvoiCampagneError(
+                    "Aucun employé n'est enregistré pour ce département — configurez "
+                    "l'annuaire des employés (voir Employés) avant de lancer la campagne."
+                )
+
+        trackings = []
+        premier_envoi = True
+        for employe in employes:
+            scenario = self._scenario_pour_departement(employe.departement)
+            if scenario is None:
+                raise EnvoiCampagneError(
+                    f"Aucun scénario ne cible le département "
+                    f"« {departement_label(employe.departement)} » et aucun scénario "
+                    f"générique n'est défini sur cette campagne."
+                )
+            if not premier_envoi and self.delai_entre_envois:
+                time.sleep(self.delai_entre_envois)
+            premier_envoi = False
+            trackings.append(self.envoyer_scenario(scenario, employe.email))
+        return trackings
