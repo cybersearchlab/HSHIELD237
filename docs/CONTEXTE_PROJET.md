@@ -6,6 +6,19 @@
 
 ## État d'avancement
 
+- **Session du 2026-08-27 mise en pause ici**, à la demande de l'utilisateur.
+  Journée entièrement hors plan des 20 jours (aucun nouveau jour du plan
+  entamé) : notification de refus sur Campagnes, lecture d'email par le
+  responsable + classement des versions par date, déconnexion accessible
+  partout, correctif d'un objet dupliqué, mode sombre, puis les deux
+  chantiers demandés par l'encadreur — départements dynamiques et
+  annuaire des employés avec envoi individuel ciblé. Tout est committé et
+  poussé (dernier commit `c6e3b22`), arbre de travail propre, 78/78 tests
+  backend au vert. Une présentation non-IT récapitulant toute la journée
+  a aussi été produite dans `docs/presentations/` (gitignorée, non
+  commitée) : `H-SHIELD237_avancement_2026-08-27.pptx` (18 diapositives).
+  **Prochaine étape à la reprise : Jour 15** (vérification de fidélité
+  visuelle) — voir « Prochaine action précise » tout en bas de ce document.
 - **2026-08-27 (demande de l'encadreur, hors plan des 20 jours — chantier en
   deux étapes) : les deux étapes sont terminées.**
   **Étape 1/2** — les 10 départements figés en dur sont remplacés par un
