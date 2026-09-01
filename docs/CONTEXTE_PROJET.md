@@ -7,20 +7,19 @@
 ## État d'avancement
 
 - **2026-09-01 (Jour 16 du plan, backend uniquement, périmètre redéfini
-  par l'utilisateur)** : page Paramètres — **étapes 1 à 3 sur 4
-  terminées**. Profil (mise à jour de soi-même) + changement de mot de
-  passe self-service ; gestion de l'équipe par l'administrateur (lister,
-  créer un compte avec un rôle, changer un rôle) ; réinitialisation de
-  mot de passe admin-médiée (le lien « mot de passe oublié »/« contacter
+  par l'utilisateur) : les 4 étapes sont terminées.** Page Paramètres —
+  profil + changement de mot de passe self-service (étape 1) ; gestion
+  de l'équipe par l'administrateur : lister, créer un compte avec un
+  rôle, changer un rôle (étape 2) ; réinitialisation de mot de passe
+  admin-médiée — le lien « mot de passe oublié »/« contacter
   l'administrateur » de la page de connexion, jusqu'ici mort, notifie
   désormais réellement l'administrateur, qui déclenche la
-  réinitialisation depuis l'application — jamais de lien envoyé
-  directement à l'utilisateur). 21 nouveaux tests, 99/99 au total.
-  Committé et poussé (commit `c02230a`). Voir « Journal du 2026-09-01 ».
-  **Étape 4 (clés API/services externes saisissables depuis
-  l'application) — en cours**, voir « Prochaine action précise ». Plan
-  détaillé approuvé disponible dans
-  `C:\Users\Mr NDJOCK LEVY\.claude\plans\binary-imagining-kernighan.md`.
+  réinitialisation depuis l'application (étape 3) ; clés API/services
+  externes saisissables depuis l'application, chiffrées au repos,
+  utilisées en priorité par `ClaudeGenerationService` et
+  `EnvoiCampagneService` (étape 4). 32 nouveaux tests, **110/110 au
+  total**. Committé et poussé (commits `c02230a`, `e692b03`). Voir
+  « Journal du 2026-09-01 » et « (suite) ».
 - **Session du 2026-08-27 mise en pause ici**, à la demande de l'utilisateur.
   Journée entièrement hors plan des 20 jours (aucun nouveau jour du plan
   entamé) : notification de refus sur Campagnes, lecture d'email par le
@@ -967,10 +966,11 @@ ci-dessus.
 | App | État | Détail |
 |---|---|---|
 | `accounts` | ✅ Fait (étendu le 2026-09-01) | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur`. **2026-09-01** (Jour 16, étapes 1-3/4) : `MeView` en lecture/écriture (profil), `ChangerMotDePasseView`, gestion d'équipe admin-only (`UtilisateurListCreateView`, `UtilisateurRoleView`), modèle `DemandeReinitialisation` + réinitialisation admin-médiée (`MotDePasseOublieView` public, `DemandeReinitialisationListView`/`...TraiterView`, `UtilisateurReinitialiserMotDePasseView`), `notifications.py` (email, pas de blacklist JWT). 21 tests (`tests.py`, nouveau fichier) |
+| `parametres` | ✅ Fait (2026-09-01, étape 4/4) | Modèle `ParametreExterne` (les 8 réglages jusqu'ici lus uniquement depuis `.env` : `ANTHROPIC_API_KEY`/`MODEL`, `EMAIL_*`, `SIMULATION_BASE_URL`), valeur chiffrée au repos (`cryptography.fernet`, clé dérivée de `SECRET_KEY`), masquée en lecture pour les clés secrètes. `services.get_parametre()` (+ `_int`/`_bool`) : priorité au registre en base, repli sur `.env`/`settings`. CRUD `/api/parametres/externes/` admin-only (lecture et écriture). 11 tests |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
 | `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires. `ScenarioPhishing.date_creation` ajouté (absent jusqu'ici), tri explicite du plus récent au plus ancien, 1 test supplémentaire (57 tests au total). **2026-08-27 (suite 4)** : nouveau modèle `DepartementConfigure` (registre dynamique des départements, remplace `Departement.choices`), CRUD `/api/departements/` (admin-only, suppression bloquée si utilisé), `services.departement_label()` (résolution live du libellé), 7 tests supplémentaires (64 tests au total) |
-| `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
-| `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **2026-08-27** : `envoyer_aux_employes(cible, employe_id)` (envoi ciblé à l'annuaire `apps.employes`, réutilise entièrement la logique d'envoi individuel déjà en place), `EnvoyerCampagneRequestSerializer` étendu, tests supplémentaires. **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
+| `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html. **2026-09-01** : `api_key`/`model` résolus via `apps.parametres.services.get_parametre()` en priorité (repli sur `.env`) |
+| `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **2026-08-27** : `envoyer_aux_employes(cible, employe_id)` (envoi ciblé à l'annuaire `apps.employes`, réutilise entièrement la logique d'envoi individuel déjà en place), `EnvoyerCampagneRequestSerializer` étendu, tests supplémentaires. **2026-09-01** : connexion SMTP construite explicitement via `get_connection()` à partir de `apps.parametres.services.get_parametre()` (repli sur `.env`), plutôt que des réglages Django globaux implicites. **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `employes` | ✅ Fait (2026-08-27) | Modèle `Employe` (nom, email unique, département), CRUD `/api/employes/` (lecture consultant+administrateur, écriture admin-only, filtrable par département), 8 tests. Annuaire remplaçant l'adresse de diffusion pour l'envoi de campagne |
 | `gouvernance` | ✅ Fait (jour 11, étendu le 2026-08-25) | Modèles `Consentement` (+ `motifs_refus`, `motif_refus_details`), `JournalAudit`, `ResponsableDepartement` (registre admin-only) ; endpoints demande (admin-only)/liste/valider/refuser (motifs obligatoires)/journal-audit/responsables (CRUD admin-only) ; `services.creer_consentement_auto` ; `tests.py` (23 tests) |
 | `rapports` | ✅ Fait (jour 13 backend) | `GenerationRapportService` (WeasyPrint 69.0), endpoint `.../rapport/`, `tests.py` (4 tests). Vérifié en direct (PDF réel via curl) et committé — voir « Journal du 2026-08-25 » |
@@ -1599,35 +1599,92 @@ réutilisant strictement les conventions déjà établies.
     nouveau, `urls.py` nouveau, `tests.py` nouveau, migration `0003`),
     `config/urls.py`.
 
+## Journal du 2026-09-01 (suite) — clés API / services externes (étape 4/4)
+
+Dernière étape du chantier Paramètres backend, construite sur les
+étapes 1-3 (registre d'utilisateurs, réinitialisation admin-médiée).
+
+1. **Nouvelle app `apps.parametres`** : modèle `ParametreExterne` —
+   `cle` restreinte aux 8 réglages jusqu'ici lus uniquement depuis
+   `.env` (`ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `EMAIL_HOST`,
+   `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`,
+   `EMAIL_USE_TLS`, `SIMULATION_BASE_URL`), `valeur_chiffree` — jamais
+   stockée en clair, chiffrée via `cryptography.fernet.Fernet` avec une
+   clé dérivée de `SECRET_KEY` (pas de variable d'environnement
+   supplémentaire à provisionner).
+2. **Masquage en lecture** pour les clés réellement secrètes
+   (`ANTHROPIC_API_KEY`, `EMAIL_HOST_PASSWORD` — déterminé par une liste
+   fixe, pas un choix de l'administrateur) : seuls les 4 derniers
+   caractères sont renvoyés par l'API (ex. `••••1a2b`) ; les réglages
+   neutres (modèle, port, URL) restent visibles en clair. Le champ
+   `valeur` (écriture) est write-only, jamais renvoyé tel quel après
+   enregistrement.
+3. `apps/parametres/services.py::get_parametre(cle, defaut)` (+
+   `get_parametre_int`/`get_parametre_bool`) : priorité au registre en
+   base, repli sur `.env`/`settings` sinon — **aucune substitution
+   automatique en variable d'environnement**, seulement une fonction que
+   le code applicatif appelle explicitement.
+4. `ClaudeGenerationService.__init__` (jour 7) et
+   `EnvoiCampagneService.__init__` (jour 8) résolvent désormais leurs
+   réglages via `get_parametre(...)` avant de retomber sur
+   `settings.X` — changement minimal, aucune modification du
+   comportement d'envoi lui-même. `EnvoiCampagneService` construit
+   désormais une connexion SMTP explicite (`django.core.mail.get_connection`)
+   à partir des valeurs résolues, plutôt que de dépendre implicitement
+   des réglages Django globaux — pour que la valeur admin prime
+   réellement.
+5. CRUD `/api/parametres/externes/` (`ModelViewSet`, admin-only **en
+   lecture et en écriture** — contrairement à `apps.employes`/
+   `apps.campagnes`, pas de lecture ouverte au consultant, ce n'est pas
+   une donnée à exposer même en lecture). Pagination désactivée (8
+   lignes maximum possibles).
+6. **11 nouveaux tests** (`apps/parametres/tests.py`, nouveau fichier) :
+   CRUD admin-only, chiffrement confirmé en base (valeur en clair
+   absente de `valeur_chiffree`), masquage/visibilité selon `est_secret`,
+   clé inconnue refusée, `get_parametre`/`_int`/`_bool` avec et sans
+   valeur en base, `ClaudeGenerationService` utilisant la valeur DB en
+   priorité (vérifié via mock des `settings`). **110/110 tests
+   backend.**
+7. **Vérifié en conditions réelles via `curl`** : création d'un
+   paramètre non secret (`ANTHROPIC_MODEL`) → `201`, valeur visible en
+   clair en lecture (`valeur_affichee`), champ `valeur` bien absent du
+   payload de retour. Donnée de test supprimée après vérification.
+8. **Committé et poussé** (commit `e692b03`).
+
+**Le chantier Paramètres backend (étapes 1 à 4) est maintenant terminé.**
+
 ## Prochaine action précise
 
-**Étape 4/4 en cours** : clés API / services externes, saisissables
-depuis l'application (administrateur uniquement) — nouvelle app
-`apps.parametres`, modèle `ParametreExterne` chiffré au repos
-(`cryptography.fernet`), masquage en lecture des valeurs secrètes,
-branché dans `ClaudeGenerationService` (jour 7) et `EnvoiCampagneService`
-(jour 8) via une fonction `get_parametre(cle, defaut)` qui retombe sur
-`.env`/`settings` si rien n'est configuré. Plan détaillé déjà approuvé,
-disponible dans
-`C:\Users\Mr NDJOCK LEVY\.claude\plans\binary-imagining-kernighan.md` —
-le suivre directement plutôt que re-planifier.
+**Toutes les demandes explicites sont à jour**, y compris les 4 étapes
+du chantier Paramètres backend (voir « Journal du 2026-09-01 » et
+« (suite) »). Pistes pour la suite, aucune n'a encore été redemandée
+explicitement :
 
-1. Avant de reprendre, vérifier l'état de Docker Desktop
+1. **Le frontend de la page Paramètres** : ce chantier (Jour 16) était
+   backend uniquement, sur demande explicite de l'utilisateur — aucune
+   page React construite. Les endpoints sont prêts (`/api/auth/me/`,
+   `/api/auth/mot-de-passe/`, `/api/auth/mot-de-passe-oublie/`,
+   `/api/accounts/utilisateurs/` (+ `/role/`, `/reinitialiser-mot-de-passe/`),
+   `/api/accounts/demandes-reinitialisation/` (+ `/traiter/`),
+   `/api/parametres/externes/`) ; la maquette de référence
+   (`docs/maquettes/entreprises_consentements_parametres.html`) sert de
+   base pour les onglets Profil/Sécurité/Équipe/API & IA — l'onglet
+   Facturation en est explicitement écarté (plus de mode SaaS) et les
+   onglets Notifications/Zone sensible n'ont pas d'équivalent backend
+   construit ce tour, à clarifier si redemandés.
+2. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
+   chaque page développée à sa maquette de référence — d'autant plus
+   pertinent après le mode sombre, les départements dynamiques,
+   l'annuaire des employés et les futures pages Paramètres.
+3. Avant de reprendre, vérifier l'état de Docker Desktop
    (`docker compose ps`) — le sprint a connu plusieurs interruptions
-   d'environnement (voir « Bugs connus » et « Journal du 2026-09-01»,
+   d'environnement (voir « Bugs connus » et « Journal du 2026-09-01 »,
    point sur la suspension complète des conteneurs) ; relancer avec
    `docker compose up -d`, patienter le ralentissement au premier
    démarrage (`WORKER TIMEOUT`), et vérifier `db` (récupération WAL
    possible après un arrêt non propre, résolue automatiquement en 1-3
    minutes, voir logs `database system was not properly shut down`).
-2. **Une fois l'étape 4 livrée et vérifiée**, revenir aux pistes du plan
-   des 20 jours non redemandées explicitement : Jour 15 (vérification de
-   fidélité visuelle — d'autant plus pertinent après le mode sombre, les
-   départements dynamiques, l'annuaire des employés et les nouvelles
-   pages Paramètres qui n'ont pas de maquette de référence d'origine) ;
-   le frontend de la page Paramètres elle-même (ce tour du Jour 16 était
-   backend uniquement, sur demande explicite).
-3. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
+4. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
    `administrateur@hshield237.local` / `Administrateur1234!` toujours
    valides ; `arthur@hshield237.local` / `Responsable1234!` (rôle
    responsable, désigné pour Direction générale) (voir « Bugs connus »).
