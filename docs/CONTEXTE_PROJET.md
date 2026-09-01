@@ -6,6 +6,21 @@
 
 ## État d'avancement
 
+- **2026-09-01 (Jour 16 du plan, backend uniquement, périmètre redéfini
+  par l'utilisateur)** : page Paramètres — **étapes 1 à 3 sur 4
+  terminées**. Profil (mise à jour de soi-même) + changement de mot de
+  passe self-service ; gestion de l'équipe par l'administrateur (lister,
+  créer un compte avec un rôle, changer un rôle) ; réinitialisation de
+  mot de passe admin-médiée (le lien « mot de passe oublié »/« contacter
+  l'administrateur » de la page de connexion, jusqu'ici mort, notifie
+  désormais réellement l'administrateur, qui déclenche la
+  réinitialisation depuis l'application — jamais de lien envoyé
+  directement à l'utilisateur). 21 nouveaux tests, 99/99 au total.
+  Committé et poussé (commit `c02230a`). Voir « Journal du 2026-09-01 ».
+  **Étape 4 (clés API/services externes saisissables depuis
+  l'application) — en cours**, voir « Prochaine action précise ». Plan
+  détaillé approuvé disponible dans
+  `C:\Users\Mr NDJOCK LEVY\.claude\plans\binary-imagining-kernighan.md`.
 - **Session du 2026-08-27 mise en pause ici**, à la demande de l'utilisateur.
   Journée entièrement hors plan des 20 jours (aucun nouveau jour du plan
   entamé) : notification de refus sur Campagnes, lecture d'email par le
@@ -951,7 +966,7 @@ ci-dessus.
 
 | App | État | Détail |
 |---|---|---|
-| `accounts` | ✅ Fait | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur` |
+| `accounts` | ✅ Fait (étendu le 2026-09-01) | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur`. **2026-09-01** (Jour 16, étapes 1-3/4) : `MeView` en lecture/écriture (profil), `ChangerMotDePasseView`, gestion d'équipe admin-only (`UtilisateurListCreateView`, `UtilisateurRoleView`), modèle `DemandeReinitialisation` + réinitialisation admin-médiée (`MotDePasseOublieView` public, `DemandeReinitialisationListView`/`...TraiterView`, `UtilisateurReinitialiserMotDePasseView`), `notifications.py` (email, pas de blacklist JWT). 21 tests (`tests.py`, nouveau fichier) |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
 | `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires. `ScenarioPhishing.date_creation` ajouté (absent jusqu'ici), tri explicite du plus récent au plus ancien, 1 test supplémentaire (57 tests au total). **2026-08-27 (suite 4)** : nouveau modèle `DepartementConfigure` (registre dynamique des départements, remplace `Departement.choices`), CRUD `/api/departements/` (admin-only, suppression bloquée si utilisé), `services.departement_label()` (résolution live du libellé), 7 tests supplémentaires (64 tests au total) |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html |
@@ -1476,31 +1491,145 @@ approuvé suivi tel quel (voir
 
 **Les deux étapes de ce chantier sont maintenant terminées et vérifiées.**
 
+## Journal du 2026-09-01 — Paramètres backend, étapes 1-3/4 (profil, équipe, réinitialisation)
+
+Jour 16 du plan des 20 jours, avec un périmètre redéfini par l'utilisateur
+dans la demande elle-même : plus de mode SaaS (l'onglet Facturation de la
+maquette `docs/maquettes/entreprises_consentements_parametres.html` est
+écarté), accès segmenté par rôle, et des pouvoirs précis pour
+l'administrateur. Backend uniquement pour ce tour (demande explicite) —
+aucune page frontend Paramètres construite.
+
+**Exploration préalable** (voir plan approuvé) : `apps.accounts` ne
+contenait avant ce jour qu'un modèle `Utilisateur` minimal et une
+`MeView` en lecture seule — aucun changement de mot de passe, aucune
+réinitialisation, aucune gestion d'équipe, aucun mécanisme de
+notification interne dans tout le projet. Tout construit de zéro, en
+réutilisant strictement les conventions déjà établies.
+
+### Étape 1 — Profil et mot de passe (self-service)
+
+1. `MeView` passe de `RetrieveAPIView` à `RetrieveUpdateAPIView` — PATCH
+   `/api/auth/me/` via un nouveau `ProfilSerializer` (nom/prénom/email
+   uniquement ; `role`/`is_staff`/`is_superuser` n'existent même pas dans
+   ce serializer — un utilisateur ne peut jamais se promouvoir
+   lui-même).
+2. Nouveau `POST /api/auth/mot-de-passe/` (`ChangerMotDePasseView`) :
+   ancien mot de passe vérifié via `check_password()`, nouveau validé via
+   `django.contrib.auth.password_validation.validate_password` — les 4
+   validateurs (`AUTH_PASSWORD_VALIDATORS`) étaient déjà configurés dans
+   `settings/base.py` mais jamais utilisés jusqu'ici.
+
+### Étape 2 — Gestion de l'équipe (administrateur uniquement)
+
+3. `GET/POST /api/accounts/utilisateurs/` (`UtilisateurListCreateView`) :
+   liste tous les comptes ; la création prend un rôle **restreint à
+   `consultant`/`responsable`/`administrateur`** (pas `employe`, rôle
+   historique explicitement hors périmètre de la demande) et **aucun mot
+   de passe** — un mot de passe temporaire est généré
+   (`secrets.token_urlsafe`) et envoyé par email au titulaire, jamais
+   choisi ni connu de l'administrateur qui crée le compte.
+4. `PATCH /api/accounts/utilisateurs/<id>/role/`
+   (`UtilisateurRoleView`) : change uniquement le rôle.
+5. Motif **paired-`APIView` + `enregistrer_audit`** réutilisé tel quel
+   depuis `apps.gouvernance.views` (import inter-app déjà établi, comme
+   `creer_consentement_auto`) — chaque création de compte et chaque
+   changement de rôle journalisé dans `JournalAudit`.
+
+### Étape 3 — Réinitialisation de mot de passe (admin-médiée)
+
+6. **Décision de conception explicite** : pas de lien de réinitialisation
+   auto-envoyé à l'utilisateur (le modèle SaaS classique) — cohérent avec
+   le principe déjà établi dans ce projet où c'est toujours
+   l'administrateur qui déclenche l'action sensible (voir
+   `ResponsableDepartement`, la validation de consentement). Nouveau
+   modèle `DemandeReinitialisation` (`email_saisi`, `utilisateur` FK
+   nullable — `null` si l'email ne correspond à aucun compte, conservé
+   pour information sans jamais le révéler côté client, `statut`,
+   `traite_par`).
+7. `POST /api/auth/mot-de-passe-oublie/` (**public**, sans
+   authentification) : c'est le nouvel endpoint réel derrière les deux
+   liens jusqu'ici morts de `LoginPage.jsx` (« Mot de passe oublié ? »
+   et « Contacter l'administrateur », qui affichaient un toast
+   « Fonctionnalité non disponible dans cette maquette »). Réponse
+   **toujours identique**, qu'un compte existe ou non pour cet email —
+   jamais d'indice côté client. Notifie par email tous les comptes
+   `role=administrateur` (nouveau `apps/accounts/notifications.py` —
+   aucun modèle de notification in-app n'existe dans ce projet, l'email
+   est le seul canal déjà disponible, réutilisant les réglages SMTP déjà
+   configurés pour les campagnes).
+8. `GET /api/accounts/demandes-reinitialisation/` (liste, admin-only) et
+   `POST .../<id>/traiter/` (génère et envoie un nouveau mot de passe au
+   titulaire du compte associé, marque la demande traitée).
+9. `POST /api/accounts/utilisateurs/<id>/reinitialiser-mot-de-passe/` :
+   réinitialisation directe par l'administrateur, sans demande
+   préalable — pour « réinitialiser le mot de passe de n'importe qui ».
+
+### Vérification
+
+10. **21 nouveaux tests** (`apps/accounts/tests.py`, nouveau fichier —
+    aucun test n'existait encore dans cette app) : profil (mise à jour,
+    rôle non modifiable, email déjà utilisé refusé), changement de mot
+    de passe (réussi/ancien incorrect/nouveau trop faible/non
+    authentifié), équipe (liste et création réservées à l'administrateur,
+    rôle hors périmètre refusé, changement de rôle journalisé),
+    réinitialisation (email existant vs inexistant — réponse identique,
+    email de notification déclenché, traitement change effectivement le
+    mot de passe, réinitialisation directe, tout réservé à
+    l'administrateur). **99/99 tests backend au total.**
+11. Vérifié en conditions réelles via `curl` (login, liste des
+    utilisateurs) — les endpoints déclenchant un envoi SMTP réel
+    (création de compte, mot de passe oublié) n'ont pas pu être
+    revérifiés ainsi cette session (voir point 12) mais sont couverts
+    par les tests automatisés contre un backend email mocké
+    (`locmem`), suivant la même convention que les tests de campagnes.
+12. **Aléa de session, sans lien avec le code** : l'environnement Docker
+    complet (les 4 conteneurs) a été retrouvé entièrement arrêté
+    (`Exited (137)`, code SIGKILL) au milieu de la session, coïncidant
+    avec un message utilisateur indiquant que « l'accès a été réactivé »
+    — cohérent avec une suspension complète de la machine/de
+    l'environnement plutôt qu'un crash applicatif. `db` a dû refaire une
+    récupération WAL après cet arrêt non propre (résolue automatiquement
+    en configuration, sans perte de données, comme les fois précédentes
+    documentées). Résolu par un simple `docker compose up -d` puis un
+    nouveau passage complet des tests (à nouveau 99/99 au vert), sans
+    aucun changement de code.
+13. **Committé et poussé** (commit `c02230a`) : `apps/accounts/`
+    (`models.py`, `serializers.py`, `views.py`, `notifications.py`
+    nouveau, `urls.py` nouveau, `tests.py` nouveau, migration `0003`),
+    `config/urls.py`.
+
 ## Prochaine action précise
 
-**Toutes les demandes explicites sont à jour**, y compris le chantier
-complet des départements dynamiques + annuaire des employés (étapes 1 et
-2, voir « Journal du 2026-08-27 (suite 4) » et « (suite 5) »). Pistes pour
-la suite, aucune n'a encore été redemandée explicitement :
+**Étape 4/4 en cours** : clés API / services externes, saisissables
+depuis l'application (administrateur uniquement) — nouvelle app
+`apps.parametres`, modèle `ParametreExterne` chiffré au repos
+(`cryptography.fernet`), masquage en lecture des valeurs secrètes,
+branché dans `ClaudeGenerationService` (jour 7) et `EnvoiCampagneService`
+(jour 8) via une fonction `get_parametre(cle, defaut)` qui retombe sur
+`.env`/`settings` si rien n'est configuré. Plan détaillé déjà approuvé,
+disponible dans
+`C:\Users\Mr NDJOCK LEVY\.claude\plans\binary-imagining-kernighan.md` —
+le suivre directement plutôt que re-planifier.
 
-1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
-   chaque page développée à sa maquette de référence — d'autant plus
-   pertinent après le mode sombre, les départements dynamiques et les
-   deux nouvelles pages (Départements, Employés) qui n'ont pas de
-   maquette de référence d'origine et suivent donc uniquement les
-   conventions déjà établies (cartes, modales, toasts).
-2. **Jour 16** (page Paramètres) : reste le seul lien de nav encore non
-   câblé.
-3. Avant de reprendre, vérifier l'état de Docker Desktop
-   (`docker compose ps`) — il s'est arrêté entre deux sessions à plusieurs
-   reprises ce sprint (voir « Bugs connus ») ; relancer avec
-   `docker compose up -d` et patienter le ralentissement au premier
-   démarrage si les workers backend bouclent en `WORKER TIMEOUT`.
-4. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
+1. Avant de reprendre, vérifier l'état de Docker Desktop
+   (`docker compose ps`) — le sprint a connu plusieurs interruptions
+   d'environnement (voir « Bugs connus » et « Journal du 2026-09-01»,
+   point sur la suspension complète des conteneurs) ; relancer avec
+   `docker compose up -d`, patienter le ralentissement au premier
+   démarrage (`WORKER TIMEOUT`), et vérifier `db` (récupération WAL
+   possible après un arrêt non propre, résolue automatiquement en 1-3
+   minutes, voir logs `database system was not properly shut down`).
+2. **Une fois l'étape 4 livrée et vérifiée**, revenir aux pistes du plan
+   des 20 jours non redemandées explicitement : Jour 15 (vérification de
+   fidélité visuelle — d'autant plus pertinent après le mode sombre, les
+   départements dynamiques, l'annuaire des employés et les nouvelles
+   pages Paramètres qui n'ont pas de maquette de référence d'origine) ;
+   le frontend de la page Paramètres elle-même (ce tour du Jour 16 était
+   backend uniquement, sur demande explicite).
+3. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
    `administrateur@hshield237.local` / `Administrateur1234!` toujours
    valides ; `arthur@hshield237.local` / `Responsable1234!` (rôle
    responsable, désigné pour Direction générale) (voir « Bugs connus »).
    L'annuaire des employés (`/employes`) est vide en conditions réelles —
-   à peupler avant toute démonstration de lancement de campagne (le
-   lancement est bloqué avec un message explicite tant qu'aucun employé
-   n'est configuré pour le département concerné).
+   à peupler avant toute démonstration de lancement de campagne.
