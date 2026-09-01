@@ -8,3 +8,4 @@ psycopg[binary]>=3.1
 gunicorn>=22.0
 anthropic>=0.34
 weasyprint==69.0
+cryptography>=42.0

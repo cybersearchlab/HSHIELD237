@@ -31,8 +31,13 @@ class ClaudeGenerationService:
     """
 
     def __init__(self, api_key=None, model=None):
-        self.api_key = api_key or settings.ANTHROPIC_API_KEY
-        self.model = model or settings.ANTHROPIC_MODEL
+        from apps.parametres.services import get_parametre
+
+        # Priorité au réglage saisi par l'administrateur depuis l'application
+        # (Paramètres > API & IA) ; repli sur .env/settings si rien n'est
+        # configuré (voir apps.parametres.services.get_parametre).
+        self.api_key = api_key or get_parametre("ANTHROPIC_API_KEY", settings.ANTHROPIC_API_KEY)
+        self.model = model or get_parametre("ANTHROPIC_MODEL", settings.ANTHROPIC_MODEL)
 
     def _client(self):
         if not self.api_key:

@@ -2,7 +2,7 @@ import logging
 import time
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.utils.html import escape
 
 from apps.campagnes.services import departement_label
@@ -55,6 +55,21 @@ class EnvoiCampagneService:
             delai_entre_envois if delai_entre_envois is not None else self.config.delai_entre_envois
         )
 
+        # Connexion SMTP construite explicitement à partir des réglages
+        # saisis par l'administrateur (Paramètres > API & IA), avec repli
+        # sur .env/settings — plutôt que de dépendre implicitement des
+        # réglages globaux Django, pour que la valeur admin prime
+        # réellement (voir apps.parametres.services).
+        from apps.parametres.services import get_parametre, get_parametre_bool, get_parametre_int
+
+        self.connection = get_connection(
+            host=get_parametre("EMAIL_HOST", settings.EMAIL_HOST),
+            port=get_parametre_int("EMAIL_PORT", settings.EMAIL_PORT),
+            username=get_parametre("EMAIL_HOST_USER", settings.EMAIL_HOST_USER),
+            password=get_parametre("EMAIL_HOST_PASSWORD", settings.EMAIL_HOST_PASSWORD),
+            use_tls=get_parametre_bool("EMAIL_USE_TLS", settings.EMAIL_USE_TLS),
+        )
+
     def _construire_url_capture(self, tracking_id):
         base = settings.SIMULATION_BASE_URL.rstrip("/")
         return f"{base}/simulation/capture/{tracking_id}/"
@@ -93,6 +108,7 @@ class EnvoiCampagneService:
             from_email=f"{self.config.expediteur_nom} <{self.config.expediteur_email}>".strip(),
             to=[destinataire_email],
             reply_to=[self.config.reply_to],
+            connection=self.connection,
         )
         message.attach_alternative(corps_html, "text/html")
 

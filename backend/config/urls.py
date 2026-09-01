@@ -21,6 +21,7 @@ from apps.campagnes.views import (
 from apps.employes.views import EmployeViewSet
 from apps.generation.views import GenerationAPIView, GenerationManuelView
 from apps.gouvernance.urls import urlpatterns as gouvernance_urls
+from apps.parametres.views import ParametreExterneViewSet
 from apps.rapports.views import RapportCampagneView
 from apps.simulation.urls import api_urlpatterns as simulation_api_urls
 from apps.simulation.urls import public_urlpatterns as simulation_public_urls
@@ -36,6 +37,7 @@ router.register("campagnes", CampagneViewSet, basename="campagne")
 router.register("templates-departement", TemplateDepartementViewSet, basename="templatedepartement")
 router.register("departements", DepartementViewSet, basename="departement")
 router.register("employes", EmployeViewSet, basename="employe")
+router.register("parametres/externes", ParametreExterneViewSet, basename="parametreexterne")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

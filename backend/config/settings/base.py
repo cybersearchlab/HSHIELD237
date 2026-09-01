@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "apps.rapports",
     "apps.templates_departement",
     "apps.employes",
+    "apps.parametres",
 ]
 
 MIDDLEWARE = [
