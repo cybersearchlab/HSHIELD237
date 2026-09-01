@@ -1948,3 +1948,175 @@ tr:hover td {
   animation: spin 0.8s linear infinite;
   display: inline-block;
 }
+
+/* ── PARAMÈTRES ── repris de docs/maquettes/entreprises_consentements_parametres.html */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.settings-nav {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  position: sticky;
+  top: 78px;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+  border-left: 3px solid transparent;
+  transition: all 0.12s;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-nav-item:last-child {
+  border-bottom: none;
+}
+
+.settings-nav-item:hover {
+  background: var(--surface2);
+}
+
+.settings-nav-item.active {
+  background: #ebf0f9;
+  border-left-color: var(--navy-mid);
+  color: var(--navy-mid);
+  font-weight: 600;
+}
+
+.settings-nav-item i {
+  font-size: 17px;
+  color: var(--text3);
+}
+
+.settings-nav-item.active i {
+  color: var(--navy-mid);
+}
+
+.settings-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+
+.settings-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.settings-section-sub {
+  font-size: 12px;
+  color: var(--text3);
+  margin-bottom: 18px;
+}
+
+.settings-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.settings-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--navy-mid);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.team-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.team-row:last-child {
+  border-bottom: none;
+}
+
+.team-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--navy-mid);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.team-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.team-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.team-email {
+  font-size: 11.5px;
+  color: var(--text3);
+}
+
+.role-select {
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-str);
+  background: var(--surface2);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.api-key-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.api-key-val {
+  flex: 1;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  color: var(--text2);
+  letter-spacing: 0.05em;
+}

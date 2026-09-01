@@ -11,6 +11,7 @@ import EmployesPage from "./pages/Employes/EmployesPage";
 import GenererScenarioPage from "./pages/GenererScenario/GenererScenarioPage";
 import HistoriquePage from "./pages/Historique/HistoriquePage";
 import LoginPage from "./pages/Login/LoginPage";
+import ParametresPage from "./pages/Parametres/ParametresPage";
 import RapportsPDFPage from "./pages/RapportsPDF/RapportsPDFPage";
 import ResponsablesPage from "./pages/Responsables/ResponsablesPage";
 import ResultatsPage from "./pages/Resultats/ResultatsPage";
@@ -110,6 +111,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <HistoriquePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/parametres"
+                element={
+                  <ProtectedRoute>
+                    <ParametresPage />
                   </ProtectedRoute>
                 }
               />

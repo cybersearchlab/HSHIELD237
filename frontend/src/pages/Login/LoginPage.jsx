@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { demanderReinitialisation } from "../../api/accounts";
 import { login } from "../../api/auth";
 import { useAuth } from "../../context/AuthContext";
 
@@ -38,9 +39,25 @@ export default function LoginPage() {
     toastTimer.current = setTimeout(() => setToast(null), 3500);
   }
 
-  function notAvailable(event) {
+  // "Mot de passe oublié ?" et "Contacter l'administrateur" pointent vers
+  // le même mécanisme : aucun lien de réinitialisation n'est envoyé
+  // directement à la personne — sa demande est enregistrée et
+  // l'administrateur, notifié par email, déclenche lui-même la
+  // réinitialisation depuis Paramètres > Équipe (voir
+  // apps.accounts.views.MotDePasseOublieView côté backend).
+  async function handleMotDePasseOublie(event) {
     event?.preventDefault?.();
-    showToast("Fonctionnalité non disponible dans cette maquette.", "info");
+    let cible = email.trim();
+    if (!cible) {
+      cible = (window.prompt("Indiquez votre adresse email pour prévenir l'administrateur :") || "").trim();
+      if (!cible) return;
+    }
+    try {
+      const data = await demanderReinitialisation(cible);
+      showToast(data.detail, "success");
+    } catch {
+      showToast("Impossible d'envoyer la demande pour le moment. Réessayez.", "error");
+    }
   }
 
   async function handleSubmit(event) {
@@ -167,7 +184,7 @@ export default function LoginPage() {
               <label style={styles.rememberLabel}>
                 <input type="checkbox" style={styles.checkbox} /> Se souvenir de moi
               </label>
-              <a href="#" onClick={notAvailable} style={styles.link}>
+              <a href="#" onClick={handleMotDePasseOublie} style={styles.link}>
                 Mot de passe oublié ?
               </a>
             </div>
@@ -182,7 +199,7 @@ export default function LoginPage() {
           </form>
 
           <div style={{ marginTop: 26, textAlign: "center", fontSize: 12, color: MUTED, lineHeight: 1.8 }}>
-            <a href="#" onClick={notAvailable} style={{ ...styles.link, fontWeight: 500 }}>
+            <a href="#" onClick={handleMotDePasseOublie} style={{ ...styles.link, fontWeight: 500 }}>
               Contacter l'administrateur →
             </a>
           </div>
