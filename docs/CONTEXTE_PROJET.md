@@ -6,8 +6,17 @@
 
 ## État d'avancement
 
-- **2026-09-01 (Jour 16 du plan, backend uniquement, périmètre redéfini
-  par l'utilisateur) : les 4 étapes sont terminées.** Page Paramètres —
+- **2026-09-01 (suite) — Jour 16 entièrement terminé (backend + frontend).**
+  La page Paramètres (`/parametres`) est maintenant connectée aux
+  endpoints réels : Profil et Sécurité (tous rôles), Équipe et API & IA
+  (administrateur uniquement) — Facturation entièrement retirée (plus de
+  mode SaaS), Notifications/Zone sensible omis (pas d'endpoint backend).
+  Les liens « Mot de passe oublié ? »/« Contacter l'administrateur » de
+  la page de connexion, morts depuis le jour 3, fonctionnent réellement.
+  Committé et poussé (commit `f5f7644`). Voir « Journal du 2026-09-01
+  (suite 2) ».
+- **2026-09-01 (Jour 16 du plan, backend d'abord, périmètre redéfini
+  par l'utilisateur) : les 4 étapes backend sont terminées.** Page Paramètres —
   profil + changement de mot de passe self-service (étape 1) ; gestion
   de l'équipe par l'administrateur : lister, créer un compte avec un
   rôle, changer un rôle (étape 2) ; réinitialisation de mot de passe
@@ -980,7 +989,7 @@ ci-dessus.
 
 | Page | État | Détail |
 |---|---|---|
-| `Login/LoginPage.jsx` | ✅ Fait | Fidèle à `login.html`, connectée à l'API |
+| `Login/LoginPage.jsx` | ✅ Fait | Fidèle à `login.html`, connectée à l'API. **2026-09-01** : « Mot de passe oublié ? »/« Contacter l'administrateur » (liens morts depuis le jour 3) appellent désormais `POST /api/auth/mot-de-passe-oublie/` — réponse générique, jamais d'indice sur l'existence d'un compte |
 | `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages. **Sidebar** : bouton de déconnexion + email du compte connecté dans le pied de page, sur toutes les pages (2026-08-27, auparavant seulement sur Dashboard). **Topbar** : bouton de bascule mode sombre / mode clair (2026-08-27, `ThemeContext`), visible sur toutes les pages |
 | `Dashboard/DashboardPage.jsx` | ✅ Fait (jour 12) | Métriques réelles (campagnes actives, emails envoyés, taux de clic moyen, score de vulnérabilité), comparatif par département, jauge de score (`ScoreRing`), campagnes récentes, alerte automatique si risque élevé |
 | `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal). **2026-08-27** : bandeau d'alerte + badge rouge « Refusée » avec motifs, si le responsable a refusé la campagne. Modale de lancement : nouvelle section « Destinataires » (tous les employés du département / un employé en particulier, alimentée par l'annuaire `apps.employes`) — remplace l'ancienne absence de sélection de cible |
@@ -992,7 +1001,7 @@ ci-dessus.
 | `Historique/HistoriquePage.jsx` | ✅ Fait (2026-08-25) | Timeline chronologique de toutes les campagnes groupées par mois, panneau de détail (score + barres) avec téléchargement du rapport PDF (réutilise le Jour 13), graphique d'évolution mensuelle réel. Route `/historique` |
 | `Departements/DepartementsPage.jsx` | ✅ Fait (2026-08-27) | Registre des départements de l'entreprise (créer/renommer/supprimer), réservé à l'administrateur (page et lien de nav). Route `/departements` |
 | `Employes/EmployesPage.jsx` | ✅ Fait (2026-08-27) | Annuaire des employés par département (nom, email), réservé à l'administrateur (page et lien de nav), même motif de navigation par département que `TemplatesDepartementPage.jsx`. Route `/employes` |
-| Paramètres | ⬜ Pas commencé | Lien de nav déjà présent dans `navConfig.js`, pointe vers une route non câblée (redirection vers `/`) |
+| `Parametres/ParametresPage.jsx` | ✅ Fait (2026-09-01) | 4 onglets connectés (Profil, Sécurité — tous rôles ; Équipe, API & IA — administrateur uniquement). Facturation entièrement retirée (plus de mode SaaS) ; Notifications et Zone sensible omis (aucun endpoint backend). Route `/parametres` câblée dans `App.jsx` |
 
 ## Décisions ou écarts par rapport au plan
 
@@ -1653,38 +1662,87 @@ Dernière étape du chantier Paramètres backend, construite sur les
 
 **Le chantier Paramètres backend (étapes 1 à 4) est maintenant terminé.**
 
+## Journal du 2026-09-01 (suite 2) — Paramètres frontend (Profil, Sécurité, Équipe, API & IA)
+
+Suite directe du chantier backend (voir « Journal du 2026-09-01 » et
+« (suite) »). Nouvelle page `frontend/src/pages/Parametres/ParametresPage.jsx`
+(route `/parametres`, lien de nav déjà présent depuis le jour 4 mais
+jamais câblé jusqu'ici).
+
+1. **4 onglets connectés**, fidèles à `docs/maquettes/
+   entreprises_consentements_parametres.html` pour la structure visuelle
+   (`.settings-nav`/`.settings-section`/`.team-row`/`.role-select`/
+   `.api-key-row`, classes portées telles quelles dans
+   `components.css`) : Profil et Sécurité visibles pour tous les rôles ;
+   Équipe et API & IA réservés à l'administrateur (masqués côté client —
+   la vraie garde reste le `403` backend, comme partout ailleurs dans
+   ce projet).
+2. **Écart assumé par rapport à la maquette** : l'onglet Facturation est
+   entièrement retiré (plus de mode SaaS, demande explicite répétée) ;
+   les onglets Notifications et Zone sensible sont omis — aucun endpoint
+   backend ne les couvre, cohérent avec la convention déjà établie de ne
+   jamais fabriquer une interface sans donnée réelle derrière (voir les
+   mêmes décisions prises pour Résultats/Historique aux jours 12/14).
+3. **Onglet Équipe** : au-delà du strict `GET`/création/changement de
+   rôle, une section « Demandes de réinitialisation en attente » liste
+   les demandes soumises depuis la page de connexion
+   (`GET /api/accounts/demandes-reinitialisation/`, filtrées côté client
+   sur `statut=en_attente`) avec un bouton « Traiter » par ligne — et
+   chaque utilisateur listé a un bouton dédié « Réinitialiser le mot de
+   passe » (icône clé), pour couvrir séparément les deux parcours
+   demandés : réinitialisation à la suite d'une demande, et
+   réinitialisation directe à l'initiative de l'administrateur.
+4. **`LoginPage.jsx`** : « Mot de passe oublié ? » et « Contacter
+   l'administrateur » (jusqu'ici un simple toast « Fonctionnalité non
+   disponible dans cette maquette », depuis le jour 3) appellent
+   désormais `POST /api/auth/mot-de-passe-oublie/` avec l'email déjà
+   saisi dans le formulaire (ou demandé via un `prompt()` s'il est
+   vide) — la réponse générique du backend est affichée telle quelle,
+   jamais d'indice sur l'existence d'un compte.
+5. **Vérification réelle complète en navigateur** (Puppeteer) :
+   4 onglets confirmés pour l'administrateur, seuls Profil/Sécurité pour
+   un consultant ; mise à jour du profil confirmée ; erreur « ancien mot
+   de passe incorrect » confirmée sur un mauvais mot de passe ; création
+   d'un compte confirmée (utilisateur retrouvé en base, email envoyé) ;
+   changement de rôle fonctionnel ; configuration d'`ANTHROPIC_API_KEY`
+   (secrète) confirmée masquée en lecture (`••••1234`, ne montrant que
+   les 4 derniers caractères) et d'`ANTHROPIC_MODEL` (non secrète)
+   confirmée affichée en clair ; lien « mot de passe oublié » confirmé
+   créant réellement une `DemandeReinitialisation` en base. Aucune
+   erreur console réelle (un seul `400` observé, celui du test
+   volontaire de mot de passe incorrect). Données de test supprimées
+   après vérification.
+6. **Aléa rencontré, sans lien avec le code** : plusieurs requêtes
+   déclenchant un envoi SMTP réel (création de compte, mot de passe
+   oublié) ont mis plus de temps que l'attente initiale du script de
+   vérification avant de répondre — cohérent avec la latence Mailtrap
+   déjà documentée à plusieurs reprises ce sprint ; confirmé en base que
+   chaque action avait bien abouti malgré l'apparence de blocage côté
+   script.
+7. **Committé et poussé** (commit `f5f7644`).
+
+**Le Jour 16 (page Paramètres, backend + frontend) est maintenant
+entièrement terminé.**
+
 ## Prochaine action précise
 
-**Toutes les demandes explicites sont à jour**, y compris les 4 étapes
-du chantier Paramètres backend (voir « Journal du 2026-09-01 » et
-« (suite) »). Pistes pour la suite, aucune n'a encore été redemandée
-explicitement :
+**Toutes les demandes explicites sont à jour**, y compris le chantier
+Paramètres complet — backend (4 étapes) et frontend (voir « Journal du
+2026-09-01 », « (suite) » et « (suite 2) »). Pistes pour la suite,
+aucune n'a encore été redemandée explicitement :
 
-1. **Le frontend de la page Paramètres** : ce chantier (Jour 16) était
-   backend uniquement, sur demande explicite de l'utilisateur — aucune
-   page React construite. Les endpoints sont prêts (`/api/auth/me/`,
-   `/api/auth/mot-de-passe/`, `/api/auth/mot-de-passe-oublie/`,
-   `/api/accounts/utilisateurs/` (+ `/role/`, `/reinitialiser-mot-de-passe/`),
-   `/api/accounts/demandes-reinitialisation/` (+ `/traiter/`),
-   `/api/parametres/externes/`) ; la maquette de référence
-   (`docs/maquettes/entreprises_consentements_parametres.html`) sert de
-   base pour les onglets Profil/Sécurité/Équipe/API & IA — l'onglet
-   Facturation en est explicitement écarté (plus de mode SaaS) et les
-   onglets Notifications/Zone sensible n'ont pas d'équivalent backend
-   construit ce tour, à clarifier si redemandés.
-2. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
+1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
    chaque page développée à sa maquette de référence — d'autant plus
    pertinent après le mode sombre, les départements dynamiques,
-   l'annuaire des employés et les futures pages Paramètres.
-3. Avant de reprendre, vérifier l'état de Docker Desktop
+   l'annuaire des employés et la nouvelle page Paramètres.
+2. Avant de reprendre, vérifier l'état de Docker Desktop
    (`docker compose ps`) — le sprint a connu plusieurs interruptions
-   d'environnement (voir « Bugs connus » et « Journal du 2026-09-01 »,
-   point sur la suspension complète des conteneurs) ; relancer avec
+   d'environnement (voir « Bugs connus ») ; relancer avec
    `docker compose up -d`, patienter le ralentissement au premier
    démarrage (`WORKER TIMEOUT`), et vérifier `db` (récupération WAL
    possible après un arrêt non propre, résolue automatiquement en 1-3
    minutes, voir logs `database system was not properly shut down`).
-4. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
+3. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
    `administrateur@hshield237.local` / `Administrateur1234!` toujours
    valides ; `arthur@hshield237.local` / `Responsable1234!` (rôle
    responsable, désigné pour Direction générale) (voir « Bugs connus »).
