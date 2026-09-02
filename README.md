@@ -67,27 +67,21 @@ générer un, ou `docs/DEPLOIEMENT.md` pour un certificat réel en
 production). Les migrations s'appliquent automatiquement au démarrage du
 service `backend`.
 
-**Premier compte administrateur** — aucun compte n'existe par défaut :
+**Premier compte administrateur** — aucun compte n'existe par défaut,
+et aucune intervention manuelle en base n'est nécessaire : une commande
+de gestion dédiée crée le compte, en clair (`is_staff`/`is_superuser`)
+**et** avec le rôle applicatif « administrateur » d'un même coup — ce
+que `createsuperuser` seul ne fait pas (voir `docs/DEPLOIEMENT.md` pour
+le détail de ce piège) :
 
 ```bash
-docker compose exec backend python manage.py createsuperuser
+docker compose exec backend python manage.py creer_administrateur
 ```
 
-`createsuperuser` crée un compte technique (`is_staff`/`is_superuser`)
-mais **ne lui donne pas automatiquement le rôle applicatif
-« administrateur »** (champ `role`, distinct des droits Django) —
-complétez ensuite :
-
-```bash
-docker compose exec backend python manage.py shell -c "
-from apps.accounts.models import Utilisateur, Role
-u = Utilisateur.objects.get(email='<email-saisi-a-l-instant>')
-u.role = Role.ADMINISTRATEUR
-u.save(update_fields=['role'])
-"
-```
-
-Ce compte peut ensuite créer les autres comptes (consultant, responsable,
+(mode interactif — demande l'email, le prénom/nom optionnels, puis le
+mot de passe deux fois ; `--noinput --email ... --password ...` pour un
+script de déploiement, voir `--help` pour le détail des options.) Ce
+compte peut ensuite créer tous les autres (consultant, responsable,
 administrateur) directement depuis l'application — Paramètres > Équipe.
 
 **Docker Desktop, premier démarrage** : un ralentissement notable

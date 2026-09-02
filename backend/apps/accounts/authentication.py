@@ -27,7 +27,23 @@ def jeton_perime_par_changement_mot_de_passe(utilisateur, validated_token):
     if not date_changement or iat is None:
         return False
     emis_le = datetime.datetime.fromtimestamp(iat, tz=datetime.timezone.utc)
-    return emis_le < date_changement
+    # Le claim `iat` d'un JWT n'a qu'une résolution à la seconde (norme
+    # JWT — nombre entier de secondes depuis l'epoch), alors que
+    # date_changement_mot_de_passe est horodaté à la microseconde près
+    # (timezone.now()). Sans cet ajustement, un jeton émis pendant la
+    # même seconde que le changement — mais réellement après — pouvait
+    # être rejeté à tort, puisque sa valeur `iat` tronquée à l'entier
+    # inférieur devenait alors numériquement antérieure à l'instant
+    # microseconde-près du changement (bug constaté via un test qui
+    # se reconnecte immédiatement après un changement de mot de passe,
+    # dans la même seconde). On compare donc à la seconde entière du
+    # changement plutôt qu'à sa valeur microseconde-près : un jeton émis
+    # pendant cette même seconde (ou après) reste valide — la fenêtre de
+    # tolérance résultante (un jeton légèrement antérieur, dans la même
+    # seconde, restant valide quelques centaines de ms de trop) est
+    # un compromis assumé, inhérent à la résolution d'un `iat` JWT.
+    date_changement_seconde = date_changement.replace(microsecond=0)
+    return emis_le < date_changement_seconde
 
 
 class JWTAuthenticationAvecInvalidation(JWTAuthentication):

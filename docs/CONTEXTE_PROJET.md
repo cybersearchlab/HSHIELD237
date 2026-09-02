@@ -6,6 +6,26 @@
 
 ## État d'avancement
 
+- **2026-09-02 (suite 5) — Jour 20 : démarrage propre, migrations
+  automatiques, commande dédiée de création d'administrateur.** Les
+  trois points vérifiés en conditions réelles, sur un environnement
+  réellement vidé (`docker compose down -v` puis `up -d`) : les 4
+  services démarrent « healthy » sans erreur ; **les migrations, qui ne
+  s'appliquaient pas automatiquement jusqu'ici (contrairement à ce que
+  documentait déjà le README depuis le Jour 19), s'appliquent
+  maintenant vraiment au démarrage** — nouveau `backend/entrypoint.sh`
+  (`migrate --noinput` puis `exec gunicorn`), `Dockerfile` mis à jour
+  (`ENTRYPOINT` au lieu de `CMD`) ; nouvelle commande de gestion
+  `python manage.py creer_administrateur` (interactive ou `--noinput`)
+  qui crée un compte à la fois technique et avec le rôle applicatif
+  « administrateur » d'un même coup — corrige le piège documenté au
+  Jour 19 (`createsuperuser` seul ne positionne jamais `role`). **Bug
+  réel trouvé et corrigé en cours de vérification** : l'invalidation
+  JWT du 2026-09-02 pouvait rejeter à tort un jeton émis dans la même
+  seconde qu'un changement de mot de passe (résolution `iat` à la
+  seconde entière contre horodatage microseconde-près) — corrigé dans
+  `authentication.py`. 10 nouveaux tests, **144/144**. Committé et
+  poussé. Voir « Journal du 2026-09-02 (suite 5) ».
 - **2026-09-02 (suite 4) — Jour 19 : README complet et guide de
   déploiement.** `README.md` étendu (présentation, prérequis, procédure
   d'installation, variables d'environnement, structure du projet,
@@ -1044,7 +1064,7 @@ ci-dessus.
 
 | App | État | Détail |
 |---|---|---|
-| `accounts` | ✅ Fait (étendu le 2026-09-01 et 2026-09-02) | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur`. **2026-09-01** (Jour 16, étapes 1-3/4) : `MeView` en lecture/écriture (profil), `ChangerMotDePasseView`, gestion d'équipe admin-only (`UtilisateurListCreateView`, `UtilisateurRoleView`), modèle `DemandeReinitialisation` + réinitialisation admin-médiée (`MotDePasseOublieView` public, `DemandeReinitialisationListView`/`...TraiterView`, `UtilisateurReinitialiserMotDePasseView`), `notifications.py`. **2026-09-02** : `Utilisateur.date_changement_mot_de_passe` + `authentication.py` (`JWTAuthenticationAvecInvalidation`, `TokenRefreshViewAvecInvalidation` dans `views.py`) — invalide les jetons JWT antérieurs au dernier changement de mot de passe. 30 tests (`tests.py`) |
+| `accounts` | ✅ Fait (étendu le 2026-09-01 et 2026-09-02) | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur`. **2026-09-01** (Jour 16, étapes 1-3/4) : `MeView` en lecture/écriture (profil), `ChangerMotDePasseView`, gestion d'équipe admin-only (`UtilisateurListCreateView`, `UtilisateurRoleView`), modèle `DemandeReinitialisation` + réinitialisation admin-médiée (`MotDePasseOublieView` public, `DemandeReinitialisationListView`/`...TraiterView`, `UtilisateurReinitialiserMotDePasseView`), `notifications.py`. **2026-09-02** : `Utilisateur.date_changement_mot_de_passe` + `authentication.py` (`JWTAuthenticationAvecInvalidation`, `TokenRefreshViewAvecInvalidation` dans `views.py`) — invalide les jetons JWT antérieurs au dernier changement de mot de passe. **2026-09-02 (suite 5, Jour 20)** : commande `management/commands/creer_administrateur.py` (crée un compte à la fois technique et avec le rôle applicatif « administrateur », voir Journal du jour) ; correctif de précision `iat`/seconde dans `authentication.jeton_perime_par_changement_mot_de_passe`. 38 tests (`tests.py`) |
 | `parametres` | ✅ Fait (2026-09-01, étape 4/4) | Modèle `ParametreExterne` (les 8 réglages jusqu'ici lus uniquement depuis `.env` : `ANTHROPIC_API_KEY`/`MODEL`, `EMAIL_*`, `SIMULATION_BASE_URL`), valeur chiffrée au repos (`cryptography.fernet`, clé dérivée de `SECRET_KEY`), masquée en lecture pour les clés secrètes. `services.get_parametre()` (+ `_int`/`_bool`) : priorité au registre en base, repli sur `.env`/`settings`. CRUD `/api/parametres/externes/` admin-only (lecture et écriture). 11 tests |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
 | `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires. `ScenarioPhishing.date_creation` ajouté (absent jusqu'ici), tri explicite du plus récent au plus ancien, 1 test supplémentaire (57 tests au total). **2026-08-27 (suite 4)** : nouveau modèle `DepartementConfigure` (registre dynamique des départements, remplace `Departement.choices`), CRUD `/api/departements/` (admin-only, suppression bloquée si utilisé), `services.departement_label()` (résolution live du libellé), 7 tests supplémentaires (64 tests au total). **2026-09-02** : `ScenarioPhishing.page_capture_html`, `validators.valider_page_capture_html()`, `ScenarioPageCaptureView` (`/api/campagnes/scenarios/<id>/page-capture/`) — fausse page de capture personnalisable, voir « Journal du 2026-09-02 (suite) », 11 tests supplémentaires |
@@ -1233,7 +1253,21 @@ gratuit (voir écart n°12).
   relançant simplement la commande — réseau globalement fiable mais pas
   parfaitement stable.
 - **Anomalie observée, cause non confirmée** : plusieurs campagnes de test créées en cours de session (ids 17, 20) ont disparu de la base entre deux vérifications, alors que `db_data` est un volume Docker nommé censé persister. Sans certitude sur la cause exacte (possiblement lié aux redémarrages Docker Desktop de la session) — à surveiller ; aucune perte de données de production n'est en jeu (uniquement des campagnes de test).
-- Comptes de test disponibles : `admin@hshield237.local` / `AdminTest1234!` (rôle employe — nom trompeur, historique, non corrigé pour ne rien casser), `consultant@hshield237.local` / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` / `Responsable1234!` (rôle responsable, désigné pour Informatique, créé le 2026-08-21 pour tester la validation de consentement), `administrateur@hshield237.local` / `Administrateur1234!` (rôle administrateur, créé le 2026-08-25 pour tester le registre des responsables), `arthur@hshield237.local` / `Responsable1234!` (rôle responsable, désigné pour Direction générale, créé le 2026-08-27 pour tester le refus de campagne et la visualisation d'email).
+- **Comptes de test recréés le 2026-09-02 (Jour 20)** après un
+  `docker compose down -v` volontaire pour vérifier un démarrage sur
+  environnement réellement propre — l'ancien compte `admin@hshield237.local`
+  / `AdminTest1234!` (rôle employe, nom trompeur, historique) n'existe
+  plus, il n'a pas été recréé. Comptes actuels : `consultant@hshield237.local`
+  / `Consultant1234!` (rôle consultant), `responsable@hshield237.local` /
+  `Responsable1234!` (rôle responsable, désigné pour Informatique),
+  `administrateur@hshield237.local` / `Administrateur1234!` (rôle
+  administrateur, créé via la nouvelle commande `creer_administrateur`),
+  `arthur@hshield237.local` / `Responsable1234!` (rôle responsable,
+  désigné pour Direction générale). **Les campagnes, scénarios et
+  employés de test accumulés au fil du sprint ont, eux, été perdus par
+  ce même `down -v`** (données éphémères, sans impact — l'annuaire des
+  employés était de toute façon déjà vide en conditions réelles avant
+  cette vérification).
 
 ## Journal du 2026-08-27 — notification de refus, email visible par le responsable, déconnexion globale
 
@@ -2062,15 +2096,117 @@ instructions complètes d'installation et d'exécution.
    Django.
 4. **Committé et poussé.**
 
+## Journal du 2026-09-02 (suite 5) — Jour 20, démarrage propre, migrations automatiques, commande d'administrateur
+
+Trois vérifications demandées, sur un environnement **réellement**
+vidé : `docker compose down -v` (supprime aussi les volumes, y compris
+`db_data`) puis `docker compose up -d` — pas une simple relecture du
+`docker-compose.yml`.
+
+### 1. Démarrage propre
+
+Les 4 services démarrent `healthy` en une seule commande, sans aucune
+erreur dans les journaux (recherche explicite de `error`/`traceback`/
+`exception` sur l'ensemble des logs — un seul faux positif, le nom
+d'une migration Django standard contenant le mot « error »).
+`https://localhost/api/health/` et `https://localhost/` confirmés `200`
+juste après.
+
+### 2. Migrations automatiques — **pas encore vraies avant ce jour**
+
+Constat en ouvrant `backend/Dockerfile` : `CMD` lançait directement
+Gunicorn, sans jamais appeler `migrate` — alors que le README (rédigé
+au Jour 19) affirmait déjà que « les migrations s'appliquent
+automatiquement au démarrage ». C'était vrai en pratique uniquement
+parce que ce projet n'a jamais tourné sur une base réellement vide
+depuis longtemps (chaque `migrate` du sprint a toujours été lancé à la
+main après un changement de schéma). Corrigé :
+
+- `backend/entrypoint.sh` (nouveau) : `python manage.py migrate
+  --noinput` puis `exec gunicorn ...` (`set -e` — un échec de migration
+  bloque le démarrage plutôt que de laisser tourner un backend
+  désynchronisé de son schéma).
+- `Dockerfile` : `ENTRYPOINT ["/app/entrypoint.sh"]` à la place de
+  `CMD [...]`, `chmod +x` ajouté à l'étape de build.
+- Vérifié sur la base tout juste vidée : les 24 migrations (toutes
+  apps confondues) s'appliquent automatiquement, dans l'ordre, avant
+  que Gunicorn ne démarre — confirmé par les logs du conteneur, sans
+  intervention manuelle.
+
+### 3. Commande dédiée de création d'administrateur
+
+Nouvelle commande `apps/accounts/management/commands/
+creer_administrateur.py` — évite à la fois une création manuelle en
+base de données et le piège documenté au Jour 19
+(`createsuperuser` seul ne positionne jamais le champ applicatif
+`role`). Crée un compte à la fois technique
+(`is_staff`/`is_superuser=True`, accès `/admin/`) et applicatif
+(`role=Role.ADMINISTRATEUR`) en une seule commande. Mode interactif
+(email, prénom/nom optionnels, mot de passe demandé deux fois avec
+confirmation) ou `--noinput` avec `--email`/`--password` (ou la
+variable d'environnement `DJANGO_ADMIN_PASSWORD`, pour éviter un mot
+de passe en clair dans l'historique du shell) — pensé pour un script de
+déploiement. Réutilise `validate_password` (les mêmes règles que le
+changement de mot de passe applicatif) et refuse un email déjà utilisé.
+Vérifié en conditions réelles sur la base vidée : compte créé, connexion
+réussie (`/api/auth/login/`), accès confirmé à un endpoint
+admin-only (`/api/accounts/utilisateurs/`).
+
+### 4. Bug réel trouvé en cours de vérification, corrigé
+
+En recréant les comptes de test standard après le `down -v` (voir
+« Bugs connus » plus bas) et en relançant la suite complète, un test
+déjà existant (`InvalidationJetonsTests
+.test_nouvelle_connexion_fonctionne_normalement_apres_changement`,
+2026-09-02 plus tôt ce jour) a échoué de façon intermittente
+(`401` au lieu de `200`). Cause réelle, pas un test fragile à corriger
+en façade : le claim `iat` d'un jeton JWT n'a qu'une résolution à la
+seconde (norme JWT — entier de secondes depuis l'epoch), alors que
+`Utilisateur.date_changement_mot_de_passe` est horodaté à la
+microseconde près (`timezone.now()`). Un jeton émis dans la **même
+seconde** qu'un changement de mot de passe — mais réellement après —
+pouvait être rejeté à tort, sa valeur `iat` tronquée à l'entier
+inférieur devenant numériquement antérieure à l'instant
+microseconde-près du changement. Corrigé dans
+`apps.accounts.authentication.jeton_perime_par_changement_mot_de_passe`
+en comparant à la seconde entière du changement plutôt qu'à sa valeur
+microseconde-près (compromis assumé et documenté en commentaire : un
+jeton émis une fraction de seconde *avant* un changement, dans la même
+seconde, reste valide un court instant — inhérent à la résolution d'un
+`iat` JWT, préférable au risque inverse de rejeter des sessions
+légitimes). Nouveau `JetonPerimeParChangementMotDePasseTests` (5 tests
+déterministes, horodatages construits à la main plutôt que dépendants
+de l'heure réelle d'exécution) couvrant explicitement ce cas.
+
+### 5. Vérification
+
+- **10 nouveaux tests** (5 `CreerAdministrateurCommandTests`, 5
+  `JetonPerimeParChangementMotDePasseTests`). **144/144 tests backend**,
+  y compris le test auparavant intermittent, désormais stable.
+- **README.md et docs/DEPLOIEMENT.md** mis à jour : la section
+  « Premier compte administrateur » de chacun utilise désormais
+  `creer_administrateur` plutôt que `createsuperuser` + correctif
+  manuel.
+- Comptes de test standard recréés après le `down -v` (voir « Bugs
+  connus », ci-dessus, section comptes) — l'ancien compte historique
+  `admin@hshield237.local`/`AdminTest1234!` n'a volontairement pas été
+  recréé.
+- Committé et poussé.
+
 ## Prochaine action précise
 
 **Toutes les demandes explicites sont à jour**, y compris le chantier
 Paramètres complet (backend + frontend), l'invalidation des jetons JWT au
 changement de mot de passe, la fausse page de capture personnalisable,
-les tests end-to-end Playwright et le README complet + guide de
-déploiement (voir « Journal du 2026-09-01 », « (suite) », « (suite 2) »,
-« Journal du 2026-09-02 », « (suite) », « (suite 3) » et « (suite 4) »).
-Pistes pour la suite, aucune n'a encore été redemandée explicitement :
+les tests end-to-end Playwright, le README complet + guide de
+déploiement, et la vérification du Jour 20 (démarrage propre, migrations
+automatiques, commande d'administrateur) — voir « Journal du
+2026-09-01 », « (suite) », « (suite 2) », « Journal du 2026-09-02 », «
+(suite) », « (suite 3) », « (suite 4) » et « (suite 5) ». Le plan de
+20 jours (14 août → 2 septembre 2026) est donc **fonctionnellement
+couvert de bout en bout** au niveau de ses grandes étapes (Jours 1 à 14,
+16 à 20 — seul le Jour 15, fidélité visuelle, reste net à faire). Pistes
+pour la suite, aucune n'a encore été redemandée explicitement :
 
 1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
    chaque page développée à sa maquette de référence — d'autant plus

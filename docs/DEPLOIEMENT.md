@@ -7,7 +7,7 @@ du dépôt pour une présentation générale du projet, et
 `docs/CONTEXTE_PROJET.md` pour l'historique complet des décisions si
 besoin de creuser un point précis.
 
-## 1. Ce que vous héberger
+## 1. Ce que vous hébergez
 
 Quatre conteneurs Docker orchestrés par `docker-compose.yml`, à la racine
 du dépôt :
@@ -136,29 +136,42 @@ d'images par défaut).
 ## 7. Premier compte administrateur
 
 Aucun compte n'existe par défaut après un déploiement sur une base vide.
+Une commande de gestion dédiée (`creer_administrateur`, voir Jour 20 du
+plan) crée le compte technique **et** son rôle applicatif en une seule
+étape — aucune intervention manuelle en base de données nécessaire :
 
 ```bash
-docker compose exec backend python manage.py createsuperuser
+docker compose exec backend python manage.py creer_administrateur
 ```
 
-Cette commande crée un compte technique Django (accès à `/admin/`) mais
-**ne lui attribue pas automatiquement le rôle applicatif
-« administrateur »** utilisé par H-SHIELD237 (champ `role`, distinct des
-droits `is_staff`/`is_superuser` de Django) — complétez immédiatement
-après :
+Mode interactif par défaut (demande l'email, prénom/nom optionnels, puis
+le mot de passe deux fois, avec les mêmes règles de robustesse que le
+changement de mot de passe applicatif). Pour un script de déploiement,
+mode non interactif :
 
 ```bash
-docker compose exec backend python manage.py shell -c "
-from apps.accounts.models import Utilisateur, Role
-u = Utilisateur.objects.get(email='<email-saisi-a-l-instant>')
-u.role = Role.ADMINISTRATEUR
-u.save(update_fields=['role'])
-"
+docker compose exec -e DJANGO_ADMIN_PASSWORD='<mot-de-passe>' backend \
+  python manage.py creer_administrateur --noinput \
+  --email admin@votre-domaine.cm --first-name Prenom --last-name Nom
 ```
 
-Ce compte peut ensuite créer tous les autres comptes (consultant,
-responsable, administrateur) directement depuis l'application —
-Paramètres > Équipe — sans plus jamais avoir besoin d'un accès serveur.
+(`DJANGO_ADMIN_PASSWORD` plutôt que `--password` évite qu'un mot de
+passe en clair n'apparaisse dans l'historique du shell ou les journaux
+de déploiement.)
+
+**Piège évité par cette commande, à connaître si vous deviez un jour
+créer un compte autrement** : `manage.py createsuperuser`, la commande
+standard de Django, crée bien un compte technique
+(`is_staff`/`is_superuser`, accès à `/admin/`) mais **ne lui attribue
+jamais le rôle applicatif « administrateur »** utilisé par H-SHIELD237
+(champ `role`, distinct des droits Django) — un tel compte n'aurait
+alors aucun droit reconnu par l'application elle-même (ex. Paramètres >
+Équipe resterait inaccessible), malgré un accès complet à `/admin/`.
+
+Le compte créé par `creer_administrateur` peut ensuite créer tous les
+autres comptes (consultant, responsable, administrateur) directement
+depuis l'application — Paramètres > Équipe — sans plus jamais avoir
+besoin d'un accès serveur.
 
 ## 8. Sauvegardes
 

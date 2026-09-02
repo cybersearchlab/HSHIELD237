@@ -1,0 +1,6 @@
+# Les scripts shell doivent toujours garder des fins de ligne LF, même
+# sur un checkout Windows (core.autocrlf) — un `#!/bin/sh` avec des CRLF
+# échoue au démarrage du conteneur (« bad interpreter »). Concerne en
+# particulier backend/entrypoint.sh (voir docs/CONTEXTE_PROJET.md,
+# Journal du 2026-09-02, Jour 20).
+*.sh text eol=lf

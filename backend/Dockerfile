@@ -24,9 +24,10 @@ COPY . .
 
 RUN mkdir -p /app/media /app/staticfiles /app/.cache \
     && adduser --disabled-password --no-create-home appuser \
-    && chown -R appuser:appuser /app
+    && chown -R appuser:appuser /app \
+    && chmod +x /app/entrypoint.sh
 USER appuser
 
 EXPOSE 8000
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+ENTRYPOINT ["/app/entrypoint.sh"]

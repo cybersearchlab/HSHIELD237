@@ -1,6 +1,10 @@
+import io
+
 from django.core import mail
+from django.core.management import CommandError, call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import Role, Utilisateur
 
@@ -314,6 +318,76 @@ class ReinitialisationMotDePasseTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+class JetonPerimeParChangementMotDePasseTests(TestCase):
+    """Teste directement `jeton_perime_par_changement_mot_de_passe`
+    (apps.accounts.authentication) avec des horodatages construits à la
+    main plutôt que via un vrai aller-retour HTTP chronométré au réel —
+    déterministe, contrairement aux tests de InvalidationJetonsTests
+    (ci-dessous) qui, bien que fiables en pratique, dépendent de l'heure
+    système au moment de l'exécution. Couvre spécifiquement le bug
+    corrigé le 2026-09-02 : le claim `iat` d'un JWT n'a qu'une résolution
+    à la seconde, alors que `date_changement_mot_de_passe` est
+    microseconde-près — sans ajustement, un jeton émis dans la même
+    seconde que le changement (mais réellement après) était rejeté à
+    tort."""
+
+    def setUp(self):
+        self.user = Utilisateur.objects.create_user(
+            username="jeton-perime-test", email="jeton-perime-test@hshield237.local", password="Test1234!"
+        )
+
+    @staticmethod
+    def _validated_token(iat_datetime):
+        return {"iat": int(iat_datetime.timestamp())}
+
+    def test_aucun_changement_enregistre_jeton_toujours_valide(self):
+        from .authentication import jeton_perime_par_changement_mot_de_passe
+
+        self.user.date_changement_mot_de_passe = None
+        token = self._validated_token(timezone.now())
+        self.assertFalse(jeton_perime_par_changement_mot_de_passe(self.user, token))
+
+    def test_jeton_nettement_anterieur_au_changement_rejete(self):
+        from .authentication import jeton_perime_par_changement_mot_de_passe
+
+        maintenant = timezone.now()
+        self.user.date_changement_mot_de_passe = maintenant
+        token = self._validated_token(maintenant - timezone.timedelta(minutes=5))
+        self.assertTrue(jeton_perime_par_changement_mot_de_passe(self.user, token))
+
+    def test_jeton_nettement_posterieur_au_changement_valide(self):
+        from .authentication import jeton_perime_par_changement_mot_de_passe
+
+        maintenant = timezone.now()
+        self.user.date_changement_mot_de_passe = maintenant
+        token = self._validated_token(maintenant + timezone.timedelta(minutes=5))
+        self.assertFalse(jeton_perime_par_changement_mot_de_passe(self.user, token))
+
+    def test_jeton_emis_dans_la_meme_seconde_apres_le_changement_reste_valide(self):
+        """Le cas précis du bug : le changement a lieu à x.900s, le jeton
+        est émis 50ms plus tard (x.950s, donc réellement après) — mais
+        `iat` tronque à la seconde entière (x.000s), numériquement
+        antérieure à x.900s sans l'ajustement apporté au correctif."""
+        from .authentication import jeton_perime_par_changement_mot_de_passe
+
+        base = timezone.now().replace(microsecond=900_000)
+        self.user.date_changement_mot_de_passe = base
+        token = self._validated_token(base + timezone.timedelta(milliseconds=50))
+        self.assertFalse(jeton_perime_par_changement_mot_de_passe(self.user, token))
+
+    def test_jeton_emis_dans_la_meme_seconde_avant_le_changement_reste_le_compromis_assume(self):
+        """Symétrique du cas précédent : un jeton émis 50ms *avant* un
+        changement qui a lieu à x.900s (donc réellement avant) reste
+        valide encore un court instant — compromis assumé et documenté,
+        inhérent à la résolution en secondes entières d'un `iat` JWT."""
+        from .authentication import jeton_perime_par_changement_mot_de_passe
+
+        base = timezone.now().replace(microsecond=900_000)
+        self.user.date_changement_mot_de_passe = base
+        token = self._validated_token(base - timezone.timedelta(milliseconds=800))
+        self.assertFalse(jeton_perime_par_changement_mot_de_passe(self.user, token))
+
+
 class InvalidationJetonsTests(TestCase):
     """Le changement de mot de passe (self-service, réinitialisation
     admin directe, ou traitement d'une demande) doit invalider
@@ -398,3 +472,67 @@ class InvalidationJetonsTests(TestCase):
             reverse("auth-login"), {"email": self.EMAIL, "password": self.ANCIEN}, content_type="application/json"
         )
         self.assertEqual(reponse.status_code, 401)
+
+
+class CreerAdministrateurCommandTests(TestCase):
+    """Commande de gestion `creer_administrateur` (Jour 20 du plan) —
+    crée le tout premier compte administrateur d'un déploiement sans
+    passer par une intervention manuelle en base de données, et sans le
+    piège de `createsuperuser` seul (qui ne positionne jamais le champ
+    applicatif `role`, voir docs/DEPLOIEMENT.md)."""
+
+    def test_cree_un_compte_avec_le_role_administrateur(self):
+        call_command(
+            "creer_administrateur",
+            "--noinput",
+            email="nouvel-admin@hshield237.local",
+            password="MotDePasseValide1234!",
+            stdout=io.StringIO(),
+        )
+        utilisateur = Utilisateur.objects.get(email="nouvel-admin@hshield237.local")
+        self.assertEqual(utilisateur.role, Role.ADMINISTRATEUR)
+        self.assertTrue(utilisateur.is_staff)
+        self.assertTrue(utilisateur.is_superuser)
+        self.assertTrue(utilisateur.check_password("MotDePasseValide1234!"))
+
+    def test_refuse_un_email_deja_utilise(self):
+        Utilisateur.objects.create_user(
+            username="deja-la@hshield237.local", email="deja-la@hshield237.local", password="Test1234!"
+        )
+        with self.assertRaises(CommandError):
+            call_command(
+                "creer_administrateur",
+                "--noinput",
+                email="deja-la@hshield237.local",
+                password="MotDePasseValide1234!",
+                stdout=io.StringIO(),
+            )
+
+    def test_refuse_un_mot_de_passe_trop_faible(self):
+        with self.assertRaises(CommandError):
+            call_command(
+                "creer_administrateur",
+                "--noinput",
+                email="admin-faible@hshield237.local",
+                password="1234",
+                stdout=io.StringIO(),
+            )
+        self.assertFalse(Utilisateur.objects.filter(email="admin-faible@hshield237.local").exists())
+
+    def test_refuse_sans_mot_de_passe_en_noinput(self):
+        with self.assertRaises(CommandError):
+            call_command(
+                "creer_administrateur",
+                "--noinput",
+                email="sans-mdp@hshield237.local",
+                stdout=io.StringIO(),
+            )
+
+    def test_refuse_sans_email_en_noinput(self):
+        with self.assertRaises(CommandError):
+            call_command(
+                "creer_administrateur",
+                "--noinput",
+                password="MotDePasseValide1234!",
+                stdout=io.StringIO(),
+            )
