@@ -4,10 +4,15 @@ from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.accounts.urls import urlpatterns as accounts_urls
-from apps.accounts.views import ChangerMotDePasseView, MeView, MotDePasseOublieView
+from apps.accounts.views import (
+    ChangerMotDePasseView,
+    MeView,
+    MotDePasseOublieView,
+    TokenRefreshViewAvecInvalidation,
+)
 from apps.campagnes.views import (
     CampagneScoreView,
     CampagneViewSet,
@@ -44,7 +49,7 @@ urlpatterns = [
     path("api/health/", health),
     path("api-auth/", include("rest_framework.urls")),
     path("api/auth/login/", TokenObtainPairView.as_view(), name="auth-login"),
-    path("api/auth/refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
+    path("api/auth/refresh/", TokenRefreshViewAvecInvalidation.as_view(), name="auth-refresh"),
     path("api/auth/me/", MeView.as_view(), name="auth-me"),
     path("api/auth/mot-de-passe/", ChangerMotDePasseView.as_view(), name="auth-changer-mot-de-passe"),
     path("api/auth/mot-de-passe-oublie/", MotDePasseOublieView.as_view(), name="auth-mot-de-passe-oublie"),

@@ -159,6 +159,37 @@ class GestionEquipeTests(TestCase):
         mot_de_passe_envoye = mail.outbox[0].body.split("Mot de passe temporaire : ")[1].split("\n")[0]
         self.assertTrue(nouvel_utilisateur.check_password(mot_de_passe_envoye))
 
+    def test_nouvel_utilisateur_peut_se_connecter_immediatement_avec_le_mot_de_passe_temporaire(self):
+        # Vérifie le parcours complet demandé : la création est bien
+        # enregistrée en base ET le compte est immédiatement utilisable
+        # via /api/auth/login/ avec le mot de passe temporaire reçu par
+        # email — pas seulement check_password() en local.
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            self.list_url,
+            {"first_name": "Connexion", "last_name": "Immediate", "email": "connexion-immediate@hshield237.local",
+             "role": Role.CONSULTANT},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Utilisateur.objects.filter(email="connexion-immediate@hshield237.local").exists())
+        mot_de_passe = mail.outbox[0].body.split("Mot de passe temporaire : ")[1].split("\n")[0]
+        self.client.logout()
+
+        connexion = self.client.post(
+            reverse("auth-login"),
+            {"email": "connexion-immediate@hshield237.local", "password": mot_de_passe},
+            content_type="application/json",
+        )
+        self.assertEqual(connexion.status_code, 200)
+        self.assertIn("access", connexion.data)
+        self.assertIn("refresh", connexion.data)
+
+        moi = self.client.get(reverse("auth-me"), HTTP_AUTHORIZATION=f"Bearer {connexion.data['access']}")
+        self.assertEqual(moi.status_code, 200)
+        self.assertEqual(moi.data["email"], "connexion-immediate@hshield237.local")
+        self.assertEqual(moi.data["role"], Role.CONSULTANT)
+
     def test_creation_avec_role_hors_perimetre_refusee(self):
         self.client.force_login(self.admin)
         response = self.client.post(
@@ -281,3 +312,89 @@ class ReinitialisationMotDePasseTests(TestCase):
         url = reverse("accounts-utilisateur-reinitialiser", kwargs={"utilisateur_id": self.admin.id})
         response = self.client.post(url)
         self.assertEqual(response.status_code, 403)
+
+
+class InvalidationJetonsTests(TestCase):
+    """Le changement de mot de passe (self-service, réinitialisation
+    admin directe, ou traitement d'une demande) doit invalider
+    immédiatement tous les jetons JWT déjà émis — access ET refresh —
+    plutôt que de les laisser valides jusqu'à leur expiration naturelle
+    (15 min / 7 jours). Ces tests passent par les vrais endpoints JWT
+    (POST /api/auth/login/, /refresh/) plutôt que force_login(), qui
+    authentifie par session Django et ne passerait jamais par le code
+    testé ici."""
+
+    EMAIL = "jwt-invalidation@hshield237.local"
+    ANCIEN = "AncienMotDePasse1234!"
+    NOUVEAU = "NouveauMotDePasse5678!"
+
+    def setUp(self):
+        self.user = Utilisateur.objects.create_user(
+            username="jwt-invalidation", email=self.EMAIL, password=self.ANCIEN, role=Role.CONSULTANT,
+        )
+
+    def _login(self, password=None):
+        response = self.client.post(
+            reverse("auth-login"),
+            {"email": self.EMAIL, "password": password or self.ANCIEN},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        return response.data["access"], response.data["refresh"]
+
+    def _changer_mot_de_passe(self, access):
+        return self.client.post(
+            reverse("auth-changer-mot-de-passe"),
+            {"ancien_mot_de_passe": self.ANCIEN, "nouveau_mot_de_passe": self.NOUVEAU},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {access}",
+        )
+
+    def test_le_jeton_fonctionne_normalement_avant_tout_changement(self):
+        access, _ = self._login()
+        response = self.client.get(reverse("auth-me"), HTTP_AUTHORIZATION=f"Bearer {access}")
+        self.assertEqual(response.status_code, 200)
+
+    def test_ancien_access_token_rejete_apres_changement_de_mot_de_passe(self):
+        access, _ = self._login()
+        self.assertEqual(self._changer_mot_de_passe(access).status_code, 200)
+
+        apres = self.client.get(reverse("auth-me"), HTTP_AUTHORIZATION=f"Bearer {access}")
+        self.assertEqual(apres.status_code, 401)
+
+    def test_ancien_refresh_token_rejete_apres_changement_de_mot_de_passe(self):
+        access, refresh = self._login()
+        self._changer_mot_de_passe(access)
+
+        reponse = self.client.post(reverse("auth-refresh"), {"refresh": refresh}, content_type="application/json")
+        self.assertEqual(reponse.status_code, 401)
+
+    def test_reinitialisation_admin_invalide_aussi_les_anciens_jetons(self):
+        access, _ = self._login()
+        admin = Utilisateur.objects.create_user(
+            username="admin-jwt", email="admin-jwt@hshield237.local", password="Test1234!", role=Role.ADMINISTRATEUR,
+        )
+        self.client.force_login(admin)
+        self.client.post(reverse("accounts-utilisateur-reinitialiser", kwargs={"utilisateur_id": self.user.id}))
+        self.client.logout()
+
+        apres = self.client.get(reverse("auth-me"), HTTP_AUTHORIZATION=f"Bearer {access}")
+        self.assertEqual(apres.status_code, 401)
+
+    def test_nouvelle_connexion_fonctionne_normalement_apres_changement(self):
+        access, _ = self._login()
+        self._changer_mot_de_passe(access)
+
+        reponse = self._login(password=self.NOUVEAU)
+        nouvel_access, _ = reponse
+        ok = self.client.get(reverse("auth-me"), HTTP_AUTHORIZATION=f"Bearer {nouvel_access}")
+        self.assertEqual(ok.status_code, 200)
+
+    def test_login_avec_ancien_mot_de_passe_refuse_apres_changement(self):
+        access, _ = self._login()
+        self._changer_mot_de_passe(access)
+
+        reponse = self.client.post(
+            reverse("auth-login"), {"email": self.EMAIL, "password": self.ANCIEN}, content_type="application/json"
+        )
+        self.assertEqual(reponse.status_code, 401)

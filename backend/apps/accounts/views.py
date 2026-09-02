@@ -1,17 +1,19 @@
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.generics import RetrieveUpdateAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from django.utils import timezone
-from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from apps.gouvernance.views import enregistrer_audit
 
+from .authentication import jeton_perime_par_changement_mot_de_passe
 from .models import DemandeReinitialisation, StatutDemande, Utilisateur
 from .notifications import (
     envoyer_mot_de_passe_temporaire,
@@ -58,10 +60,11 @@ class MeView(RetrieveUpdateAPIView):
 
 class ChangerMotDePasseView(APIView):
     """POST /api/auth/mot-de-passe/ — changement de mot de passe par
-    l'utilisateur connecté lui-même. Exige l'ancien mot de passe (pas de
-    session à invalider explicitement — aucune blacklist JWT n'est
-    installée dans ce projet, les jetons déjà émis restent valides
-    jusqu'à expiration naturelle, point de vigilance déjà connu)."""
+    l'utilisateur connecté lui-même. Exige l'ancien mot de passe. Les
+    jetons JWT (access et refresh) déjà émis avant ce changement sont
+    invalidés immédiatement — voir apps.accounts.authentication, qui
+    compare leur date d'émission à `date_changement_mot_de_passe`
+    plutôt que de nécessiter une liste de révocation en base."""
 
     permission_classes = [IsAuthenticated]
 
@@ -81,8 +84,9 @@ class ChangerMotDePasseView(APIView):
             return Response({"nouveau_mot_de_passe": exc.messages}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(nouveau)
-        user.save(update_fields=["password"])
-        return Response({"detail": "Mot de passe mis à jour."})
+        user.date_changement_mot_de_passe = timezone.now()
+        user.save(update_fields=["password", "date_changement_mot_de_passe"])
+        return Response({"detail": "Mot de passe mis à jour. Vos connexions sur d'autres appareils devront se reconnecter."})
 
 
 class UtilisateurListCreateView(APIView):
@@ -162,7 +166,8 @@ def _reinitialiser(utilisateur, admin, action, details_extra=None):
     demande. Retourne True si l'email a bien pu être envoyé."""
     mot_de_passe = generer_mot_de_passe_temporaire()
     utilisateur.set_password(mot_de_passe)
-    utilisateur.save(update_fields=["password"])
+    utilisateur.date_changement_mot_de_passe = timezone.now()
+    utilisateur.save(update_fields=["password", "date_changement_mot_de_passe"])
     enregistrer_audit(action, admin, {"utilisateur_id": utilisateur.id, "email": utilisateur.email, **(details_extra or {})})
     try:
         envoyer_mot_de_passe_temporaire(utilisateur, mot_de_passe, cree=False)
@@ -257,3 +262,30 @@ class UtilisateurReinitialiserMotDePasseView(APIView):
         utilisateur = get_object_or_404(Utilisateur, pk=utilisateur_id)
         email_envoye = _reinitialiser(utilisateur, request.user, "reinitialisation_directe_admin")
         return Response({"detail": "Mot de passe réinitialisé.", "email_envoye": email_envoye})
+
+
+class TokenRefreshViewAvecInvalidation(TokenRefreshView):
+    """POST /api/auth/refresh/ — refuse de délivrer un nouvel access
+    token à partir d'un refresh token émis avant le dernier changement
+    de mot de passe de son titulaire (sinon, un jeton renouvelé après
+    coup porterait un `iat` récent et échapperait à la vérification
+    faite par JWTAuthenticationAvecInvalidation sur les requêtes
+    suivantes — voir apps.accounts.authentication)."""
+
+    def post(self, request, *args, **kwargs):
+        refresh_str = request.data.get("refresh")
+        if refresh_str:
+            try:
+                refresh_token = RefreshToken(refresh_str)
+            except Exception:
+                # Jeton illisible/invalide : laisser TokenRefreshView produire
+                # sa propre erreur standard plutôt que d'en fabriquer une ici.
+                refresh_token = None
+            if refresh_token is not None:
+                utilisateur = Utilisateur.objects.filter(pk=refresh_token.get("user_id")).first()
+                if utilisateur and jeton_perime_par_changement_mot_de_passe(utilisateur, refresh_token):
+                    raise AuthenticationFailed(
+                        "Ce jeton a été émis avant le dernier changement de mot de passe — reconnectez-vous.",
+                        code="token_not_valid",
+                    )
+        return super().post(request, *args, **kwargs)

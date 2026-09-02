@@ -17,6 +17,13 @@ class Utilisateur(AbstractUser):
         choices=Role.choices,
         default=Role.EMPLOYE,
     )
+    # Horodatage du dernier changement de mot de passe (self-service,
+    # réinitialisation admin directe, ou traitement d'une demande) — sert
+    # à invalider les jetons JWT émis avant ce changement, sans passer
+    # par une liste de révocation en base (voir
+    # apps.accounts.authentication). `null` tant qu'aucun changement n'a
+    # eu lieu depuis la création du compte.
+    date_changement_mot_de_passe = models.DateTimeField(blank=True, null=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
