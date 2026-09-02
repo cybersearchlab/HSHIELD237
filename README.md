@@ -85,6 +85,27 @@ déploiement au-delà d'un client pilote encadré.
   les filtres anti-spam si cette configuration n'est pas en place côté
   client (voir le guide de déploiement à venir, Jour 19).
 
+## Tests
+
+- **Backend** : `docker compose exec backend python manage.py test` —
+  suite Django/DRF, exécutée dans le conteneur.
+- **End-to-end (Playwright)** : voir `e2e/README.md` — parcours
+  critiques (connexion, campagne, génération de scénario, consentement,
+  lancement, tableau de bord), exécutés contre l'environnement Docker
+  complet déjà démarré (`docker compose up -d` au préalable).
+
+## Points de configuration à vérifier avant une démonstration
+
+- **`ANTHROPIC_API_KEY` (`.env`) n'est, à ce jour, jamais qu'un
+  placeholder** (`sk-ant-xxxxx`) — jamais remplacé par une vraie clé
+  depuis sa mise en place au Jour 7. Le mode API de génération de
+  scénario échoue donc systématiquement (`401`) tant qu'une clé réelle
+  n'est pas provisionnée sur console.anthropic.com ; le mode manuel
+  (coller un texte déjà rédigé) reste pleinement utilisable sans elle.
+- **L'annuaire des employés (`/employes`) est vide par défaut** — à
+  peupler (au moins un employé par département testé) avant de pouvoir
+  lancer une campagne.
+
 ## Statut du projet
 
 Sprint en cours — voir `docs/CONTEXTE_PROJET.md`, section « État

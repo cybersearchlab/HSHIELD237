@@ -1,0 +1,17 @@
+{
+  "name": "hshield237-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Tests end-to-end (Playwright) des parcours critiques de H-SHIELD237, exécutés contre l'environnement Docker complet (docker-compose up -d) — voir README.md de ce dossier.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "install-browsers": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0"
+  }
+}

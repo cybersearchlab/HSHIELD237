@@ -6,6 +6,26 @@
 
 ## État d'avancement
 
+- **2026-09-02 (suite 3) — Jour 18 : tests end-to-end Playwright.**
+  Nouveau dossier `e2e/` (hors `backend/`/`frontend/`, projet Node
+  indépendant), configuré contre l'environnement Docker complet déjà
+  démarré (`https://localhost`, via Nginx — pas un serveur de dev
+  isolé). Deux fichiers : `connexion.spec.js` (4 tests) et
+  `parcours-critique.spec.js` (7 étapes séquentielles dépendantes —
+  création de campagne, génération de scénario en mode API puis
+  manuel, validation du consentement par un second rôle/contexte de
+  navigateur, lancement réel avec envoi SMTP réel, tableau de bord).
+  **Écart assumé** : « création d'entreprise » (énoncé du Jour 18)
+  remplacée par « création de campagne » — le modèle `Entreprise` est
+  supprimé depuis le Jour 6 (écart n°1). **Découverte réelle en cours
+  de route** : `ANTHROPIC_API_KEY` dans `.env` est une valeur
+  littéralement placeholder (`sk-ant-xxxxx`), jamais une vraie clé —
+  la génération en mode API échoue donc systématiquement (401) dans
+  cet environnement ; le test le détecte via la réponse HTTP réelle et
+  se marque proprement `skipped` (pas `failed`) avec ce diagnostic
+  explicite, sans bloquer le reste du parcours. 11/11 tests
+  passent (10 réussis + 1 skip attendu et expliqué). Committé et
+  poussé. Voir « Journal du 2026-09-02 (suite 3) ».
 - **2026-09-02 (suite 2) — `README.md` créé, limitations de sécurité
   connues documentées.** Jour 17 du plan (vérification minimale déjà
   faite le 2026-08-31 — DEBUG, .env, mots de passe hachés) : le README
@@ -1922,14 +1942,83 @@ introduit une dépendance externe sans bénéfice réel pour ce cas d'usage.
    dans la liste des scénarios de la campagne.
 7. **Committé et poussé.**
 
+## Journal du 2026-09-02 (suite 3) — Jour 18, tests end-to-end Playwright
+
+Nouveau dossier racine `e2e/` (projet Node indépendant, ni dans
+`backend/` ni dans `frontend/`) — voir `e2e/README.md` pour les
+instructions complètes d'installation et d'exécution.
+
+1. **Configuration** (`e2e/playwright.config.js`) : `baseURL:
+   https://localhost` (le port exposé par Nginx dans
+   `docker-compose.yml`, pas un serveur de dev isolé — conforme à la
+   consigne « configure ces tests pour s'exécuter contre l'environnement
+   Docker complet »), `ignoreHTTPSErrors: true` (certificat auto-signé,
+   voir `nginx/certs/`), aucun `webServer` (la pile doit déjà tourner via
+   `docker compose up -d` avant de lancer les tests).
+2. **`tests/connexion.spec.js`** (4 tests) : identifiants valides → 
+   tableau de bord ; mot de passe incorrect → erreur explicite sans
+   connecter ; page protégée sans session → redirection ; déconnexion →
+   jeton effacé, page protégée à nouveau inaccessible.
+3. **`tests/parcours-critique.spec.js`** (7 étapes séquentielles
+   dépendantes, `describe.serial`) : connexion consultant → création
+   d'une campagne (département Informatique, un responsable y est déjà
+   désigné) → génération API → génération manuelle → validation du
+   consentement par le responsable désigné (second contexte de
+   navigateur — deux rôles, deux sessions isolées) → lancement réel de
+   la campagne (SMTP réel, Mailtrap) vers un employé de test créé via
+   l'API pour l'occasion → vérification que le tableau de bord reflète
+   l'envoi. Données de test (campagne, employé) créées et supprimées via
+   l'API dans `beforeAll`/`afterAll` — jamais via l'interface, pour ne
+   pas dépendre d'un parcours qui n'est pas lui-même sous test ici.
+4. **Écart assumé par rapport à l'énoncé du Jour 18** : « création
+   d'entreprise » devient « création de campagne ». Le modèle
+   `Entreprise` est supprimé depuis le Jour 6 (voir « Décisions et
+   écarts », n°1) — l'application ne sert qu'une seule entreprise
+   cliente, segmentée par département ; créer une campagne est
+   aujourd'hui l'action qui déclenche réellement la suite du parcours
+   (demande de consentement automatique).
+5. **Découverte réelle en cours de route, sans lien avec le code** :
+   `ANTHROPIC_API_KEY` dans `.env` vaut littéralement `sk-ant-xxxxx` —
+   un placeholder, jamais une vraie clé Anthropic provisionnée. Le mode
+   API échoue donc systématiquement dans cet environnement (`401 API key
+   is invalid`, confirmé directement via `curl` contre
+   `/api/generation/api/`). Le test le détecte en observant la réponse
+   HTTP réelle de la requête (`page.waitForResponse`, pas une simple
+   attente de texte dans la page) et se marque `test.skip()` avec le
+   diagnostic exact plutôt que d'échouer à l'aveugle — en mode
+   `describe.serial`, un test explicitement *skipped* (à la différence
+   d'un test qui échoue) n'interrompt pas la suite : les étapes 4 à 7
+   s'exécutent normalement avec le seul scénario du mode manuel.
+   **À l'utilisateur de fournir une vraie clé s'il veut que le mode API
+   soit un jour exercé réellement par ce test.**
+6. **Piège de sélecteur rencontré et corrigé** : `page.getByText("Aperçu
+   de l'email simulé")` correspondait *aussi*, de façon involontaire, au
+   texte d'aide statique « Affichés dans l'aperçu de l'email simulé... »
+   toujours présent sur la page (étape 2 du formulaire) — et
+   `toBeVisible()` accepte une correspondance parmi plusieurs sans lever
+   d'erreur stricte (contrairement à `toHaveText()`), ce qui faisait
+   passer l'assertion même quand la génération n'avait pas encore
+   abouti. Corrigé en scopant sur `.preview-title`/`.preview-badge`
+   (classes précises de l'aperçu réel) plutôt que sur un texte libre.
+   **Leçon pour tout futur test Playwright dans ce projet** : préférer un
+   sélecteur de classe/rôle précis à `getByText()` dès qu'un texte
+   proche existe ailleurs sur la même page — et se rappeler que
+   `toBeVisible()` ne lève pas d'erreur de mode strict comme les autres
+   matchers.
+7. **11/11 tests** (10 réussis + 1 `skipped` attendu et expliqué).
+   Nettoyage vérifié en base après coup (campagne et employé de test
+   bien supprimés, y compris après les échecs rencontrés en cours de
+   mise au point). Committé et poussé.
+
 ## Prochaine action précise
 
 **Toutes les demandes explicites sont à jour**, y compris le chantier
 Paramètres complet (backend + frontend), l'invalidation des jetons JWT au
-changement de mot de passe et la fausse page de capture personnalisable
-(voir « Journal du 2026-09-01 », « (suite) », « (suite 2) », « Journal du
-2026-09-02 » et « (suite) »). Pistes pour la suite, aucune n'a encore été
-redemandée explicitement :
+changement de mot de passe, la fausse page de capture personnalisable et
+les tests end-to-end Playwright (voir « Journal du 2026-09-01 », «
+(suite) », « (suite 2) », « Journal du 2026-09-02 », « (suite) » et «
+(suite 3) »). Pistes pour la suite, aucune n'a encore été redemandée
+explicitement :
 
 1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
    chaque page développée à sa maquette de référence — d'autant plus
@@ -1941,14 +2030,19 @@ redemandée explicitement :
    par tests automatisés et `curl` contre l'API réelle, mais pas encore
    cliqué depuis un vrai navigateur (coller du HTML, importer un
    fichier, voir le badge passer à « Personnalisée »).
-3. Avant de reprendre, vérifier l'état de Docker Desktop
+3. **Fournir une vraie `ANTHROPIC_API_KEY`** dans `.env` si le mode API
+   de génération doit être utilisé/démontré réellement, ou exercé par le
+   test `parcours-critique.spec.js` (voir « Journal du 2026-09-02 (suite
+   3) ») — actuellement un placeholder (`sk-ant-xxxxx`), jamais remplacé
+   depuis le Jour 7.
+4. Avant de reprendre, vérifier l'état de Docker Desktop
    (`docker compose ps`) — le sprint a connu plusieurs interruptions
    d'environnement (voir « Bugs connus ») ; relancer avec
    `docker compose up -d`, patienter le ralentissement au premier
    démarrage (`WORKER TIMEOUT`), et vérifier `db` (récupération WAL
    possible après un arrêt non propre, résolue automatiquement en 1-3
    minutes, voir logs `database system was not properly shut down`).
-4. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
+5. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
    `administrateur@hshield237.local` / `Administrateur1234!` toujours
    valides ; `arthur@hshield237.local` / `Responsable1234!` (rôle
    responsable, désigné pour Direction générale) (voir « Bugs connus »).
