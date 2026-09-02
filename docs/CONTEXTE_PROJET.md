@@ -6,6 +6,18 @@
 
 ## État d'avancement
 
+- **2026-09-02 — deux vérifications demandées, une correction de sécurité
+  livrée.** (1) Le changement de mot de passe invalide désormais
+  immédiatement les anciens jetons JWT (access ET refresh) — un point de
+  vigilance documenté depuis le 2026-09-01, corrigé ce jour
+  (`apps.accounts.authentication.JWTAuthenticationAvecInvalidation` +
+  `TokenRefreshViewAvecInvalidation`, nouveau champ
+  `date_changement_mot_de_passe`). (2) Confirmé qu'un utilisateur créé
+  par l'administrateur est bien persisté en base et peut se connecter
+  immédiatement avec le mot de passe temporaire reçu par email — déjà le
+  comportement construit le 2026-09-01, désormais couvert par un test
+  bout-en-bout dédié. 9 nouveaux tests, **117/117**. Committé et poussé
+  (commit `76e3ef9`). Voir « Journal du 2026-09-02 ».
 - **2026-09-01 (suite) — Jour 16 entièrement terminé (backend + frontend).**
   La page Paramètres (`/parametres`) est maintenant connectée aux
   endpoints réels : Profil et Sécurité (tous rôles), Équipe et API & IA
@@ -974,7 +986,7 @@ ci-dessus.
 
 | App | État | Détail |
 |---|---|---|
-| `accounts` | ✅ Fait (étendu le 2026-09-01) | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur`. **2026-09-01** (Jour 16, étapes 1-3/4) : `MeView` en lecture/écriture (profil), `ChangerMotDePasseView`, gestion d'équipe admin-only (`UtilisateurListCreateView`, `UtilisateurRoleView`), modèle `DemandeReinitialisation` + réinitialisation admin-médiée (`MotDePasseOublieView` public, `DemandeReinitialisationListView`/`...TraiterView`, `UtilisateurReinitialiserMotDePasseView`), `notifications.py` (email, pas de blacklist JWT). 21 tests (`tests.py`, nouveau fichier) |
+| `accounts` | ✅ Fait (étendu le 2026-09-01 et 2026-09-02) | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur`. **2026-09-01** (Jour 16, étapes 1-3/4) : `MeView` en lecture/écriture (profil), `ChangerMotDePasseView`, gestion d'équipe admin-only (`UtilisateurListCreateView`, `UtilisateurRoleView`), modèle `DemandeReinitialisation` + réinitialisation admin-médiée (`MotDePasseOublieView` public, `DemandeReinitialisationListView`/`...TraiterView`, `UtilisateurReinitialiserMotDePasseView`), `notifications.py`. **2026-09-02** : `Utilisateur.date_changement_mot_de_passe` + `authentication.py` (`JWTAuthenticationAvecInvalidation`, `TokenRefreshViewAvecInvalidation` dans `views.py`) — invalide les jetons JWT antérieurs au dernier changement de mot de passe. 30 tests (`tests.py`) |
 | `parametres` | ✅ Fait (2026-09-01, étape 4/4) | Modèle `ParametreExterne` (les 8 réglages jusqu'ici lus uniquement depuis `.env` : `ANTHROPIC_API_KEY`/`MODEL`, `EMAIL_*`, `SIMULATION_BASE_URL`), valeur chiffrée au repos (`cryptography.fernet`, clé dérivée de `SECRET_KEY`), masquée en lecture pour les clés secrètes. `services.get_parametre()` (+ `_int`/`_bool`) : priorité au registre en base, repli sur `.env`/`settings`. CRUD `/api/parametres/externes/` admin-only (lecture et écriture). 11 tests |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
 | `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires. `ScenarioPhishing.date_creation` ajouté (absent jusqu'ici), tri explicite du plus récent au plus ancien, 1 test supplémentaire (57 tests au total). **2026-08-27 (suite 4)** : nouveau modèle `DepartementConfigure` (registre dynamique des départements, remplace `Departement.choices`), CRUD `/api/departements/` (admin-only, suppression bloquée si utilisé), `services.departement_label()` (résolution live du libellé), 7 tests supplémentaires (64 tests au total) |
@@ -1724,12 +1736,84 @@ jamais câblé jusqu'ici).
 **Le Jour 16 (page Paramètres, backend + frontend) est maintenant
 entièrement terminé.**
 
+## Journal du 2026-09-02 — invalidation des jetons JWT au changement de mot de passe
+
+Deux vérifications demandées par l'utilisateur sur le chantier Comptes
+livré la veille.
+
+### 1. Le changement de mot de passe invalide-t-il les anciens jetons ?
+
+Non, jusqu'à ce jour — point de vigilance explicitement documenté depuis
+le 2026-09-01 (« aucune blacklist JWT n'est installée dans ce projet,
+les jetons déjà émis restent valides jusqu'à expiration naturelle »).
+Corrigé :
+
+1. Nouveau champ `Utilisateur.date_changement_mot_de_passe` (nullable),
+   horodaté à chaque changement — self-service
+   (`ChangerMotDePasseView`), réinitialisation directe par
+   l'administrateur, ou traitement d'une demande (les trois passent par
+   `_reinitialiser()` ou `ChangerMotDePasseView.post()`).
+2. `apps/accounts/authentication.py` (nouveau) :
+   `JWTAuthenticationAvecInvalidation` compare le claim `iat` de chaque
+   access token à cette date — un jeton émis avant le dernier changement
+   est rejeté (`401`), sans liste de révocation en base. Remplace
+   `JWTAuthentication` comme `DEFAULT_AUTHENTICATION_CLASSES`.
+3. `TokenRefreshViewAvecInvalidation` (`apps/accounts/views.py`) : même
+   vérification appliquée aux refresh tokens avant de délivrer un
+   nouvel access token — sinon un jeton renouvelé après coup porterait
+   un `iat` récent et échapperait au contrôle ci-dessus. Remplace
+   `TokenRefreshView` sur `/api/auth/refresh/`.
+4. **Piège rencontré et corrigé en cours de route** : la classe
+   `TokenRefreshViewAvecInvalidation` vivait d'abord dans
+   `authentication.py` — mais ce module est résolu très tôt par Django
+   (`REST_FRAMEWORK.DEFAULT_AUTHENTICATION_CLASSES`, lui-même importé
+   depuis *l'intérieur* de `rest_framework.schemas`). Y importer
+   `TokenRefreshView` déclenchait un import circulaire réel
+   (`rest_framework_simplejwt.views` → `rest_framework.generics` →
+   `rest_framework.views` → `rest_framework.schemas` → résolution de
+   `DEFAULT_AUTHENTICATION_CLASSES` → réimport du même module encore en
+   cours d'exécution — `AttributeError` masquée en `ImportError` par
+   DRF). Déplacée dans `views.py` (importé plus tard, une fois ce cycle
+   déjà résolu) ; `authentication.py` ne garde que ce qui ne dépend pas
+   de `rest_framework.views`. **Point de vigilance pour tout futur
+   module référencé par un réglage résolu au chargement de Django**
+   (`DEFAULT_AUTHENTICATION_CLASSES`, `DEFAULT_PERMISSION_CLASSES`,
+   etc.) : n'y importer que le strict nécessaire, jamais toute une vue.
+
+### 2. Un utilisateur créé par l'administrateur est-il utilisable immédiatement ?
+
+Oui — c'était déjà le comportement construit le 2026-09-01
+(`Utilisateur.objects.create_user(..., password=mot_de_passe_temporaire)`,
+compte pleinement actif dès la création), simplement jamais couvert par
+un test bout-en-bout jusqu'ici (l'ancien test ne vérifiait que
+`check_password()` en local). Nouveau test passant réellement par
+`POST /api/accounts/utilisateurs/` puis `POST /api/auth/login/` avec le
+mot de passe extrait de l'email envoyé (`mail.outbox`).
+
+### Vérification
+
+5. **9 nouveaux tests** (`apps/accounts/tests.py`) : jeton valide avant
+   tout changement, access token rejeté après changement, refresh token
+   rejeté après changement, réinitialisation admin invalidant aussi les
+   anciens jetons, nouvelle connexion fonctionnelle après changement,
+   ancien mot de passe refusé au login après changement, et le parcours
+   création → connexion immédiate demandé par l'utilisateur.
+   **117/117 tests backend.**
+6. **Vérifié en conditions réelles via `curl`** (comptes de test dédiés,
+   supprimés après vérification) : jeton access valide avant changement
+   (`200`), rejeté après (`401`, message explicite), refresh token
+   également rejeté après (`401`), nouvelle connexion avec le nouveau
+   mot de passe fonctionnelle (`200`) ; création d'un utilisateur puis
+   connexion immédiate avec son mot de passe confirmée (`200`).
+7. **Committé et poussé** (commit `76e3ef9`).
+
 ## Prochaine action précise
 
 **Toutes les demandes explicites sont à jour**, y compris le chantier
-Paramètres complet — backend (4 étapes) et frontend (voir « Journal du
-2026-09-01 », « (suite) » et « (suite 2) »). Pistes pour la suite,
-aucune n'a encore été redemandée explicitement :
+Paramètres complet (backend + frontend) et l'invalidation des jetons JWT
+au changement de mot de passe (voir « Journal du 2026-09-01 », «
+(suite) », « (suite 2) » et « Journal du 2026-09-02 »). Pistes pour la
+suite, aucune n'a encore été redemandée explicitement :
 
 1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
    chaque page développée à sa maquette de référence — d'autant plus
