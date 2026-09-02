@@ -6,6 +6,24 @@
 
 ## État d'avancement
 
+- **Session du 2026-09-02 mise en pause ici**, à la demande de l'utilisateur. Journée
+  particulièrement chargée : audit des exigences Must Have (REQ-F-03/04/05), fausse
+  page de capture personnalisable, limitations de sécurité documentées dans le
+  README, tests end-to-end Playwright, README complet + guide de déploiement
+  (Jour 19), les trois dernières vérifications du plan de 20 jours (Jour 20 —
+  démarrage propre, migrations automatiques, commande dédiée d'administrateur), un
+  bug JWT réel trouvé et corrigé, et enfin la mise à jour de la section 5.1
+  (« Utilisateurs ciblés ») du `CAHIER_DES_CHARGES.docx` pour refléter exhaustivement
+  les permissions réelles de chaque rôle. Tout le code est committé et poussé
+  (dernier commit `58549f9`), arbre de travail propre à l'exception d'un fichier
+  volontairement laissé de côté (voir juste en dessous), 144/144 tests backend au
+  vert, pile Docker saine (`docker compose ps`, 4 services `healthy`).
+  **Point en attente à la reprise** : `CAHIER_DES_CHARGES.docx` (racine du dépôt,
+  jamais suivi par Git jusqu'ici) a été modifié mais pas encore committé — décision
+  laissée à l'utilisateur, explicitement proposée et non encore tranchée au moment
+  de la pause. **Prochaine étape à la reprise : Jour 15** (vérification de fidélité
+  visuelle), la seule étape du plan de 20 jours encore non traitée — voir
+  « Prochaine action précise » tout en bas de ce document.
 - **2026-09-02 (suite 5) — Jour 20 : démarrage propre, migrations
   automatiques, commande dédiée de création d'administrateur.** Les
   trois points vérifiés en conditions réelles, sur un environnement

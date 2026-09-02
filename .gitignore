@@ -45,6 +45,9 @@ docker-compose.override.yml
 .DS_Store
 Thumbs.db
 
+# --- Fichiers de verrouillage Microsoft Office (document ouvert) ---
+~$*.doc*
+
 # --- Logs ---
 *.log
 logs/
