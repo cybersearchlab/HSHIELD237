@@ -17,6 +17,57 @@ class EnvoiCampagneError(Exception):
     """Levée quand l'envoi d'une campagne (ou d'un scénario) ne peut pas aboutir."""
 
 
+# Injecté juste avant </body> (ou en fin de page si absent) dans toute page
+# de capture personnalisée (voir apps.campagnes.ScenarioPhishing.
+# page_capture_html) au moment où elle est servie — jamais stocké avec le
+# HTML en base, pour que la page reste éditable telle que fournie par le
+# consultant. Intercepte la soumission de CHAQUE <form> présent sur la
+# page (aucune convention particulière requise de la part du consultant,
+# voir apps.campagnes.validators : seule l'existence d'un vrai formulaire
+# est exigée) : empêche l'envoi réel (il n'y a rien pour le recevoir),
+# note uniquement quels champs contenaient une valeur — jamais leur
+# contenu — puis affiche un message de confirmation neutre.
+SCRIPT_SUIVI_SOUMISSION = """
+<script>
+(function () {
+  function surLaSoumission(form) {
+    return function (evenement) {
+      evenement.preventDefault();
+      var champs = {};
+      form.querySelectorAll("input, textarea, select").forEach(function (champ, index) {
+        var cle = champ.name || champ.id || ("champ_" + index);
+        champs[cle] = !!(champ.value && String(champ.value).trim().length > 0);
+      });
+      fetch(window.location.href, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ champs: champs }),
+      }).finally(function () {
+        document.body.innerHTML =
+          '<div style="font-family:-apple-system,\\'Segoe UI\\',Roboto,Arial,sans-serif;' +
+          'max-width:420px;margin:15vh auto;text-align:center;color:#334;padding:24px;">' +
+          "<p>Merci, vos informations ont été transmises.</p></div>";
+      });
+    };
+  }
+  document.querySelectorAll("form").forEach(function (form) {
+    form.addEventListener("submit", surLaSoumission(form));
+  });
+})();
+</script>
+"""
+
+
+def construire_page_capture(html_personnalise):
+    """Insère le script de suivi dans le HTML fourni par le consultant,
+    juste avant la balise fermante </body> (recherchée sans tenir compte
+    de la casse) — ou en fin de contenu si la page n'en a pas."""
+    index = html_personnalise.lower().rfind("</body>")
+    if index == -1:
+        return html_personnalise + SCRIPT_SUIVI_SOUMISSION
+    return html_personnalise[:index] + SCRIPT_SUIVI_SOUMISSION + html_personnalise[index:]
+
+
 class EnvoiCampagneService:
     """Envoie les scénarios d'une campagne par email, via le backend SMTP
     natif de Django (EMAIL_HOST/EMAIL_PORT/EMAIL_HOST_USER/EMAIL_HOST_PASSWORD

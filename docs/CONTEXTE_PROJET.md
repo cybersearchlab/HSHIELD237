@@ -6,6 +6,18 @@
 
 ## État d'avancement
 
+- **2026-09-02 (suite) — fausse page de capture personnalisable.** Le
+  consultant peut désormais remplacer, scénario par scénario, la page de
+  capture générique par une page qui imite l'apparence d'un service réel
+  — collée en HTML ou importée sous forme de fichier `.html` — servie à
+  la place de la page par défaut quand l'employé testé clique sur le
+  lien. Contrainte imposée (« forcer chaque page à respecter certains
+  paramètres utiles au suivi ») : la page doit contenir un vrai
+  formulaire, sinon rejetée à l'enregistrement ; un script de suivi est
+  ensuite injecté automatiquement à la volée (jamais stocké avec le
+  HTML) et détecte si des champs ont été remplis lors de la soumission —
+  jamais leur contenu. 17 nouveaux tests, **134/134**. Committé et
+  poussé. Voir « Journal du 2026-09-02 (suite) ».
 - **2026-09-02 — deux vérifications demandées, une correction de sécurité
   livrée.** (1) Le changement de mot de passe invalide désormais
   immédiatement les anciens jetons JWT (access ET refresh) — un point de
@@ -989,9 +1001,9 @@ ci-dessus.
 | `accounts` | ✅ Fait (étendu le 2026-09-01 et 2026-09-02) | Modèle `Utilisateur` (AbstractUser + `role`), JWT (login/refresh/me), permissions `IsConsultant`/`IsResponsable`/`IsAdministrateur`. **2026-09-01** (Jour 16, étapes 1-3/4) : `MeView` en lecture/écriture (profil), `ChangerMotDePasseView`, gestion d'équipe admin-only (`UtilisateurListCreateView`, `UtilisateurRoleView`), modèle `DemandeReinitialisation` + réinitialisation admin-médiée (`MotDePasseOublieView` public, `DemandeReinitialisationListView`/`...TraiterView`, `UtilisateurReinitialiserMotDePasseView`), `notifications.py`. **2026-09-02** : `Utilisateur.date_changement_mot_de_passe` + `authentication.py` (`JWTAuthenticationAvecInvalidation`, `TokenRefreshViewAvecInvalidation` dans `views.py`) — invalide les jetons JWT antérieurs au dernier changement de mot de passe. 30 tests (`tests.py`) |
 | `parametres` | ✅ Fait (2026-09-01, étape 4/4) | Modèle `ParametreExterne` (les 8 réglages jusqu'ici lus uniquement depuis `.env` : `ANTHROPIC_API_KEY`/`MODEL`, `EMAIL_*`, `SIMULATION_BASE_URL`), valeur chiffrée au repos (`cryptography.fernet`, clé dérivée de `SECRET_KEY`), masquée en lecture pour les clés secrètes. `services.get_parametre()` (+ `_int`/`_bool`) : priorité au registre en base, repli sur `.env`/`settings`. CRUD `/api/parametres/externes/` admin-only (lecture et écriture). 11 tests |
 | `entreprises` | ❌ **Supprimée** | Retirée au jour 6 — voir « Décisions et écarts » |
-| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires. `ScenarioPhishing.date_creation` ajouté (absent jusqu'ici), tri explicite du plus récent au plus ancien, 1 test supplémentaire (57 tests au total). **2026-08-27 (suite 4)** : nouveau modèle `DepartementConfigure` (registre dynamique des départements, remplace `Departement.choices`), CRUD `/api/departements/` (admin-only, suppression bloquée si utilisé), `services.departement_label()` (résolution live du libellé), 7 tests supplémentaires (64 tests au total) |
+| `campagnes` | ✅ Fait | Modèles `Campagne`, `ScenarioPhishing` (+ `piece_jointe`, `departements_cibles`) et `Destinataire` (email + département, jour 10), ViewSet CRUD, endpoints destinataires, filtres statut/departement, pagination, fixture de test. **`Destinataire` et `departements_cibles` ne sont plus utilisés par le frontend depuis le 2026-08-21** (voir écart n°28) mais restent fonctionnels côté API. **Jour 12** : `services.py` (calcul du score), endpoints `.../score/` et `.../departements/score/`, `tests.py` (5 tests). **Jour 14** : `services.historique_par_departement()`, endpoint `.../departements/historique/` (historique campagne par campagne, pas un seul chiffre agrégé — pour l'évolution du score dans le temps), 3 tests supplémentaires. **2026-08-27** : `CampagneSerializer` expose l'état du consentement (`consentement_statut`, motifs de refus) ; `ScenarioListView` accessible au responsable désigné pour sa propre campagne (403 sinon), 5 tests supplémentaires. `ScenarioPhishing.date_creation` ajouté (absent jusqu'ici), tri explicite du plus récent au plus ancien, 1 test supplémentaire (57 tests au total). **2026-08-27 (suite 4)** : nouveau modèle `DepartementConfigure` (registre dynamique des départements, remplace `Departement.choices`), CRUD `/api/departements/` (admin-only, suppression bloquée si utilisé), `services.departement_label()` (résolution live du libellé), 7 tests supplémentaires (64 tests au total). **2026-09-02** : `ScenarioPhishing.page_capture_html`, `validators.valider_page_capture_html()`, `ScenarioPageCaptureView` (`/api/campagnes/scenarios/<id>/page-capture/`) — fausse page de capture personnalisable, voir « Journal du 2026-09-02 (suite) », 11 tests supplémentaires |
 | `generation` | ✅ Fait | `ClaudeGenerationService`, endpoints `/api/generation/api/` (accepte désormais `expediteur_nom`/`expediteur_email`/`destinataire_email`, plus `departements_cibles`) et `/api/generation/manuel/` (multipart, pièce jointe) ; `ScenarioPhishing` étendu avec expediteur_nom/expediteur_email/destinataire_email/est_html. **2026-09-01** : `api_key`/`model` résolus via `apps.parametres.services.get_parametre()` en priorité (repli sur `.env`) |
-| `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **2026-08-27** : `envoyer_aux_employes(cible, employe_id)` (envoi ciblé à l'annuaire `apps.employes`, réutilise entièrement la logique d'envoi individuel déjà en place), `EnvoyerCampagneRequestSerializer` étendu, tests supplémentaires. **2026-09-01** : connexion SMTP construite explicitement via `get_connection()` à partir de `apps.parametres.services.get_parametre()` (repli sur `.env`), plutôt que des réglages Django globaux implicites. **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
+| `simulation` | ✅ Fait (jours 8-11) | `EnvoiCampagneService` (sélection par département jour 10, **blocage sans consentement validé jour 11**), `ConfigurationEnvoi`, `EnvoiTracking`, vue publique de capture (jour 8) ; modèle `Interaction`, pixel de suivi, tracking clic/soumission (jour 9) ; `tests.py` (6 tests). **2026-08-27** : `envoyer_aux_employes(cible, employe_id)` (envoi ciblé à l'annuaire `apps.employes`, réutilise entièrement la logique d'envoi individuel déjà en place), `EnvoyerCampagneRequestSerializer` étendu, tests supplémentaires. **2026-09-01** : connexion SMTP construite explicitement via `get_connection()` à partir de `apps.parametres.services.get_parametre()` (repli sur `.env`), plutôt que des réglages Django globaux implicites. **2026-09-02** : `Interaction.champs_renseignes`, `services.construire_page_capture()` (injection du script de suivi dans une page personnalisée), `CapturePageView` sert la page du scénario si `page_capture_html` est renseigné, 6 tests supplémentaires. **Manque encore** : déclencheur du type `signalement` (aucun mécanisme prévu) |
 | `employes` | ✅ Fait (2026-08-27) | Modèle `Employe` (nom, email unique, département), CRUD `/api/employes/` (lecture consultant+administrateur, écriture admin-only, filtrable par département), 8 tests. Annuaire remplaçant l'adresse de diffusion pour l'envoi de campagne |
 | `gouvernance` | ✅ Fait (jour 11, étendu le 2026-08-25) | Modèles `Consentement` (+ `motifs_refus`, `motif_refus_details`), `JournalAudit`, `ResponsableDepartement` (registre admin-only) ; endpoints demande (admin-only)/liste/valider/refuser (motifs obligatoires)/journal-audit/responsables (CRUD admin-only) ; `services.creer_consentement_auto` ; `tests.py` (23 tests) |
 | `rapports` | ✅ Fait (jour 13 backend) | `GenerationRapportService` (WeasyPrint 69.0), endpoint `.../rapport/`, `tests.py` (4 tests). Vérifié en direct (PDF réel via curl) et committé — voir « Journal du 2026-08-25 » |
@@ -1004,7 +1016,7 @@ ci-dessus.
 | `Login/LoginPage.jsx` | ✅ Fait | Fidèle à `login.html`, connectée à l'API. **2026-09-01** : « Mot de passe oublié ? »/« Contacter l'administrateur » (liens morts depuis le jour 3) appellent désormais `POST /api/auth/mot-de-passe-oublie/` — réponse générique, jamais d'indice sur l'existence d'un compte |
 | `components/Layout/` | ✅ Fait | Sidebar/topbar de référence, importé par toutes les pages. **Sidebar** : bouton de déconnexion + email du compte connecté dans le pied de page, sur toutes les pages (2026-08-27, auparavant seulement sur Dashboard). **Topbar** : bouton de bascule mode sombre / mode clair (2026-08-27, `ThemeContext`), visible sur toutes les pages |
 | `Dashboard/DashboardPage.jsx` | ✅ Fait (jour 12) | Métriques réelles (campagnes actives, emails envoyés, taux de clic moyen, score de vulnérabilité), comparatif par département, jauge de score (`ScoreRing`), campagnes récentes, alerte automatique si risque élevé |
-| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal). **2026-08-27** : bandeau d'alerte + badge rouge « Refusée » avec motifs, si le responsable a refusé la campagne. Modale de lancement : nouvelle section « Destinataires » (tous les employés du département / un employé en particulier, alimentée par l'annuaire `apps.employes`) — remplace l'ancienne absence de sélection de cible |
+| `Campagnes/CampagnesPage.jsx` | ✅ Fait | Tableau, recherche, filtres statut, pagination réelle, actions rapides, modale de création simplifiée (département uniquement, jour 11), modale de lancement (expéditeur/Reply-To/débit + avertissement DNS, jour 8 ; préremplissage expéditeur depuis le dernier scénario, jour 11). **Section « Destinataires par département » retirée le 2026-08-21** (voir journal). **2026-08-27** : bandeau d'alerte + badge rouge « Refusée » avec motifs, si le responsable a refusé la campagne. Modale de lancement : nouvelle section « Destinataires » (tous les employés du département / un employé en particulier, alimentée par l'annuaire `apps.employes`) — remplace l'ancienne absence de sélection de cible. **2026-09-02** : section « Page de fausse capture » dans la modale de lancement — liste les scénarios de la campagne avec un badge Générique/Personnalisée, ouvre une sous-modale (coller du HTML ou importer un fichier `.html`) branchée sur `ScenarioPageCaptureView` |
 | `GenererScenario/GenererScenarioPage.jsx` | ✅ Fait | Sélecteur API/Manuel, formulaire adapté (département), aperçu enrichi (De/À, CTA, mode HTML), validation inline, scroll automatique (jour 7). Champs **Expéditeur/destinataire communs aux deux modes** depuis le 2026-08-21 (auparavant manuel uniquement) ; **sélecteur « Départements ciblés » retiré** le même jour. **Sélecteur de template de départ** (mode API uniquement, filtré par département de la campagne) ajouté le 2026-08-25. **2026-08-27** : suppression d'une ligne dupliquant l'objet dans l'aperçu (n'apparaît plus que dans l'en-tête) |
 | `Consentements/ConsentementsPage.jsx` | ✅ Fait (jour 11, refondu le 2026-08-25) | Métriques, recherche/filtres par statut, actions Valider/Refuser réservées au responsable désigné authentifié, modale de refus avec motifs à cocher + texte libre. Plus de saisie manuelle du responsable (retirée) ; section admin-only « Campagnes sans consentement » avec génération manuelle. **2026-08-27** : bouton « Voir l'email » (responsable uniquement) ouvrant une modale d'aperçu du scénario de phishing, corrigée le même jour pour ne plus dupliquer l'objet, puis pour classer les versions par date (sélecteur, la plus récente pré-sélectionnée) quand une campagne a plusieurs scénarios |
 | `Responsables/ResponsablesPage.jsx` | ✅ Fait (2026-08-25) | Registre des responsables par département, réservé à l'administrateur (page et lien de nav). Route `/responsables` |
@@ -1807,26 +1819,123 @@ mot de passe extrait de l'email envoyé (`mail.outbox`).
    connexion immédiate avec son mot de passe confirmée (`200`).
 7. **Committé et poussé** (commit `76e3ef9`).
 
+## Journal du 2026-09-02 (suite) — fausse page de capture personnalisable
+
+Demande explicite de l'utilisateur : la fausse page de capture doit
+pouvoir imiter l'apparence d'un service réel (portail de l'entreprise
+cliente, par exemple), fournie par le consultant lui-même — soit collée
+en HTML, soit importée sous forme de fichier — plutôt que la page
+générique unique utilisée jusqu'ici pour tous les scénarios. Deux
+exigences supplémentaires posées par l'utilisateur, à traiter par la
+conception : (a) un mécanisme qui « force » toute page importée à
+respecter le nécessaire au suivi de la soumission ; (b) une décision
+d'hébergement en production, laissée explicitement à ma charge.
+
+### 1. Stockage et personnalisation, scénario par scénario
+
+- `ScenarioPhishing.page_capture_html` (nouveau champ `TextField`, vide
+  par défaut = page générique inchangée — aucune régression sur les
+  scénarios déjà créés) + `page_capture_date_maj`.
+- `PUT /api/campagnes/scenarios/<id>/page-capture/`
+  (`ScenarioPageCaptureView`, admin/consultant) accepte soit
+  `{"html": "..."}`, soit un fichier `.html` en `multipart/form-data`
+  (`PageCaptureUploadSerializer`, jamais les deux à la fois) ; `GET` pour
+  relire (édition), `DELETE` pour revenir à la page générique. Chaque
+  changement journalisé (`JournalAudit`, comme les autres actions
+  sensibles du projet) — cette page sera réellement vue par de vrais
+  employés testés, au même titre qu'une campagne ou qu'un consentement.
+- `ScenarioPhishingSerializer` expose seulement un indicateur booléen
+  (`page_capture_personnalisee`) dans la liste des scénarios d'une
+  campagne — jamais le HTML complet (jusqu'à 2 Mo), qui reste réservé à
+  l'endpoint dédié.
+
+### 2. Le mécanisme « qui force » — validation + injection automatique
+
+Plutôt que d'imposer au consultant une convention à respecter lui-même
+(un attribut précis, un endpoint particulier à connaître), la contrainte
+retenue est minimale et vérifiée à l'enregistrement
+(`apps.campagnes.validators.valider_page_capture_html`) : la page doit
+contenir un vrai `<form>` avec au moins un champ (`<input>`, `<textarea>`
+ou `<select>`) — sinon rejetée avec un message explicite. Un script de
+suivi (`apps.simulation.services.construire_page_capture`) est ensuite
+injecté **automatiquement** juste avant `</body>` au moment où la page
+est servie (jamais stocké avec le HTML en base, pour qu'elle reste
+éditable telle que fournie) : il intercepte la soumission de chaque
+`<form>` présent, empêche l'envoi réel (rien ne serait là pour le
+recevoir), note uniquement quels champs contenaient une valeur — jamais
+leur contenu, conformément à REQ-F-04 du cahier des charges — puis
+affiche un message de confirmation neutre. Le consultant n'a donc
+aucun code de suivi à écrire lui-même.
+- `Interaction.champs_renseignes` (nouveau champ `JSONField`, ex.
+  `{"identifiant": true, "mot_de_passe": true}`) stocke ce résultat, pour
+  la page personnalisée comme pour la page générique par défaut
+  (unifié dans `CapturePageView.post`) — toujours des booléens, jamais de
+  valeur saisie.
+
+### 3. Décision d'hébergement en production (laissée à ma charge)
+
+Aucune nouvelle infrastructure : la page personnalisée est stockée comme
+simple texte en PostgreSQL (déjà en place, déjà sauvegardé) et servie
+dynamiquement par la route publique existante
+`/simulation/capture/<uuid>/` (`CapturePageView`, déjà exposée sans
+authentification, déjà reverse-proxyée par Nginx dans
+`docker-compose.yml`, déjà accessible depuis l'extérieur via le domaine
+que pointera le client — prérequis DNS déjà documenté pour la
+délivrabilité des emails, jour 19). Alternative écartée : un stockage de
+fichiers statiques séparé (S3, volume dédié) — inutile ici, une page
+HTML de quelques dizaines de Ko tient très bien en base, et cela aurait
+introduit une dépendance externe sans bénéfice réel pour ce cas d'usage.
+
+### 4. Vérification
+
+5. **17 nouveaux tests** (`apps/campagnes/tests.py` :
+   `PageCapturePersonnaliseeTests`, 11 tests — rejet sans formulaire,
+   rejet sans champ, rejet page vide, HTML collé, fichier importé, rejet
+   si les deux à la fois, permission par rôle, indicateur dans la liste
+   des scénarios, suppression, lecture ; `apps/simulation/tests.py` :
+   6 tests — script injecté avant `</body>`, clic toujours enregistré,
+   soumission JSON décodée en booléens sans fuite de valeur, page
+   générique inchangée en l'absence de personnalisation, formulaire
+   classique aussi noté en booléens). **134/134 tests backend.**
+6. **Vérifié en conditions réelles via `curl`** contre la pile Docker en
+   cours d'exécution (scénario de test créé puis supprimé après coup) :
+   page personnalisée servie avec le script injecté juste avant
+   `</body>` (confirmé par index de position dans le HTML retourné) ;
+   soumission JSON acceptée (`200`, `{"ok": true}`) et retrouvée en base
+   avec les bons booléens (`{'identifiant': True, 'mdp': True}`), aucune
+   valeur saisie nulle part ; rejet confirmé (`400`, message explicite)
+   d'une page sans `<form>` via l'endpoint réel, authentifié comme
+   consultant ; indicateur `page_capture_personnalisee` confirmé exact
+   dans la liste des scénarios de la campagne.
+7. **Committé et poussé.**
+
 ## Prochaine action précise
 
 **Toutes les demandes explicites sont à jour**, y compris le chantier
-Paramètres complet (backend + frontend) et l'invalidation des jetons JWT
-au changement de mot de passe (voir « Journal du 2026-09-01 », «
-(suite) », « (suite 2) » et « Journal du 2026-09-02 »). Pistes pour la
-suite, aucune n'a encore été redemandée explicitement :
+Paramètres complet (backend + frontend), l'invalidation des jetons JWT au
+changement de mot de passe et la fausse page de capture personnalisable
+(voir « Journal du 2026-09-01 », « (suite) », « (suite 2) », « Journal du
+2026-09-02 » et « (suite) »). Pistes pour la suite, aucune n'a encore été
+redemandée explicitement :
 
 1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
    chaque page développée à sa maquette de référence — d'autant plus
    pertinent après le mode sombre, les départements dynamiques,
    l'annuaire des employés et la nouvelle page Paramètres.
-2. Avant de reprendre, vérifier l'état de Docker Desktop
+2. **Vérification visuelle en navigateur de la page de fausse capture
+   personnalisable** (section « Page de fausse capture » dans la modale
+   de lancement de campagne, `CampagnesPage.jsx`) : vérifié à ce stade
+   par tests automatisés et `curl` contre l'API réelle, mais pas encore
+   cliqué depuis un vrai navigateur (coller du HTML, importer un
+   fichier, voir le badge passer à « Personnalisée »).
+3. Avant de reprendre, vérifier l'état de Docker Desktop
    (`docker compose ps`) — le sprint a connu plusieurs interruptions
    d'environnement (voir « Bugs connus ») ; relancer avec
    `docker compose up -d`, patienter le ralentissement au premier
    démarrage (`WORKER TIMEOUT`), et vérifier `db` (récupération WAL
    possible après un arrêt non propre, résolue automatiquement en 1-3
    minutes, voir logs `database system was not properly shut down`).
-3. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
+4. Comptes de test : `consultant@hshield237.local` / `Consultant1234!`,
    `administrateur@hshield237.local` / `Administrateur1234!` toujours
    valides ; `arthur@hshield237.local` / `Responsable1234!` (rôle
    responsable, désigné pour Direction générale) (voir « Bugs connus »).

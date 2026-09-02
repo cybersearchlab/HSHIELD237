@@ -40,3 +40,30 @@ export async function createDestinataire(campagneId, payload) {
 export async function deleteDestinataire(campagneId, destinataireId) {
   await axiosClient.delete(`/campagnes/${campagneId}/destinataires/${destinataireId}/`);
 }
+
+// Fausse page de capture personnalisée d'un scénario (2026-09-02) — soit
+// du HTML collé, soit un fichier .html importé, jamais les deux à la
+// fois (voir ScenarioPageCaptureView côté backend).
+export async function getPageCapture(scenarioId) {
+  const { data } = await axiosClient.get(`/campagnes/scenarios/${scenarioId}/page-capture/`);
+  return data;
+}
+
+export async function setPageCaptureHtml(scenarioId, html) {
+  const { data } = await axiosClient.put(`/campagnes/scenarios/${scenarioId}/page-capture/`, { html });
+  return data;
+}
+
+export async function setPageCaptureFichier(scenarioId, fichier) {
+  const form = new FormData();
+  form.append("fichier", fichier);
+  const { data } = await axiosClient.put(`/campagnes/scenarios/${scenarioId}/page-capture/`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+export async function deletePageCapture(scenarioId) {
+  const { data } = await axiosClient.delete(`/campagnes/scenarios/${scenarioId}/page-capture/`);
+  return data;
+}

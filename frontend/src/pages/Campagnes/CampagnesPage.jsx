@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { createCampagne, deleteCampagne, listCampagnes, listScenarios, updateCampagne } from "../../api/campagnes";
+import {
+  createCampagne,
+  deleteCampagne,
+  deletePageCapture,
+  getPageCapture,
+  listCampagnes,
+  listScenarios,
+  setPageCaptureFichier,
+  setPageCaptureHtml,
+  updateCampagne,
+} from "../../api/campagnes";
 import { listEmployes } from "../../api/employes";
 import { envoyerCampagne, getConfigurationEnvoi, updateConfigurationEnvoi } from "../../api/simulation";
 import Layout from "../../components/Layout";
@@ -60,6 +70,17 @@ export default function CampagnesPage() {
   const [launchEmployes, setLaunchEmployes] = useState([]);
   const [launchCible, setLaunchCible] = useState("tous"); // "tous" | "un_employe"
   const [launchEmployeId, setLaunchEmployeId] = useState("");
+  // Scénarios de la campagne en cours de lancement — pour proposer, pour
+  // chacun, la personnalisation de sa fausse page de capture.
+  const [launchScenarios, setLaunchScenarios] = useState([]);
+
+  // Sous-modale de personnalisation de la page de capture d'un scénario.
+  const [capturePageScenario, setCapturePageScenario] = useState(null);
+  const [capturePageMode, setCapturePageMode] = useState("html"); // "html" | "fichier"
+  const [capturePageHtml, setCapturePageHtml] = useState("");
+  const [capturePageFichier, setCapturePageFichier] = useState(null);
+  const [capturePageSaving, setCapturePageSaving] = useState(false);
+  const [capturePageError, setCapturePageError] = useState("");
 
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -124,6 +145,7 @@ export default function CampagnesPage() {
     setLaunchEmployes([]);
     setLaunchCible("tous");
     setLaunchEmployeId("");
+    setLaunchScenarios([]);
     setLaunchLoading(true);
     try {
       const [config, scenarios, employes] = await Promise.all([
@@ -140,10 +162,80 @@ export default function CampagnesPage() {
       setLaunchReplyTo(config.reply_to || "");
       setLaunchDelai(config.delai_entre_envois ?? 2);
       setLaunchEmployes(employes);
+      setLaunchScenarios(scenarios);
     } catch {
       showToast("Impossible de charger la configuration d'envoi.", "error");
     } finally {
       setLaunchLoading(false);
+    }
+  }
+
+  // --- Personnalisation de la fausse page de capture d'un scénario ---
+
+  async function openCapturePageModal(scenario) {
+    setCapturePageScenario(scenario);
+    setCapturePageMode("html");
+    setCapturePageHtml("");
+    setCapturePageFichier(null);
+    setCapturePageError("");
+    if (scenario.page_capture_personnalisee) {
+      try {
+        const detail = await getPageCapture(scenario.id);
+        setCapturePageHtml(detail.page_capture_html || "");
+      } catch {
+        showToast("Impossible de charger la page personnalisée existante.", "error");
+      }
+    }
+  }
+
+  function closeCapturePageModal() {
+    setCapturePageScenario(null);
+    setCapturePageFichier(null);
+  }
+
+  function refreshScenarioDansLaListe(scenarioId, patch) {
+    setLaunchScenarios((prev) => prev.map((s) => (s.id === scenarioId ? { ...s, ...patch } : s)));
+  }
+
+  async function handleCapturePageSubmit(event) {
+    event.preventDefault();
+    setCapturePageError("");
+    if (capturePageMode === "fichier" && !capturePageFichier) {
+      setCapturePageError("Choisissez un fichier .html à importer.");
+      return;
+    }
+    if (capturePageMode === "html" && !capturePageHtml.trim()) {
+      setCapturePageError("Collez le code HTML de la page.");
+      return;
+    }
+    setCapturePageSaving(true);
+    try {
+      if (capturePageMode === "fichier") {
+        await setPageCaptureFichier(capturePageScenario.id, capturePageFichier);
+      } else {
+        await setPageCaptureHtml(capturePageScenario.id, capturePageHtml);
+      }
+      refreshScenarioDansLaListe(capturePageScenario.id, { page_capture_personnalisee: true });
+      showToast("Page de capture personnalisée enregistrée.", "success");
+      closeCapturePageModal();
+    } catch (error) {
+      setCapturePageError(error.response?.data?.detail || "Impossible d'enregistrer cette page.");
+    } finally {
+      setCapturePageSaving(false);
+    }
+  }
+
+  async function handleCapturePageSupprimer() {
+    setCapturePageSaving(true);
+    try {
+      await deletePageCapture(capturePageScenario.id);
+      refreshScenarioDansLaListe(capturePageScenario.id, { page_capture_personnalisee: false });
+      showToast("Page de capture réinitialisée (générique).", "success");
+      closeCapturePageModal();
+    } catch {
+      showToast("Impossible de réinitialiser cette page.", "error");
+    } finally {
+      setCapturePageSaving(false);
     }
   }
 
@@ -569,6 +661,38 @@ export default function CampagnesPage() {
                       )}
                     </div>
                     <div className="form-group" style={{ marginBottom: 20 }}>
+                      <label className="form-label">Page de fausse capture</label>
+                      {launchScenarios.length === 0 ? (
+                        <div className="form-hint">Aucun scénario généré pour cette campagne.</div>
+                      ) : (
+                        <div className="team-list" style={{ marginBottom: 8 }}>
+                          {launchScenarios.map((s) => (
+                            <div className="team-row" key={s.id}>
+                              <div className="team-info">
+                                <div className="team-name">{s.objet_email}</div>
+                                <div className="team-email">
+                                  <span
+                                    className={`badge ${s.page_capture_personnalisee ? "badge-success" : "badge-neutral"}`}
+                                  >
+                                    {s.page_capture_personnalisee ? "Page personnalisée" : "Page générique"}
+                                  </span>
+                                </div>
+                              </div>
+                              <button type="button" className="btn btn-sm" onClick={() => openCapturePageModal(s)}>
+                                <i className="ti ti-code" /> {s.page_capture_personnalisee ? "Modifier" : "Personnaliser"}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="form-hint">
+                        Par défaut, la fausse page imite un formulaire de connexion générique. Vous pouvez la
+                        remplacer par une page imitant un service réel : elle doit contenir un vrai formulaire
+                        (balise &lt;form&gt; avec au moins un champ) pour que la soumission puisse être détectée —
+                        le suivi est ajouté automatiquement, aucun code de suivi à écrire vous-même.
+                      </div>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 20 }}>
                       <label className="form-label">Destinataires *</label>
                       {launchEmployes.length === 0 ? (
                         <div className="form-hint" style={{ color: "var(--red)" }}>
@@ -651,6 +775,95 @@ export default function CampagnesPage() {
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={launchLoading || launchSaving}>
                   <i className="ti ti-send" /> {launchSaving ? "Envoi en cours…" : "Lancer la campagne"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {capturePageScenario && (
+        <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && closeCapturePageModal()}>
+          <div className="modal" style={{ maxWidth: 640 }}>
+            <div className="modal-header">
+              <h3>Page de capture — {capturePageScenario.objet_email}</h3>
+              <div className="close-btn" role="button" tabIndex={0} onClick={closeCapturePageModal}>
+                <i className="ti ti-x" />
+              </div>
+            </div>
+            <form onSubmit={handleCapturePageSubmit}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-check" style={{ marginBottom: 8 }}>
+                    <input
+                      type="radio"
+                      name="capture-page-mode"
+                      checked={capturePageMode === "html"}
+                      onChange={() => setCapturePageMode("html")}
+                    />
+                    Coller le code HTML
+                  </label>
+                  <label className="form-check" style={{ marginBottom: 8 }}>
+                    <input
+                      type="radio"
+                      name="capture-page-mode"
+                      checked={capturePageMode === "fichier"}
+                      onChange={() => setCapturePageMode("fichier")}
+                    />
+                    Importer un fichier .html
+                  </label>
+                </div>
+                {capturePageMode === "html" ? (
+                  <div className="form-group">
+                    <label className="form-label">Code HTML de la page</label>
+                    <textarea
+                      className="form-textarea"
+                      style={{ minHeight: 220, fontFamily: "monospace", fontSize: 12 }}
+                      placeholder="<html>…<form>…</form>…</html>"
+                      value={capturePageHtml}
+                      onChange={(e) => setCapturePageHtml(e.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <label className="form-label">Fichier .html</label>
+                    <input
+                      className="form-input"
+                      type="file"
+                      accept=".html,.htm,text/html"
+                      onChange={(e) => setCapturePageFichier(e.target.files?.[0] || null)}
+                    />
+                  </div>
+                )}
+                <div className="form-hint">
+                  La page doit contenir un vrai formulaire (&lt;form&gt; avec au moins un champ &lt;input&gt;,
+                  &lt;textarea&gt; ou &lt;select&gt;) — c'est la seule contrainte : le suivi de la soumission
+                  (détecter si des champs ont été remplis, jamais leur contenu) est ajouté automatiquement à la
+                  page au moment où elle est servie à l'employé testé.
+                </div>
+                {capturePageError && (
+                  <div className="form-error-text">
+                    <i className="ti ti-alert-circle" /> {capturePageError}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                {capturePageScenario.page_capture_personnalisee && (
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ marginRight: "auto" }}
+                    disabled={capturePageSaving}
+                    onClick={handleCapturePageSupprimer}
+                  >
+                    <i className="ti ti-refresh" /> Revenir à la page générique
+                  </button>
+                )}
+                <button type="button" className="btn" onClick={closeCapturePageModal}>
+                  Annuler
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={capturePageSaving}>
+                  {capturePageSaving ? "Enregistrement…" : "Enregistrer"}
                 </button>
               </div>
             </form>

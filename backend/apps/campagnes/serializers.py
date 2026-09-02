@@ -20,6 +20,13 @@ class DepartementSerializer(serializers.ModelSerializer):
 
 
 class ScenarioPhishingSerializer(serializers.ModelSerializer):
+    # Le HTML complet de la page personnalisée n'est volontairement pas
+    # exposé ici (peut peser jusqu'à 2 Mo — voir apps.campagnes.validators)
+    # : seul un indicateur et sa date sont utiles à la liste des scénarios
+    # d'une campagne. Le contenu complet se récupère via
+    # GET /api/campagnes/scenarios/<id>/page-capture/ (ScenarioPageCaptureView).
+    page_capture_personnalisee = serializers.SerializerMethodField()
+
     class Meta:
         model = ScenarioPhishing
         fields = [
@@ -36,8 +43,30 @@ class ScenarioPhishingSerializer(serializers.ModelSerializer):
             "est_html",
             "date_creation",
             "departements_cibles",
+            "page_capture_personnalisee",
+            "page_capture_date_maj",
         ]
-        read_only_fields = ["id", "date_creation"]
+        read_only_fields = ["id", "date_creation", "page_capture_personnalisee", "page_capture_date_maj"]
+
+    def get_page_capture_personnalisee(self, obj):
+        return bool(obj.page_capture_html)
+
+
+class PageCaptureUploadSerializer(serializers.Serializer):
+    """Accepte soit du HTML collé directement, soit un fichier .html
+    importé — jamais les deux à la fois (voir ScenarioPageCaptureView)."""
+
+    html = serializers.CharField(required=False, allow_blank=True)
+    fichier = serializers.FileField(required=False)
+
+    def validate(self, data):
+        html = data.get("html")
+        fichier = data.get("fichier")
+        if not html and not fichier:
+            raise serializers.ValidationError("Fournissez le code HTML de la page, ou importez un fichier .html.")
+        if html and fichier:
+            raise serializers.ValidationError("Fournissez soit le code HTML collé, soit un fichier — pas les deux.")
+        return data
 
 
 class DestinataireSerializer(serializers.ModelSerializer):

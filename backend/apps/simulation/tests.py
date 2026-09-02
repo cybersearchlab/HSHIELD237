@@ -70,6 +70,87 @@ class TrackingInteractionTests(TestCase):
         self.assertNotIn("email", champs)
         self.assertNotIn("password", champs)
 
+    def test_soumission_formulaire_classique_note_les_champs_renseignes_en_booleens(self):
+        self.client.post(self.capture_url, {"email": "victime@entreprise.cm", "password": "MotDePasseSecret123"})
+        interaction = self.tracking.interactions.get(type=TypeInteraction.SOUMISSION)
+        self.assertEqual(interaction.champs_renseignes, {"email": True, "password": True})
+
+    def test_soumission_avec_champ_vide_note_false(self):
+        self.client.post(self.capture_url, {"email": "victime@entreprise.cm", "password": ""})
+        interaction = self.tracking.interactions.get(type=TypeInteraction.SOUMISSION)
+        self.assertEqual(interaction.champs_renseignes, {"email": True, "password": False})
+
+
+class PageCapturePersonnaliseeTrackingTests(TestCase):
+    """Fausse page de capture personnalisée (2026-09-02) : servie à la
+    place de la page générique, script de suivi injecté automatiquement,
+    soumission détectée sans jamais stocker les valeurs saisies — voir
+    apps.simulation.services.construire_page_capture et
+    apps.campagnes.validators.valider_page_capture_html."""
+
+    HTML_PERSONNALISE = (
+        "<html><body><h1>Portail RH</h1>"
+        "<form><input name='identifiant'><input name='mot_de_passe' type='password'></form>"
+        "</body></html>"
+    )
+
+    def setUp(self):
+        self.campagne = Campagne.objects.create(departement=Departement.IT)
+        self.scenario = ScenarioPhishing.objects.create(
+            campagne=self.campagne,
+            objet_email="Test de suivi personnalisé",
+            corps_email="Corps de test.",
+            url_fausse_page="https://exemple.cm/",
+            secteur_cible="Test",
+            page_capture_html=self.HTML_PERSONNALISE,
+        )
+        self.tracking = EnvoiTracking.objects.create(
+            scenario=self.scenario, destinataire_email="employe-test@entreprise.cm"
+        )
+        self.capture_url = reverse("simulation-capture", kwargs={"tracking_id": self.tracking.id})
+
+    def test_page_personnalisee_servie_avec_script_de_suivi_injecte(self):
+        response = self.client.get(self.capture_url)
+        self.assertEqual(response.status_code, 200)
+        contenu = response.content.decode("utf-8")
+        self.assertIn("Portail RH", contenu)
+        self.assertIn("<script>", contenu)
+        self.assertIn("fetch(", contenu)
+        # Injecté juste avant la fermeture du <body>, pas en dehors.
+        self.assertLess(contenu.index("fetch("), contenu.rindex("</body>"))
+
+    def test_visite_de_la_page_personnalisee_enregistre_un_clic(self):
+        self.client.get(self.capture_url)
+        self.assertEqual(self.tracking.interactions.filter(type=TypeInteraction.CLIC).count(), 1)
+
+    def test_soumission_json_du_script_de_suivi_enregistree_sans_valeurs(self):
+        import json as json_module
+
+        response = self.client.post(
+            self.capture_url,
+            data=json_module.dumps({"champs": {"identifiant": True, "mot_de_passe": True}}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"ok": True})
+        interaction = self.tracking.interactions.get(type=TypeInteraction.SOUMISSION)
+        self.assertEqual(interaction.champs_renseignes, {"identifiant": True, "mot_de_passe": True})
+        # Confirme qu'aucune valeur saisie n'a pu se glisser dans le JSON stocké.
+        self.assertNotIn("MotDePasseSecret", str(interaction.champs_renseignes))
+
+    def test_page_sans_personnalisation_reste_la_page_generique(self):
+        scenario_generique = ScenarioPhishing.objects.create(
+            campagne=self.campagne,
+            objet_email="Sans personnalisation",
+            corps_email="Corps.",
+            url_fausse_page="https://exemple.cm/generique/",
+            secteur_cible="Test",
+        )
+        tracking = EnvoiTracking.objects.create(scenario=scenario_generique, destinataire_email="autre@entreprise.cm")
+        response = self.client.get(reverse("simulation-capture", kwargs={"tracking_id": tracking.id}))
+        self.assertContains(response, "Vérification de compte requise")
+        self.assertNotIn("Portail RH", response.content.decode("utf-8"))
+
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 class SegmentationDepartementTests(TestCase):

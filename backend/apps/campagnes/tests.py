@@ -407,3 +407,128 @@ class DepartementRegistryTests(TestCase):
         response = self.client.delete(f"/api/departements/{dept.id}/")
         self.assertEqual(response.status_code, 400)
         self.assertTrue(DepartementConfigure.objects.filter(code="comptabilite").exists())
+
+
+class PageCapturePersonnaliseeTests(TestCase):
+    """Personnalisation de la fausse page de capture d'un scénario
+    (2026-09-02) — voir ScenarioPageCaptureView et
+    apps.campagnes.validators.valider_page_capture_html."""
+
+    HTML_VALIDE = (
+        "<html><body><form><input name='email'><input name='password' "
+        "type='password'></form></body></html>"
+    )
+
+    def setUp(self):
+        self.consultant = Utilisateur.objects.create_user(
+            username="consultant-capture",
+            email="consultant-capture@hshield237.local",
+            password="Test1234!",
+            role=Role.CONSULTANT,
+        )
+        self.employe = Utilisateur.objects.create_user(
+            username="employe-capture",
+            email="employe-capture@hshield237.local",
+            password="Test1234!",
+            role=Role.EMPLOYE,
+        )
+        self.campagne = Campagne.objects.create(departement=Departement.IT)
+        self.scenario = ScenarioPhishing.objects.create(
+            campagne=self.campagne,
+            objet_email="Vérification de compte",
+            corps_email="Contenu.",
+            url_fausse_page="https://exemple.cm/",
+            secteur_cible="Test",
+        )
+        self.url = f"/api/campagnes/scenarios/{self.scenario.id}/page-capture/"
+
+    def test_refuse_sans_authentification(self):
+        response = self.client.put(self.url, {"html": self.HTML_VALIDE}, content_type="application/json")
+        self.assertIn(response.status_code, (401, 403))
+
+    def test_refuse_pour_un_role_non_autorise(self):
+        self.client.force_login(self.employe)
+        response = self.client.put(self.url, {"html": self.HTML_VALIDE}, content_type="application/json")
+        self.assertEqual(response.status_code, 403)
+
+    def test_page_sans_formulaire_refusee(self):
+        self.client.force_login(self.consultant)
+        response = self.client.put(
+            self.url, {"html": "<html><body><p>Rien à suivre ici.</p></body></html>"}, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.scenario.refresh_from_db()
+        self.assertEqual(self.scenario.page_capture_html, "")
+
+    def test_page_avec_formulaire_mais_sans_champ_refusee(self):
+        self.client.force_login(self.consultant)
+        response = self.client.put(
+            self.url, {"html": "<html><body><form></form></body></html>"}, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_page_vide_refusee(self):
+        self.client.force_login(self.consultant)
+        response = self.client.put(self.url, {"html": "   "}, content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_html_colle_accepte_et_enregistre(self):
+        self.client.force_login(self.consultant)
+        response = self.client.put(self.url, {"html": self.HTML_VALIDE}, content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["personnalisee"])
+        self.scenario.refresh_from_db()
+        self.assertEqual(self.scenario.page_capture_html, self.HTML_VALIDE)
+        self.assertIsNotNone(self.scenario.page_capture_date_maj)
+
+    def test_fichier_html_accepte_et_enregistre(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
+
+        self.client.force_login(self.consultant)
+        fichier = SimpleUploadedFile("page.html", self.HTML_VALIDE.encode("utf-8"), content_type="text/html")
+        response = self.client.put(
+            self.url, encode_multipart(BOUNDARY, {"fichier": fichier}), content_type=MULTIPART_CONTENT
+        )
+        self.assertEqual(response.status_code, 200)
+        self.scenario.refresh_from_db()
+        self.assertEqual(self.scenario.page_capture_html, self.HTML_VALIDE)
+
+    def test_html_et_fichier_a_la_fois_refuse(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test.client import BOUNDARY, MULTIPART_CONTENT, encode_multipart
+
+        self.client.force_login(self.consultant)
+        fichier = SimpleUploadedFile("page.html", self.HTML_VALIDE.encode("utf-8"), content_type="text/html")
+        response = self.client.put(
+            self.url,
+            encode_multipart(BOUNDARY, {"html": self.HTML_VALIDE, "fichier": fichier}),
+            content_type=MULTIPART_CONTENT,
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_scenario_liste_indique_la_personnalisation(self):
+        self.client.force_login(self.consultant)
+        self.client.put(self.url, {"html": self.HTML_VALIDE}, content_type="application/json")
+        response = self.client.get(f"/api/campagnes/{self.campagne.id}/scenarios/")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data[0]["page_capture_personnalisee"])
+        # Le HTML complet n'est jamais renvoyé dans la liste.
+        self.assertNotIn("page_capture_html", response.data[0])
+
+    def test_suppression_revient_a_la_page_generique(self):
+        self.client.force_login(self.consultant)
+        self.client.put(self.url, {"html": self.HTML_VALIDE}, content_type="application/json")
+        response = self.client.delete(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["personnalisee"])
+        self.scenario.refresh_from_db()
+        self.assertEqual(self.scenario.page_capture_html, "")
+        self.assertIsNone(self.scenario.page_capture_date_maj)
+
+    def test_lecture_retourne_le_html_complet(self):
+        self.client.force_login(self.consultant)
+        self.client.put(self.url, {"html": self.HTML_VALIDE}, content_type="application/json")
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["page_capture_html"], self.HTML_VALIDE)

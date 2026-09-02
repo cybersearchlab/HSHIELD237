@@ -55,6 +55,14 @@ class Interaction(models.Model):
     type = models.CharField(max_length=20, choices=TypeInteraction.choices)
     horodatage = models.DateTimeField(auto_now_add=True)
     adresse_ip = models.GenericIPAddressField(blank=True, null=True)
+    # Pour une SOUMISSION : quels champs du formulaire (générique ou page
+    # personnalisée, voir apps.campagnes.ScenarioPhishing.page_capture_html)
+    # contenaient une valeur au moment de l'envoi — uniquement des booléens
+    # (ex. {"email": true, "password": true}), jamais le contenu saisi
+    # lui-même (voir REQ-F-04 du cahier des charges : aucune donnée
+    # sensible réelle n'est stockée). Rempli par
+    # apps.simulation.views._champs_renseignes_depuis_requete.
+    champs_renseignes = models.JSONField(blank=True, null=True)
 
     class Meta:
         ordering = ["-horodatage"]

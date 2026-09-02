@@ -1,6 +1,9 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,10 +11,18 @@ from rest_framework.viewsets import ModelViewSet
 
 from apps.accounts.models import Role
 from apps.accounts.permissions import IsAdministrateur, IsConsultant, IsResponsable
+from apps.gouvernance.views import enregistrer_audit
 
-from .models import Campagne, DepartementConfigure, Destinataire
-from .serializers import CampagneSerializer, DepartementSerializer, DestinataireSerializer, ScenarioPhishingSerializer
+from .models import Campagne, DepartementConfigure, Destinataire, ScenarioPhishing
+from .serializers import (
+    CampagneSerializer,
+    DepartementSerializer,
+    DestinataireSerializer,
+    PageCaptureUploadSerializer,
+    ScenarioPhishingSerializer,
+)
 from .services import historique_par_departement, score_campagne, score_par_departement
+from .validators import TAILLE_MAX_OCTETS, valider_page_capture_html
 
 CAN_MANAGE_CAMPAGNE = [IsAuthenticated & (IsConsultant | IsAdministrateur)]
 CAN_VIEW_SCENARIOS = [IsAuthenticated & (IsConsultant | IsAdministrateur | IsResponsable)]
@@ -130,6 +141,82 @@ class ScenarioListView(APIView):
                 )
         scenarios = campagne.scenarios.order_by("-date_creation")
         return Response(ScenarioPhishingSerializer(scenarios, many=True).data)
+
+
+class ScenarioPageCaptureView(APIView):
+    """GET/PUT/DELETE /api/campagnes/scenarios/<id>/page-capture/ —
+    personnalisation de la fausse page de capture d'un scénario (2026-09-02).
+    Le consultant fournit soit du HTML collé, soit un fichier .html importé
+    (voir PageCaptureUploadSerializer) ; validé (voir
+    apps.campagnes.validators) puis stocké sur ScenarioPhishing. Un script
+    de suivi est injecté automatiquement à la volée quand la page est
+    servie (voir apps.simulation.views.CapturePageView), jamais ici — la
+    page reste éditable telle que fournie."""
+
+    permission_classes = CAN_MANAGE_CAMPAGNE
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_object(self, scenario_id):
+        return get_object_or_404(ScenarioPhishing, pk=scenario_id)
+
+    def get(self, request, scenario_id):
+        scenario = self.get_object(scenario_id)
+        return Response(
+            {
+                "scenario_id": scenario.id,
+                "personnalisee": bool(scenario.page_capture_html),
+                "page_capture_html": scenario.page_capture_html,
+                "page_capture_date_maj": scenario.page_capture_date_maj,
+            }
+        )
+
+    def put(self, request, scenario_id):
+        scenario = self.get_object(scenario_id)
+        upload = PageCaptureUploadSerializer(data=request.data)
+        upload.is_valid(raise_exception=True)
+        fichier = upload.validated_data.get("fichier")
+
+        if fichier is not None:
+            if fichier.size > TAILLE_MAX_OCTETS:
+                return Response({"detail": "Fichier trop volumineux (2 Mo maximum)."}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                contenu = fichier.read().decode("utf-8")
+            except UnicodeDecodeError:
+                return Response(
+                    {"detail": "Le fichier doit être un fichier texte HTML encodé en UTF-8."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            contenu = upload.validated_data.get("html", "")
+
+        try:
+            contenu = valider_page_capture_html(contenu)
+        except DjangoValidationError as exc:
+            return Response({"detail": exc.messages[0]}, status=status.HTTP_400_BAD_REQUEST)
+
+        scenario.page_capture_html = contenu
+        scenario.page_capture_date_maj = timezone.now()
+        scenario.save(update_fields=["page_capture_html", "page_capture_date_maj"])
+        enregistrer_audit(
+            "personnalisation_page_capture",
+            request.user,
+            {"scenario_id": scenario.id, "campagne_id": scenario.campagne_id, "source": "fichier" if fichier else "html"},
+        )
+        return Response(
+            {"detail": "Page de capture personnalisée enregistrée.", "personnalisee": True, "page_capture_date_maj": scenario.page_capture_date_maj}
+        )
+
+    def delete(self, request, scenario_id):
+        scenario = self.get_object(scenario_id)
+        scenario.page_capture_html = ""
+        scenario.page_capture_date_maj = None
+        scenario.save(update_fields=["page_capture_html", "page_capture_date_maj"])
+        enregistrer_audit(
+            "suppression_page_capture_personnalisee",
+            request.user,
+            {"scenario_id": scenario.id, "campagne_id": scenario.campagne_id},
+        )
+        return Response({"detail": "Page de capture réinitialisée (page générique par défaut).", "personnalisee": False})
 
 
 class CampagneScoreView(APIView):

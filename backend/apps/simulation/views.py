@@ -1,6 +1,7 @@
 import base64
+import json
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -19,7 +20,12 @@ from .serializers import (
     EnvoiTrackingSerializer,
     EnvoyerCampagneRequestSerializer,
 )
-from .services import EnvoiCampagneError, EnvoiCampagneService
+from .services import EnvoiCampagneError, EnvoiCampagneService, construire_page_capture
+
+# Une soumission ne peut raisonnablement provenir que d'un formulaire
+# borné — limite le nombre de champs pris en compte pour éviter qu'une
+# requête forgée ne gonfle abusivement le JSON stocké.
+NOMBRE_MAX_CHAMPS_SUIVIS = 50
 
 CAN_MANAGE_ENVOI = [IsAuthenticated & (IsConsultant | IsAdministrateur)]
 
@@ -32,6 +38,31 @@ def _client_ip(request):
     if forwarded:
         return forwarded.split(",")[0].strip()
     return request.META.get("REMOTE_ADDR")
+
+
+def _champs_renseignes_depuis_requete(request):
+    """Extrait, pour une soumission de fausse page de capture, quels
+    champs contenaient une valeur — jamais leur contenu. Deux formats
+    possibles : JSON (script de suivi injecté dans une page personnalisée,
+    voir apps.simulation.services.construire_page_capture) ou
+    formulaire classique (page générique par défaut, JS désactivé, ou
+    page personnalisée sans JavaScript actif côté navigateur)."""
+    if request.content_type == "application/json":
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            return None
+        champs = payload.get("champs")
+        if not isinstance(champs, dict):
+            return None
+        return {str(cle): bool(valeur) for cle, valeur in list(champs.items())[:NOMBRE_MAX_CHAMPS_SUIVIS]}
+    if request.POST:
+        return {
+            cle: bool(str(valeur).strip())
+            for cle, valeur in list(request.POST.items())[:NOMBRE_MAX_CHAMPS_SUIVIS]
+            if cle != "csrfmiddlewaretoken"
+        }
+    return None
 
 
 class ConfigurationEnvoiView(APIView):
@@ -100,11 +131,33 @@ class CapturePageView(View):
     def get(self, request, tracking_id):
         tracking = get_object_or_404(EnvoiTracking, pk=tracking_id)
         Interaction.objects.create(envoi=tracking, type=TypeInteraction.CLIC, adresse_ip=_client_ip(request))
-        return render(request, "simulation/capture.html", {"scenario": tracking.scenario})
+        scenario = tracking.scenario
+        if scenario.page_capture_html:
+            # Rendu direct (pas via le moteur de templates Django) : le
+            # HTML vient du consultant et peut légitimement contenir des
+            # accolades ({{ }}, {% %}) sans rapport avec la syntaxe des
+            # templates Django — les faire interpréter casserait la page
+            # ou lèverait une erreur de rendu.
+            html = construire_page_capture(scenario.page_capture_html)
+            return HttpResponse(html, content_type="text/html; charset=utf-8")
+        return render(request, "simulation/capture.html", {"scenario": scenario})
 
     def post(self, request, tracking_id):
         tracking = get_object_or_404(EnvoiTracking, pk=tracking_id)
-        Interaction.objects.create(envoi=tracking, type=TypeInteraction.SOUMISSION, adresse_ip=_client_ip(request))
+        champs = _champs_renseignes_depuis_requete(request)
+        Interaction.objects.create(
+            envoi=tracking, type=TypeInteraction.SOUMISSION, adresse_ip=_client_ip(request), champs_renseignes=champs
+        )
+        # Soumission via le script de suivi injecté dans une page
+        # personnalisée (fetch JSON, voir apps.simulation.services) : la
+        # confirmation est déjà affichée côté client, une simple
+        # confirmation suffit ici.
+        if request.content_type == "application/json":
+            return JsonResponse({"ok": True})
+        # Formulaire classique (page générique, ou page personnalisée sans
+        # JavaScript actif côté navigateur) : rendu de la page générique
+        # de confirmation dans tous les cas — cohérent avec le principe
+        # qu'aucune page personnalisée n'a de variante "soumis" propre.
         return render(request, "simulation/capture.html", {"scenario": tracking.scenario, "soumis": True})
 
 

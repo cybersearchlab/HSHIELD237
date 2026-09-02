@@ -107,6 +107,20 @@ class ScenarioPhishing(models.Model):
             "actuelle des départements."
         ),
     )
+    # Fausse page de capture personnalisée (2026-09-02) : HTML fourni par le
+    # consultant (collé ou importé depuis un fichier .html), imitant
+    # l'apparence d'un service réel. Vide = page générique par défaut
+    # (voir apps.simulation.views.CapturePageView, templates/simulation/
+    # capture.html). Un script de suivi est injecté automatiquement au
+    # moment de servir la page (voir apps.simulation.services.
+    # construire_page_capture) — jamais stocké tel quel ici, pour que la
+    # page reste éditable/relisible sans le script parasite le
+    # contaminant. Validé à l'enregistrement : doit contenir un vrai
+    # formulaire (voir apps.campagnes.validators.valider_page_capture_html)
+    # — c'est le mécanisme qui « force » toute page importée à respecter le
+    # minimum nécessaire au suivi de soumission.
+    page_capture_html = models.TextField(blank=True, default="")
+    page_capture_date_maj = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         ordering = ["-date_creation"]

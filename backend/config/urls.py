@@ -21,6 +21,7 @@ from apps.campagnes.views import (
     DestinataireListCreateView,
     HistoriqueParDepartementView,
     ScenarioListView,
+    ScenarioPageCaptureView,
     ScoreParDepartementView,
 )
 from apps.employes.views import EmployeViewSet
@@ -63,6 +64,11 @@ urlpatterns = [
         "api/campagnes/<int:campagne_id>/scenarios/",
         ScenarioListView.as_view(),
         name="campagne-scenarios",
+    ),
+    path(
+        "api/campagnes/scenarios/<int:scenario_id>/page-capture/",
+        ScenarioPageCaptureView.as_view(),
+        name="scenario-page-capture",
     ),
     path(
         "api/campagnes/<int:campagne_id>/destinataires/",
