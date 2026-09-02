@@ -1,10 +1,10 @@
 # H-SHIELD237
 
 Plateforme camerounaise de simulation de phishing à but de sensibilisation
-(security awareness training) — permet à un consultant de générer, envoyer
-et suivre des campagnes de phishing simulé auprès des employés d'une
-entreprise cliente, dans un cadre de gouvernance qui exige un consentement
-validé avant tout envoi.
+(security awareness training) — permet à un consultant de générer,
+envoyer et suivre des campagnes de phishing simulé auprès des employés
+d'une entreprise cliente, dans un cadre de gouvernance qui exige un
+consentement explicite et validé avant tout envoi.
 
 Développée dans le cadre d'un sprint de finalisation de 20 jours (14 août
 → 2 septembre 2026, IUSJC Eyang · CyberSecurity Research Laboratory) —
@@ -12,12 +12,154 @@ voir `docs/rapport_planification.md` pour le détail jour par jour, et
 `docs/CONTEXTE_PROJET.md` pour le journal complet des décisions prises en
 cours de route.
 
-> **Ce README est un premier jet.** Les instructions complètes
-> d'installation, de configuration et de déploiement sont prévues au
-> Jour 19 du sprint (`docs/DEPLOIEMENT.md`, à venir). Cette version se
-> concentre sur les limitations de sécurité connues de la plateforme —
-> à documenter *avant* tout déploiement au-delà d'un usage local/pilote,
-> plutôt que de les découvrir en production.
+## Fonctionnalités principales
+
+- **Génération de scénarios de phishing** — par IA (API Claude,
+  contextualisée au marché camerounais) ou saisie manuelle (texte déjà
+  rédigé, sans dépendre d'une clé API).
+- **Campagnes segmentées par département**, avec annuaire des employés et
+  envoi individuel ciblé (jamais une adresse de diffusion visible par
+  tous les destinataires).
+- **Gouvernance intégrée** — aucune campagne ne peut être lancée sans
+  consentement explicite validé par le responsable désigné du
+  département concerné ; journal d'audit des actions sensibles.
+- **Suivi des interactions** — ouverture (pixel), clic, soumission sur
+  une fausse page de capture (générique par défaut, ou personnalisée par
+  le consultant), avec score de vulnérabilité composite.
+- **Rapports PDF**, tableau de bord, historique par département.
+- **Paramètres applicatifs** — profil, sécurité, gestion de l'équipe,
+  clés API/services externes — pilotables depuis l'application, sans
+  toucher aux fichiers de configuration après le déploiement initial.
+
+## Prérequis
+
+Cette liste concerne la machine de développement — à distinguer de ce qui
+tourne à l'intérieur des conteneurs Docker en production (voir
+`docs/DEPLOIEMENT.md` pour l'équipe qui héberge la plateforme).
+
+| Logiciel | Usage |
+|---|---|
+| Git | Gestion de version. |
+| Node.js LTS (20+) | Développement du frontend React/Vite, et exécution des tests end-to-end (`e2e/`) depuis l'hôte. |
+| Python 3.12 | Développement local du backend Django hors conteneur (autocomplétion, migrations, tests rapides). |
+| Docker Desktop | Construit et orchestre les conteneurs du projet (`db`, `backend`, `frontend`, `nginx`) définis dans `docker-compose.yml`. |
+| WSL2 (Windows) | Backend requis par Docker Desktop sous Windows. |
+| Un client PostgreSQL (psql, pgAdmin, DBeaver) | Pour inspecter directement les tables de la base — le serveur PostgreSQL complet n'a pas besoin d'être installé en local, il tourne déjà dans Docker. |
+
+Détail complet des prérequis et de l'ordre d'installation conseillé :
+voir `docs/rapport_planification.md`, section 1.
+
+## Installation et démarrage
+
+```bash
+git clone <url-du-depot> hshield237
+cd hshield237
+cp .env.example .env
+# Renseigner .env — voir « Variables d'environnement » ci-dessous.
+
+docker compose up -d
+docker compose ps      # les 4 services doivent afficher "healthy"
+```
+
+L'application est alors accessible sur `https://localhost` (certificat
+TLS auto-signé en développement — voir `nginx/certs/README.md` pour en
+générer un, ou `docs/DEPLOIEMENT.md` pour un certificat réel en
+production). Les migrations s'appliquent automatiquement au démarrage du
+service `backend`.
+
+**Premier compte administrateur** — aucun compte n'existe par défaut :
+
+```bash
+docker compose exec backend python manage.py createsuperuser
+```
+
+`createsuperuser` crée un compte technique (`is_staff`/`is_superuser`)
+mais **ne lui donne pas automatiquement le rôle applicatif
+« administrateur »** (champ `role`, distinct des droits Django) —
+complétez ensuite :
+
+```bash
+docker compose exec backend python manage.py shell -c "
+from apps.accounts.models import Utilisateur, Role
+u = Utilisateur.objects.get(email='<email-saisi-a-l-instant>')
+u.role = Role.ADMINISTRATEUR
+u.save(update_fields=['role'])
+"
+```
+
+Ce compte peut ensuite créer les autres comptes (consultant, responsable,
+administrateur) directement depuis l'application — Paramètres > Équipe.
+
+**Docker Desktop, premier démarrage** : un ralentissement notable
+(`WORKER TIMEOUT` côté backend, ou récupération WAL de PostgreSQL après
+un arrêt non propre) est possible sur les toutes premières minutes —
+il se résorbe automatiquement ; `docker compose restart backend` en cas
+de doute persistant (voir `docs/CONTEXTE_PROJET.md`, « Bugs connus »).
+
+## Variables d'environnement (`.env`, jamais commité)
+
+Voir `.env.example` pour le fichier de référence complet (valeurs
+d'exemple, sans secret réel). Résumé :
+
+| Variable | Rôle |
+|---|---|
+| `SECRET_KEY` | Clé secrète Django — générer une valeur unique par environnement, jamais réutiliser celle d'exemple. |
+| `DEBUG` | `False` en production, toujours (vérifié — voir « Limitations connues » ci-dessous). |
+| `ALLOWED_HOSTS` | Domaine(s) réel(s) de la plateforme, séparés par virgule. |
+| `CORS_ALLOWED_ORIGINS` | Origine(s) autorisée(s) pour le frontend (généralement le même domaine, en `https://`). |
+| `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Connexion PostgreSQL (service `db` du `docker-compose.yml`). |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Génération de scénario par IA (console.anthropic.com — indépendant de tout abonnement Claude utilisé pour développer le projet). Peut rester vide : le mode manuel fonctionne sans elle. |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` | Compte SMTP utilisé pour l'envoi des campagnes — **jamais un serveur auto-hébergé** ; voir le rappel de délivrabilité ci-dessous. |
+| `SIMULATION_BASE_URL` | URL publique de base utilisée pour construire les liens de la fausse page de capture insérés dans les emails simulés — doit correspondre au domaine réel accessible par les destinataires. |
+| `VITE_API_BASE_URL` | Base des appels API côté frontend (`/api` par défaut, relatif — ne change généralement pas). |
+
+Ces mêmes réglages `ANTHROPIC_API_KEY`/`ANTHROPIC_MODEL`/`EMAIL_*` sont
+aussi modifiables **après coup**, directement depuis l'application
+(Paramètres > API & IA, administrateur uniquement) — la valeur saisie
+là prime alors sur celle de `.env`.
+
+## Structure du projet
+
+```
+hshield237/
+├── docker-compose.yml
+├── .env.example
+├── README.md                    (ce fichier)
+├── docs/
+│   ├── rapport_planification.md (plan détaillé des 20 jours du sprint)
+│   ├── CONTEXTE_PROJET.md       (journal complet des décisions)
+│   ├── DEPLOIEMENT.md           (guide pour l'équipe IT du client)
+│   ├── charte_graphique.html
+│   └── maquettes/                (une maquette HTML par page)
+├── backend/                      (Django + Django REST Framework)
+│   ├── config/settings/          (base.py, dev.py, prod.py)
+│   └── apps/
+│       ├── accounts/              (comptes, rôles, JWT, équipe)
+│       ├── campagnes/              (Campagne, ScenarioPhishing, départements)
+│       ├── generation/             (génération IA + mode manuel)
+│       ├── simulation/             (envoi SMTP, tracking, fausse page)
+│       ├── gouvernance/            (consentement, journal d'audit)
+│       ├── rapports/               (génération PDF)
+│       ├── templates_departement/  (templates de scénario réutilisables)
+│       ├── employes/               (annuaire des employés)
+│       └── parametres/             (clés API/services externes)
+├── frontend/                     (React + Vite)
+│   └── src/pages/                 (une page par écran de l'application)
+├── nginx/                        (reverse proxy, terminaison TLS)
+└── e2e/                          (tests end-to-end Playwright — voir e2e/README.md)
+```
+
+## Rappel important — délivrabilité des emails simulés
+
+**La plateforme ne peut pas, à elle seule, garantir qu'un email simulé
+échappe aux filtres anti-spam du destinataire.** La délivrabilité dépend
+entièrement de l'autorisation du domaine ou de l'adresse IP d'envoi par
+l'équipe IT du client — configuration DNS (enregistrements SPF, DKIM,
+DMARC) sur le domaine d'envoi utilisé, et éventuellement mise en liste
+blanche du service SMTP ou de l'adresse IP sortante auprès de la
+passerelle de messagerie de l'entreprise cliente. **C'est un prérequis
+côté client, pas un défaut applicatif** — voir `docs/DEPLOIEMENT.md`
+pour le détail destiné à l'équipe IT chargée de cette autorisation.
 
 ## Limitations de sécurité connues
 
@@ -81,9 +223,7 @@ déploiement au-delà d'un client pilote encadré.
   une action explicite de la personne testée).
 - **La délivrabilité des emails simulés dépend entièrement de la
   configuration DNS (SPF, DKIM, DMARC) du domaine d'envoi choisi par le
-  client** — H-SHIELD237 ne peut pas garantir qu'un email simulé évite
-  les filtres anti-spam si cette configuration n'est pas en place côté
-  client (voir le guide de déploiement à venir, Jour 19).
+  client** — voir le rappel dédié ci-dessus et `docs/DEPLOIEMENT.md`.
 
 ## Tests
 

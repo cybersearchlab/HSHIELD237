@@ -6,6 +6,19 @@
 
 ## État d'avancement
 
+- **2026-09-02 (suite 4) — Jour 19 : README complet et guide de
+  déploiement.** `README.md` étendu (présentation, prérequis, procédure
+  d'installation, variables d'environnement, structure du projet,
+  rappel explicite de délivrabilité — l'ensemble venant s'ajouter au
+  contenu du Jour 17 déjà en place). Nouveau `docs/DEPLOIEMENT.md`,
+  destiné à l'équipe IT du client : architecture des 4 services,
+  certificat TLS, `.env` en production, **section dédiée à
+  l'autorisation DNS (SPF/DKIM/DMARC) et à la mise en liste blanche du
+  domaine/IP d'envoi**, démarrage, création du premier compte
+  administrateur (avec le piège `createsuperuser` ne posant pas le rôle
+  applicatif — jamais documenté explicitement avant ce jour),
+  sauvegardes, mise à jour. Committé et poussé. Voir « Journal du
+  2026-09-02 (suite 4) ».
 - **2026-09-02 (suite 3) — Jour 18 : tests end-to-end Playwright.**
   Nouveau dossier `e2e/` (hors `backend/`/`frontend/`, projet Node
   indépendant), configuré contre l'environnement Docker complet déjà
@@ -2010,15 +2023,54 @@ instructions complètes d'installation et d'exécution.
    bien supprimés, y compris après les échecs rencontrés en cours de
    mise au point). Committé et poussé.
 
+## Journal du 2026-09-02 (suite 4) — Jour 19, README complet et guide de déploiement
+
+1. **`README.md`** (racine) étendu — le contenu du Jour 17 (limitations
+   de sécurité, tests, points de configuration) reste en place tel
+   quel, complété en tête de document par : présentation/fonctionnalités
+   principales, tableau des prérequis (renvoie au détail complet de
+   `docs/rapport_planification.md` section 1), procédure d'installation
+   (`docker compose up -d`, premier compte administrateur), tableau des
+   variables d'environnement (`.env.example` commenté), arborescence du
+   projet à jour (inclut `e2e/`, absent des versions précédentes du
+   plan), et un rappel dédié sur la délivrabilité des emails simulés
+   renvoyant vers `docs/DEPLOIEMENT.md` pour le détail actionnable.
+2. **`docs/DEPLOIEMENT.md`** (nouveau), rédigé pour un lecteur qui n'a
+   pas suivi le développement (l'équipe IT du client) : architecture des
+   4 services Docker, prérequis serveur, certificat TLS
+   (`nginx/certs/`), `.env` en production (valeurs à changer
+   impérativement — `SECRET_KEY`, `ALLOWED_HOSTS`,
+   `CORS_ALLOWED_ORIGINS`, `SIMULATION_BASE_URL`), démarrage,
+   **section 6 dédiée à la délivrabilité** (SPF/DKIM/DMARC à publier sur
+   le domaine d'envoi, mise en liste blanche du domaine/IP côté
+   passerelle anti-spam du client, test avant campagne réelle — le point
+   explicitement demandé), création du premier compte administrateur,
+   sauvegardes (`pg_dump` du volume `db_data`), mise à jour
+   (`git pull` + rebuild), renvoi final vers les limitations de sécurité
+   du `README.md`.
+3. **Piège documenté, découvert en rédigeant ce guide** :
+   `manage.py createsuperuser` crée un compte technique Django
+   (`is_staff`/`is_superuser`) mais ne positionne jamais le champ
+   applicatif `role` (`apps.accounts.models.Role`, distinct des droits
+   Django) — sans l'étape manuelle documentée ici (`role =
+   Role.ADMINISTRATEUR` via `manage.py shell`), ce premier compte
+   n'aurait aucun droit reconnu par `IsAdministrateur` côté application,
+   alors même qu'il aurait accès à `/admin/`. Jamais rencontré comme un
+   bug en pratique jusqu'ici (les comptes de test du sprint ont toujours
+   été créés avec `role` positionné dès la création), mais un vrai piège
+   pour un premier déploiement suivant seulement les commandes standard
+   Django.
+4. **Committé et poussé.**
+
 ## Prochaine action précise
 
 **Toutes les demandes explicites sont à jour**, y compris le chantier
 Paramètres complet (backend + frontend), l'invalidation des jetons JWT au
-changement de mot de passe, la fausse page de capture personnalisable et
-les tests end-to-end Playwright (voir « Journal du 2026-09-01 », «
-(suite) », « (suite 2) », « Journal du 2026-09-02 », « (suite) » et «
-(suite 3) »). Pistes pour la suite, aucune n'a encore été redemandée
-explicitement :
+changement de mot de passe, la fausse page de capture personnalisable,
+les tests end-to-end Playwright et le README complet + guide de
+déploiement (voir « Journal du 2026-09-01 », « (suite) », « (suite 2) »,
+« Journal du 2026-09-02 », « (suite) », « (suite 3) » et « (suite 4) »).
+Pistes pour la suite, aucune n'a encore été redemandée explicitement :
 
 1. **Jour 15 du plan** (vérification de fidélité visuelle) : comparer
    chaque page développée à sa maquette de référence — d'autant plus
