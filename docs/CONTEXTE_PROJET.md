@@ -6,6 +6,19 @@
 
 ## État d'avancement
 
+- **2026-09-02 (suite 2) — `README.md` créé, limitations de sécurité
+  connues documentées.** Jour 17 du plan (vérification minimale déjà
+  faite le 2026-08-31 — DEBUG, .env, mots de passe hachés) : le README
+  n'existait pas encore (prévu au Jour 19), créé maintenant en version
+  allégée pour porter la section demandée — 8 limitations réelles
+  recensées (pas de protection anti-force-brute sur la connexion, liste
+  blanche de destinataires non verrouillée côté API, HTML/JS arbitraire
+  accepté par la page de capture personnalisée du 2026-09-02, pièces
+  jointes de scénario sans validation de type/taille, `/admin/` exposé
+  sans restriction supplémentaire, limite intrinsèque du pixel de suivi,
+  délivrabilité dépendante du DNS du client) — aucune n'a nécessité de
+  correction (décision : documenter, pas corriger dans l'immédiat, sauf
+  demande explicite). Committé et poussé.
 - **2026-09-02 (suite) — fausse page de capture personnalisable.** Le
   consultant peut désormais remplacer, scénario par scénario, la page de
   capture générique par une page qui imite l'apparence d'un service réel
